@@ -12,3 +12,5 @@ Pillow
 pydicom
 nibabel
 scikit-image
+opencv-python-headless
+mediapipe

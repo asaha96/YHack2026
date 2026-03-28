@@ -82,6 +82,30 @@ function AppPage() {
     return () => { cancelled = true; clearTimeout(timer); };
   }, [stage, sessionId, playAnnotations]);
 
+  // Poll for skeleton data from mobile phone (updates organ positions)
+  useEffect(() => {
+    if (stage !== "simulation") return;
+    let cancelled = false;
+
+    const poll = async () => {
+      while (!cancelled) {
+        try {
+          const res = await fetch(`http://localhost:8000/api/skeleton/latest/${sessionId}`);
+          const data = await res.json();
+          if (data.skeleton_detected) {
+            console.log("[skeleton] Received organ positions:", Object.keys(data.organ_positions).length);
+            // TODO: reposition meshes in LayeredAnatomyViewer using data.organ_positions
+          }
+        } catch { /* polling error */ }
+        await new Promise((r) => setTimeout(r, 1000)); // poll every 1s
+      }
+    };
+
+    // Start polling after a delay
+    const timer = setTimeout(poll, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [stage, sessionId]);
+
   // Reconstruction polling
   useEffect(() => {
     if (stage !== "reconstructing" || !sessionId) return;
