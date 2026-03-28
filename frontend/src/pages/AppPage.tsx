@@ -438,23 +438,8 @@ function AppPage() {
           }}
         />
 
-        {/* Narration bar — bottom center overlay */}
-        {narrationText && (
-          <div style={{
-            position: "absolute", bottom: 60, left: "50%", transform: "translateX(-50%)",
-            maxWidth: 600, width: "90%", padding: "12px 18px",
-            borderRadius: "var(--radius-md)", border: "1px solid var(--border)",
-            backgroundColor: "rgba(10, 10, 12, 0.88)", backdropFilter: "blur(8px)",
-            zIndex: 15,
-          }}>
-            <p style={{ fontSize: "0.8rem", lineHeight: 1.6, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>
-              {narrationText}
-            </p>
-          </div>
-        )}
-
-        {/* Action log — top right toasts */}
-        {messages.length > 0 && (
+        {/* Action log — top right toasts (user actions only, no narration subtitles) */}
+        {false && messages.length > 0 && (
           <div style={{
             position: "absolute", top: 12, right: 12, zIndex: 15,
             display: "flex", flexDirection: "column", gap: 6, maxWidth: 320,
