@@ -10,29 +10,14 @@ interface Props {
   enabled: boolean;
 }
 
-// Gesture guide:
-// POINT (index only)     = hover/inspect, shows cursor
-// PINCH (thumb+index)    = SELECT — confirms selection on pointed structure
-// TWO FINGERS (index+mid)= INCISION — traces a cut path while moving
-// FIST (all curled)      = RETRACT tissue
-// SPREAD (pinch opening) = ZOOM into pointed area
-
 const GESTURE_LABELS: Record<GestureType, string> = {
-  point: "Inspect",
-  pinch: "Select",
-  incision: "Incision",
-  fist: "Retract",
-  spread: "Zoom",
-  none: "",
+  point: "Inspect", pinch: "Select", incision: "Incision",
+  fist: "Retract", spread: "Zoom", none: "",
 };
 
 const GESTURE_COLORS: Record<GestureType, string> = {
-  point: "var(--text-secondary)",
-  pinch: "var(--accent)",
-  incision: "var(--risk-high)",
-  fist: "var(--risk-medium)",
-  spread: "var(--accent-secondary)",
-  none: "",
+  point: "var(--text-secondary)", pinch: "var(--accent)", incision: "var(--risk-high)",
+  fist: "var(--risk-medium)", spread: "var(--accent-secondary)", none: "",
 };
 
 export default function HandTracker({ onGesture, enabled }: Props) {
@@ -46,8 +31,10 @@ export default function HandTracker({ onGesture, enabled }: Props) {
   const lastGestureRef = useRef<GestureType>("none");
   const tracePathRef = useRef<{ x: number; y: number }[]>([]);
   const smoothBufferRef = useRef<{ x: number; y: number }[]>([]);
-  const prevPinchDistRef = useRef<number>(0);
+  // Stability: require N consecutive frames of same gesture before switching
+  const gestureCountRef = useRef<{ type: GestureType; count: number }>({ type: "none", count: 0 });
   const SMOOTH_FRAMES = 5;
+  const STABILITY_FRAMES = 3; // need 3 consecutive frames to confirm a new gesture
 
   useEffect(() => {
     if (!enabled) return;
@@ -56,9 +43,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
 
     const init = async () => {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, facingMode: "user" },
-        });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: "user" } });
         if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -79,23 +64,9 @@ export default function HandTracker({ onGesture, enabled }: Props) {
 
         const HandsClass = (window as any).Hands;
         if (!HandsClass) throw new Error("MediaPipe Hands not available");
-
-        const hands = new HandsClass({
-          locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-        });
-
-        hands.setOptions({
-          maxNumHands: 1,
-          modelComplexity: 1,
-          minDetectionConfidence: 0.7,
-          minTrackingConfidence: 0.6,
-        });
-
-        hands.onResults((results: any) => {
-          drawHand(results);
-          processGesture(results);
-        });
-
+        const hands = new HandsClass({ locateFile: (file: string) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.65, minTrackingConfidence: 0.55 });
+        hands.onResults((results: any) => { drawHand(results); processGesture(results); });
         handsRef.current = hands;
 
         const processFrame = async () => {
@@ -105,11 +76,8 @@ export default function HandTracker({ onGesture, enabled }: Props) {
           animFrameRef.current = requestAnimationFrame(processFrame);
         };
         processFrame();
-      } catch (e: any) {
-        setError(e.message || "Failed to access camera");
-      }
+      } catch (e: any) { setError(e.message || "Failed to access camera"); }
     };
-
     init();
 
     return () => {
@@ -127,10 +95,8 @@ export default function HandTracker({ onGesture, enabled }: Props) {
     if (!canvas || !video) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-
     canvas.width = video.videoWidth || 640;
     canvas.height = video.videoHeight || 480;
-
     ctx.save();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.translate(canvas.width, 0);
@@ -145,7 +111,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
           [0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],
           [0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17],
         ];
-        ctx.strokeStyle = GESTURE_COLORS[currentGesture] || "#a78bfa";
+        ctx.strokeStyle = GESTURE_COLORS[currentGesture] || "#2dd4bf";
         ctx.lineWidth = 2;
         for (const [i, j] of connections) {
           const a = landmarks[i]; const b = landmarks[j];
@@ -155,7 +121,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
           ctx.stroke();
         }
         for (const lm of landmarks) {
-          ctx.fillStyle = GESTURE_COLORS[currentGesture] || "#a78bfa";
+          ctx.fillStyle = GESTURE_COLORS[currentGesture] || "#2dd4bf";
           ctx.beginPath();
           ctx.arc((1 - lm.x) * canvas.width, lm.y * canvas.height, 3, 0, 2 * Math.PI);
           ctx.fill();
@@ -172,6 +138,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
         }
         tracePathRef.current = [];
         lastGestureRef.current = "none";
+        gestureCountRef.current = { type: "none", count: 0 };
         setCurrentGesture("none");
         onGesture("none", null, []);
       }
@@ -179,27 +146,34 @@ export default function HandTracker({ onGesture, enabled }: Props) {
     }
 
     const lm = results.multiHandLandmarks[0];
-
-    // Key landmarks
     const wrist = lm[0];
     const thumbTip = lm[4]; const thumbIp = lm[3];
-    const indexTip = lm[8]; const indexDip = lm[7]; const indexMcp = lm[5];
-    const middleTip = lm[12]; const middleDip = lm[11]; const middleMcp = lm[9];
-    const ringTip = lm[16]; const ringDip = lm[15]; const ringMcp = lm[13];
-    const pinkyTip = lm[20]; const pinkyDip = lm[19]; const pinkyMcp = lm[17];
+    const indexTip = lm[8]; const indexPip = lm[6]; const indexMcp = lm[5];
+    const middleTip = lm[12]; const middlePip = lm[10]; const middleMcp = lm[9];
+    const ringTip = lm[16]; const ringPip = lm[14]; const ringMcp = lm[13];
+    const pinkyTip = lm[20]; const pinkyPip = lm[18]; const pinkyMcp = lm[17];
 
-    const dist = (a: any, b: any) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + ((a.z || 0) - (b.z || 0)) ** 2);
-    const isExtended = (tip: any, dip: any, mcp: any) => dist(tip, mcp) > dist(dip, mcp) * 1.15;
+    // Distance helper (2D — z is noisy from mediapipe)
+    const dist2d = (a: any, b: any) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 
-    const thumbExt = dist(thumbTip, wrist) > dist(thumbIp, wrist) * 1.1;
-    const indexExt = isExtended(indexTip, indexDip, indexMcp);
-    const middleExt = isExtended(middleTip, middleDip, middleMcp);
-    const ringExt = isExtended(ringTip, ringDip, ringMcp);
-    const pinkyExt = isExtended(pinkyTip, pinkyDip, pinkyMcp);
+    // Finger extended: tip is further from wrist than PIP joint
+    // Using PIP (not DIP) for more reliable detection — larger difference
+    const isUp = (tip: any, pip: any) => {
+      const tipDist = dist2d(tip, wrist);
+      const pipDist = dist2d(pip, wrist);
+      return tipDist > pipDist * 1.05; // very forgiving threshold
+    };
 
-    const pinchDist = dist(thumbTip, indexTip);
+    const indexUp = isUp(indexTip, indexPip);
+    const middleUp = isUp(middleTip, middlePip);
+    const ringUp = isUp(ringTip, ringPip);
+    const pinkyUp = isUp(pinkyTip, pinkyPip);
+    const thumbOut = dist2d(thumbTip, wrist) > dist2d(thumbIp, wrist) * 1.05;
 
-    // Smoothed position (index finger tip, mirrored X)
+    const pinchDist = dist2d(thumbTip, indexTip);
+    const fingersUp = [indexUp, middleUp, ringUp, pinkyUp].filter(Boolean).length;
+
+    // Smoothed screen position
     const rawX = (1 - indexTip.x) * 640;
     const rawY = indexTip.y * 480;
     smoothBufferRef.current.push({ x: rawX, y: rawY });
@@ -209,74 +183,69 @@ export default function HandTracker({ onGesture, enabled }: Props) {
       { x: 0, y: 0 }
     );
 
-    const endIncision = () => {
-      if (tracePathRef.current.length > 5) onGesture("incision", null, [...tracePathRef.current]);
-      tracePathRef.current = [];
-    };
+    // Detect raw gesture for this frame
+    let rawGesture: GestureType = "none";
 
-    // Count extended fingers
-    const extCount = [indexExt, middleExt, ringExt, pinkyExt].filter(Boolean).length;
-
-    // ── GESTURE DETECTION (priority order) ──
-
-    // 1. PINCH: thumb + index tips close → SELECT
-    if (pinchDist < 0.055 && !middleExt && !ringExt) {
-      // Check if pinch is opening (spread gesture for zoom)
-      const wasPinching = lastGestureRef.current === "pinch";
-      if (wasPinching && pinchDist > prevPinchDistRef.current + 0.02) {
-        // Pinch is opening → SPREAD (zoom)
-        if (lastGestureRef.current === "incision") endIncision();
-        setCurrentGesture("spread");
-        lastGestureRef.current = "spread";
-        onGesture("spread", pos, []);
-      } else {
-        if (lastGestureRef.current === "incision") endIncision();
-        setCurrentGesture("pinch");
-        lastGestureRef.current = "pinch";
-        onGesture("pinch", pos, []);
-      }
-      prevPinchDistRef.current = pinchDist;
-
-    // 2. FIST: all fingers curled → RETRACT
-    } else if (extCount === 0 && !thumbExt) {
-      if (lastGestureRef.current === "incision") endIncision();
-      tracePathRef.current = [];
-      setCurrentGesture("fist");
-      lastGestureRef.current = "fist";
-      onGesture("fist", pos, []);
-
-    // 3. TWO FINGERS (index + middle, others curled) → INCISION trace
-    } else if (indexExt && middleExt && !ringExt && !pinkyExt) {
-      tracePathRef.current.push(pos);
-      setCurrentGesture("incision");
-      lastGestureRef.current = "incision";
-      onGesture("incision", pos, [...tracePathRef.current]);
-
-    // 4. POINT: only index finger → HOVER/INSPECT (no selection)
-    } else if (indexExt && !middleExt && !ringExt && !pinkyExt) {
-      if (lastGestureRef.current === "incision") endIncision();
-      tracePathRef.current = [];
-      setCurrentGesture("point");
-      lastGestureRef.current = "point";
-      onGesture("point", pos, []);
-
-    // 5. SPREAD: thumb + index moving apart after pinch → ZOOM
-    } else if (lastGestureRef.current === "pinch" && pinchDist > 0.08) {
-      setCurrentGesture("spread");
-      lastGestureRef.current = "spread";
-      onGesture("spread", pos, []);
-
-    // 6. Open hand / unrecognized → IDLE
-    } else {
-      if (lastGestureRef.current === "incision") endIncision();
-      tracePathRef.current = [];
-      smoothBufferRef.current = [];
-      lastGestureRef.current = "none";
-      setCurrentGesture("none");
-      onGesture("none", null, []);
+    if (pinchDist < 0.07) {
+      // Thumb and index close = PINCH (select)
+      rawGesture = "pinch";
+    } else if (fingersUp === 0 && !thumbOut) {
+      // All curled = FIST (retract)
+      rawGesture = "fist";
+    } else if (indexUp && middleUp && !ringUp && !pinkyUp) {
+      // Peace sign = INCISION
+      rawGesture = "incision";
+    } else if (indexUp && !middleUp && !ringUp && !pinkyUp) {
+      // Index only = POINT (inspect)
+      rawGesture = "point";
+    } else if (fingersUp >= 3 && thumbOut) {
+      // Open hand = no gesture (navigate)
+      rawGesture = "none";
     }
 
-    prevPinchDistRef.current = pinchDist;
+    // Stability check: only switch gesture after N consecutive same frames
+    if (rawGesture === gestureCountRef.current.type) {
+      gestureCountRef.current.count++;
+    } else {
+      gestureCountRef.current = { type: rawGesture, count: 1 };
+    }
+
+    // Don't switch until stable (except for incision traces which need responsiveness)
+    const isStable = gestureCountRef.current.count >= STABILITY_FRAMES;
+    const confirmedGesture = isStable ? rawGesture : lastGestureRef.current;
+
+    // Handle incision tracing (needs to be responsive, skip stability for trace updates)
+    if (rawGesture === "incision" && lastGestureRef.current === "incision") {
+      tracePathRef.current.push(pos);
+      onGesture("incision", pos, [...tracePathRef.current]);
+      return; // don't go through the rest, just keep tracing
+    }
+
+    if (!isStable) return; // wait for stability
+
+    // End previous incision if switching away
+    if (lastGestureRef.current === "incision" && confirmedGesture !== "incision") {
+      if (tracePathRef.current.length > 5) {
+        onGesture("incision", null, [...tracePathRef.current]);
+      }
+      tracePathRef.current = [];
+    }
+
+    // Apply confirmed gesture
+    if (confirmedGesture !== lastGestureRef.current || confirmedGesture === "point" || confirmedGesture === "pinch") {
+      lastGestureRef.current = confirmedGesture;
+      setCurrentGesture(confirmedGesture);
+
+      if (confirmedGesture === "incision") {
+        tracePathRef.current = [pos];
+        onGesture("incision", pos, [pos]);
+      } else if (confirmedGesture === "none") {
+        smoothBufferRef.current = [];
+        onGesture("none", null, []);
+      } else {
+        onGesture(confirmedGesture, pos, []);
+      }
+    }
   };
 
   return (
@@ -295,11 +264,11 @@ export default function HandTracker({ onGesture, enabled }: Props) {
       )}
       {isActive && (
         <>
-          <div style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", backgroundColor: currentGesture !== "none" ? GESTURE_COLORS[currentGesture] : "#34d399", boxShadow: `0 0 6px ${currentGesture !== "none" ? GESTURE_COLORS[currentGesture] : "#34d399"}` }} />
+          <div style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", backgroundColor: currentGesture !== "none" ? GESTURE_COLORS[currentGesture] : "#34d399" }} />
           {currentGesture !== "none" && (
             <div style={{
               position: "absolute", bottom: 5, left: 5, padding: "2px 7px", borderRadius: 5,
-              backgroundColor: "rgba(15, 15, 20, 0.85)",
+              backgroundColor: "rgba(10, 10, 12, 0.85)",
               border: `1px solid ${GESTURE_COLORS[currentGesture]}`,
               fontSize: "0.58rem", fontWeight: 600, color: GESTURE_COLORS[currentGesture],
               textTransform: "uppercase", letterSpacing: "0.05em",
