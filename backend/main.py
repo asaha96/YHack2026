@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
-app = FastAPI(title="SurgiVision API", version="0.1.0")
+app = FastAPI(title="Praxis API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,

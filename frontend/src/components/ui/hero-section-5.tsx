@@ -156,7 +156,7 @@ export function HeroSection() {
         <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
           <span style={{ fontSize: "0.78rem", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-primary)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            SurgiVision
+            Praxis
           </span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

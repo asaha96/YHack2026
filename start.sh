@@ -1,7 +1,7 @@
 #!/bin/bash
-# SurgiVision - Quick Start Script
+# Praxis - Quick Start Script
 
-echo "🫀 SurgiVision - AI Surgical Planning Assistant"
+echo "🫀 Praxis - AI Surgical Planning Assistant"
 echo "================================================"
 
 # Check for .env
@@ -39,7 +39,7 @@ FRONTEND_PID=$!
 cd ..
 
 echo ""
-echo "✅ SurgiVision is running!"
+echo "✅ Praxis is running!"
 echo "   Frontend: http://localhost:5173"
 echo "   Backend:  http://localhost:8000"
 echo "   Health:   http://localhost:8000/health"

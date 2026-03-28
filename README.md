@@ -1,4 +1,4 @@
-# SurgiVision
+# Praxis
 
 Patient-specific surgical simulation platform. Upload a CT or MRI scan, reconstruct a 3D model of the patient's interior, then practice the procedure with hand-tracked gestures while an AI assistant guides you through every step.
 
@@ -8,7 +8,7 @@ Training surgeons is expensive and disconnected from reality. Cadavers are scarc
 
 ## Solution
 
-SurgiVision takes a patient's CT/MRI scan and reconstructs their exact anatomy as a navigable 3D model. Surgeons can then simulate the procedure using hand tracking (no special hardware — just a webcam) while an AI assistant labels danger zones, recommends incision paths, and narrates risks in real-time.
+Praxis takes a patient's CT/MRI scan and reconstructs their exact anatomy as a navigable 3D model. Surgeons can then simulate the procedure using hand tracking (no special hardware — just a webcam) while an AI assistant labels danger zones, recommends incision paths, and narrates risks in real-time.
 
 ## How It Works
 
