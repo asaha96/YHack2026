@@ -184,7 +184,7 @@ export function HeroSection() {
           backgroundColor: "rgba(10, 10, 12, 0.6)",
           backdropFilter: "blur(8px)",
         }}>
-          Patient-Specific Surgical Simulation
+          Field Trauma Response
         </div>
 
         <h1 style={{
@@ -197,7 +197,7 @@ export function HeroSection() {
           fontFamily: "var(--font-sans)",
           maxWidth: 580,
         }}>
-          Rehearse the procedure before the first incision.
+          Get it right the first time.
         </h1>
 
         <p style={{
@@ -206,7 +206,7 @@ export function HeroSection() {
           maxWidth: 460, marginBottom: 36,
           fontFamily: "var(--font-sans)",
         }}>
-          Upload patient imaging, reconstruct a 3D anatomy model, and simulate the intervention with hand tracking and AI-guided risk narration.
+          Capture the scene, describe injuries by voice, and receive ranked intervention plans with survival probabilities — in under 30 seconds.
         </p>
 
         <div style={{ display: "flex", gap: 10 }}>
@@ -219,7 +219,7 @@ export function HeroSection() {
             textDecoration: "none",
             backdropFilter: "blur(8px)",
           }}>
-            Start simulation
+            Start triage
           </Link>
           <a href="#pipeline" style={{
             padding: "11px 22px", borderRadius: 4,

@@ -8,6 +8,9 @@ import ChatPanel from "../components/ChatPanel";
 import NarrationPlayer from "../components/NarrationPlayer";
 import SummaryView from "../components/SummaryView";
 import UploadPanel from "../components/UploadPanel";
+import SceneCapture from "../components/SceneCapture";
+import PatientAssess from "../components/PatientAssess";
+import ScenarioView from "../components/ScenarioView";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
 import { sendAction, sendChat, sendSemanticQuery } from "../utils/api";
 import type { AgentResponse, Modification } from "../utils/api";
@@ -20,14 +23,18 @@ interface ChatMessage {
   recommendations?: string[];
 }
 
-type AppStage = "upload" | "reconstructing" | "simulation";
+type AppStage = "scene" | "assess" | "simulate" | "plan" | "guide" | "upload" | "reconstructing" | "simulation";
 
 function AppPage() {
-  const [stage, setStage] = useState<AppStage>("upload");
-  const [sessionId, setSessionId] = useState(`session-${Date.now()}`);
+  const [stage, setStage] = useState<AppStage>("scene");
+  const [sessionId, setSessionId] = useState(`trauma-${Date.now().toString(36)}`);
   const [splatPath, setSplatPath] = useState<string | null>(null);
   const [reconstructProgress, setReconstructProgress] = useState(0);
   const [reconstructMessage, setReconstructMessage] = useState("");
+  const [sceneData, setSceneData] = useState<any>(null);
+  const [patientData, setPatientData] = useState<any>(null);
+  const [scenarios, setScenarios] = useState<any[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [viewerMode, setViewerMode] = useState<"anatomy" | "splat">("anatomy");
 
   const [selectedOrgan, setSelectedOrgan] = useState<string | null>(null);
@@ -310,6 +317,43 @@ function AppPage() {
     [selectedOrgan, handleOrganClick, handleIncisionTrace, handleChatMessage, gestureRaycast]
   );
 
+  // Scene capture handler
+  const handleSceneComplete = useCallback((sid: string, data: any) => {
+    setSessionId(sid);
+    setSceneData(data);
+    setStage("assess");
+  }, []);
+
+  // Patient assessment handler
+  const handleAssessComplete = useCallback(async (assessment: any) => {
+    setPatientData(assessment);
+    setStage("simulate");
+    try {
+      const res = await fetch("http://localhost:8000/api/scenario", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId }),
+      });
+      const data = await res.json();
+      setScenarios(data.scenarios || []);
+      setStage("plan");
+    } catch (e) {
+      console.error("Scenario generation failed:", e);
+      setStage("plan");
+    }
+  }, [sessionId]);
+
+  const handleSelectPlan = useCallback((plan: any) => {
+    setSelectedPlan(plan);
+    // Add plan steps to chat as initial context
+    setMessages([{
+      role: "assistant",
+      content: `Executing: ${plan.name} (${plan.survival_probability}% survival est.)\n\nFollow the protocol below. I'll guide you through each step.`,
+      recommendations: plan.steps?.map((s: any) => `${s.order}. ${s.action}`) || [],
+    }]);
+    setStage("simulation");
+  }, []);
+
   const navBar = (label?: string) => (
     <header style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
@@ -318,7 +362,60 @@ function AppPage() {
     </header>
   );
 
-  // ──── UPLOAD STAGE ────
+  // ──── SCENE CAPTURE ────
+  if (stage === "scene") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+        {navBar("Scene Capture")}
+        <div style={{ height: "calc(100vh - 45px)" }}>
+          <SceneCapture onComplete={handleSceneComplete} />
+        </div>
+      </div>
+    );
+  }
+
+  // ──── PATIENT ASSESSMENT ────
+  if (stage === "assess") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+        {navBar("Patient Assessment")}
+        <div style={{ height: "calc(100vh - 45px)" }}>
+          <PatientAssess sessionId={sessionId} onComplete={handleAssessComplete} />
+        </div>
+      </div>
+    );
+  }
+
+  // ──── SIMULATING ────
+  if (stage === "simulate") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
+        <div style={{ width: 24, height: 24, border: "1.5px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--accent)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Simulating</p>
+          <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>Generating intervention scenarios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ──── PLAN SELECTION ────
+  if (stage === "plan") {
+    return (
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+        {navBar("Intervention Plans")}
+        <div style={{ height: "calc(100vh - 45px)" }}>
+          <ScenarioView
+            scenarios={scenarios}
+            onSelectPlan={handleSelectPlan}
+            onOpenGuide={() => { setStage("simulation"); }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ──── UPLOAD STAGE (legacy/fallback) ────
   if (stage === "upload") {
     return (
       <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>

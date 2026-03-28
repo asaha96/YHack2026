@@ -28,6 +28,9 @@ from routes.summary import router as summary_router
 from routes.query import router as query_router
 from routes.upload import router as upload_router
 from routes.reconstruct import router as reconstruct_router
+from routes.scene import router as scene_router
+from routes.assess import router as assess_router
+from routes.scenario import router as scenario_router
 
 app.include_router(action_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
@@ -36,3 +39,6 @@ app.include_router(summary_router, prefix="/api")
 app.include_router(query_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
 app.include_router(reconstruct_router, prefix="/api")
+app.include_router(scene_router, prefix="/api")
+app.include_router(assess_router, prefix="/api")
+app.include_router(scenario_router, prefix="/api")
