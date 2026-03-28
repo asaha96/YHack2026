@@ -488,6 +488,8 @@ function AppPage() {
             {handTrackingEnabled ? "Tracking" : "Hands"}
           </button>
 
+          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => {}} />
+
           <button onClick={() => setTourActive((t) => !t)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
             border: `1px solid ${tourActive ? "var(--accent)" : "var(--border)"}`,
