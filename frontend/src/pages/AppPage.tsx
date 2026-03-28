@@ -353,47 +353,37 @@ function AppPage() {
 
   // ──── SIMULATION STAGE ────
   return (
-    <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateColumns: "1fr 360px", gridTemplateRows: "auto 1fr auto", overflow: "hidden" }}>
-      <header style={{ gridColumn: "1 / -1", padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)" }}>
+    <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden" }}>
+      {/* Header — minimal */}
+      <header style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
           <span style={{ fontSize: "0.72rem", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-primary)", letterSpacing: "0.04em", textTransform: "uppercase" }}>SurgiVision</span>
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          {/* Viewer mode toggle */}
-          <div style={{ display: "flex", borderRadius: 10, border: "1px solid var(--border)", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", overflow: "hidden" }}>
             {(["anatomy", "splat"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewerMode(mode)}
-                style={{
-                  padding: "5px 12px", border: "none",
-                  backgroundColor: viewerMode === mode ? "var(--accent-dim)" : "transparent",
-                  color: viewerMode === mode ? "var(--accent)" : "var(--text-muted)",
-                  fontSize: "0.68rem", fontWeight: 500, fontFamily: "var(--font-mono)",
-                  letterSpacing: "0.02em", textTransform: "uppercase",
-                }}
-              >
+              <button key={mode} onClick={() => setViewerMode(mode)} style={{
+                padding: "5px 12px", border: "none",
+                backgroundColor: viewerMode === mode ? "var(--accent-dim)" : "transparent",
+                color: viewerMode === mode ? "var(--accent)" : "var(--text-muted)",
+                fontSize: "0.65rem", fontWeight: 500, fontFamily: "var(--font-mono)", textTransform: "uppercase",
+              }}>
                 {mode === "anatomy" ? "Mesh" : "Splat"}
               </button>
             ))}
           </div>
 
-          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={(msg) => { setMessages((prev) => [...prev, { role: "assistant", content: msg }]); }} />
-
-          <button
-            onClick={() => setHandTrackingEnabled((e) => !e)}
-            style={{
-              padding: "5px 14px", borderRadius: "var(--radius-sm)",
-              border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
-              backgroundColor: handTrackingEnabled ? "var(--accent-dim)" : "transparent",
-              color: handTrackingEnabled ? "var(--accent)" : "var(--text-muted)",
-              fontSize: "0.68rem", fontWeight: 500,
-            }}
-          >
-            {handTrackingEnabled ? "Tracking On" : "Hands"}
+          <button onClick={() => setHandTrackingEnabled((e) => !e)} style={{
+            padding: "5px 14px", borderRadius: "var(--radius-sm)",
+            border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
+            backgroundColor: handTrackingEnabled ? "var(--accent-dim)" : "transparent",
+            color: handTrackingEnabled ? "var(--accent)" : "var(--text-muted)",
+            fontSize: "0.65rem", fontWeight: 500,
+          }}>
+            {handTrackingEnabled ? "Tracking" : "Hands"}
           </button>
 
           <button onClick={() => setTourActive((t) => !t)} style={{
@@ -401,7 +391,7 @@ function AppPage() {
             border: `1px solid ${tourActive ? "var(--accent)" : "var(--border)"}`,
             backgroundColor: tourActive ? "var(--accent-dim)" : "transparent",
             color: tourActive ? "var(--accent)" : "var(--text-muted)",
-            fontSize: "0.68rem", fontWeight: 500,
+            fontSize: "0.65rem", fontWeight: 500,
           }}>
             {tourActive ? "Touring" : "Tour"}
           </button>
@@ -409,15 +399,15 @@ function AppPage() {
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
             border: "1px solid var(--border)", backgroundColor: "transparent",
-            color: "var(--text-muted)", fontSize: "0.68rem", fontWeight: 500,
+            color: "var(--text-muted)", fontSize: "0.65rem", fontWeight: 500,
           }}>
             Report
           </button>
         </div>
       </header>
 
-      {/* Main 3D Viewer */}
-      <main style={{ position: "relative", overflow: "hidden", borderRight: "1px solid var(--border)" }}>
+      {/* Full-screen 3D Viewer */}
+      <main style={{ position: "relative", overflow: "hidden" }}>
         {viewerMode === "anatomy" ? (
           <LayeredAnatomyViewer
             ref={viewerRef}
@@ -436,54 +426,63 @@ function AppPage() {
           />
         )}
 
-        {/* Agent Tour overlay */}
+        {/* Agent Tour */}
         <AgentTour
           active={tourActive}
-          onMoveTo={(camPos, target) => {
-            // TODO: animate camera to position — for now just log
-            console.log("[tour] Move to:", camPos, "→", target);
-          }}
-          onNarrate={(text) => {
-            setNarrationText(text);
-            setMessages((prev) => [...prev, { role: "assistant", content: text }]);
-          }}
-          onPOIChange={(poi) => {
-            if (poi) setSelectedOrgan(poi.id);
-          }}
+          onMoveTo={(camPos, target) => { console.log("[tour] Move to:", camPos, "→", target); }}
+          onNarrate={(text) => { setNarrationText(text); }}
+          onPOIChange={(poi) => { if (poi) setSelectedOrgan(poi.id); }}
           onCommand={(cmd) => {
-            if (cmd === "free_explore") {
-              setTourActive(false);
-            } else {
-              handleChatMessage(cmd);
-            }
+            if (cmd === "free_explore") setTourActive(false);
+            else handleChatMessage(cmd);
           }}
         />
 
+        {/* Narration bar — bottom center overlay */}
+        {narrationText && (
+          <div style={{
+            position: "absolute", bottom: 60, left: "50%", transform: "translateX(-50%)",
+            maxWidth: 600, width: "90%", padding: "12px 18px",
+            borderRadius: "var(--radius-md)", border: "1px solid var(--border)",
+            backgroundColor: "rgba(10, 10, 12, 0.88)", backdropFilter: "blur(8px)",
+            zIndex: 15,
+          }}>
+            <p style={{ fontSize: "0.8rem", lineHeight: 1.6, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>
+              {narrationText}
+            </p>
+          </div>
+        )}
+
+        {/* Action log — top right toasts */}
+        {messages.length > 0 && (
+          <div style={{
+            position: "absolute", top: 12, right: 12, zIndex: 15,
+            display: "flex", flexDirection: "column", gap: 6, maxWidth: 320,
+          }}>
+            {messages.slice(-3).map((msg, i) => (
+              msg.role === "user" && (
+                <div key={i} style={{
+                  padding: "6px 12px", borderRadius: "var(--radius-sm)",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "rgba(10, 10, 12, 0.85)",
+                  fontSize: "0.7rem", color: "var(--text-secondary)",
+                  fontFamily: "var(--font-mono)", letterSpacing: "0.02em",
+                  animation: "fadeIn 0.3s ease",
+                }}>
+                  {msg.content}
+                </div>
+              )
+            ))}
+          </div>
+        )}
+
+        {/* Hand tracker — bottom left */}
         {handTrackingEnabled && (
-          <div style={{ position: "absolute", bottom: 16, left: 16, width: 240, height: 180, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}>
+          <div style={{ position: "absolute", bottom: 16, left: 16, width: 240, height: 180, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)", zIndex: 15 }}>
             <HandTracker onGesture={handleGesture} enabled={handTrackingEnabled} />
           </div>
         )}
       </main>
-
-      {/* Chat */}
-      <aside style={{ overflow: "hidden" }}>
-        <ChatPanel messages={messages} onSendMessage={handleChatMessage} onSemanticQuery={handleSemanticQuery} isLoading={isLoading} selectedOrgan={selectedOrgan} />
-      </aside>
-
-      {/* Footer */}
-      <footer style={{ gridColumn: "1 / -1", padding: "8px 24px", borderTop: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.68rem", color: "var(--text-muted)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--risk-low)", display: "inline-block" }} />
-            Session: {sessionId.slice(0, 12)}
-          </span>
-          <span>{allVisibleMods.length} annotations</span>
-        </div>
-        <span style={{ opacity: 0.7 }}>
-          Point to select · Trace for incision · Pinch to retract · Voice via mic
-        </span>
-      </footer>
 
       <SummaryView sessionId={sessionId} visible={showSummary} onClose={() => setShowSummary(false)} />
     </div>
