@@ -1,0 +1,38 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+app = FastAPI(title="SurgiVision API", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+from routes.action import router as action_router
+from routes.chat import router as chat_router
+from routes.narrate import router as narrate_router
+from routes.summary import router as summary_router
+from routes.query import router as query_router
+from routes.upload import router as upload_router
+from routes.reconstruct import router as reconstruct_router
+
+app.include_router(action_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(narrate_router, prefix="/api")
+app.include_router(summary_router, prefix="/api")
+app.include_router(query_router, prefix="/api")
+app.include_router(upload_router, prefix="/api")
+app.include_router(reconstruct_router, prefix="/api")
