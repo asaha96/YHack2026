@@ -1,47 +1,72 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg-primary: #0c0c10;
-  --bg-secondary: #08080c;
-  --bg-surface: #141418;
-  --bg-surface-hover: #1c1c22;
-  --border: #222228;
-  --border-hover: #333340;
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.08);
-  --accent-secondary: #10b981;
-  --accent-secondary-glow: rgba(16, 185, 129, 0.08);
-  --text-primary: #e4e4e7;
-  --text-secondary: #a1a1aa;
-  --text-muted: #52525b;
-  --risk-high: #ef4444;
-  --risk-medium: #f59e0b;
-  --risk-low: #22c55e;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+  /* Clinical dark — like a PACS radiology viewer */
+  --bg-primary: #0a0a0c;
+  --bg-secondary: #0e0e11;
+  --bg-surface: #141417;
+  --bg-surface-hover: #1a1a1e;
+  --bg-elevated: #1e1e22;
+
+  --border: #1f1f24;
+  --border-hover: #2a2a30;
+  --border-active: #3a3a42;
+
+  /* Teal accent — medical equipment / OR monitors */
+  --accent: #2dd4bf;
+  --accent-dim: rgba(45, 212, 191, 0.12);
+  --accent-muted: rgba(45, 212, 191, 0.5);
+  --accent-secondary: #818cf8;
+
+  --text-primary: #dcdce0;
+  --text-secondary: #85858f;
+  --text-muted: #4a4a55;
+
+  --risk-high: #f87171;
+  --risk-medium: #fbbf24;
+  --risk-low: #4ade80;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 2px 10px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.6);
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+  width: 100%; height: 100%; overflow: hidden;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-::-webkit-scrollbar { width: 4px; }
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
+/* Utility animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(3px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInSlow {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes spin {
@@ -49,6 +74,22 @@ html, body, #root {
 }
 
 @keyframes dotPulse {
-  0%, 80%, 100% { opacity: 0.2; }
-  40% { opacity: 0.8; }
+  0%, 80%, 100% { opacity: 0.15; }
+  40% { opacity: 0.7; }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Base button reset */
+button {
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+button:active {
+  transform: scale(0.98);
 }

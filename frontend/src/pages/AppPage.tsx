@@ -312,15 +312,20 @@ function AppPage() {
     [selectedOrgan, handleOrganClick, handleIncisionTrace, handleChatMessage, gestureRaycast]
   );
 
+  const navBar = (label?: string) => (
+    <header style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
+      <span style={{ fontSize: "0.76rem", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-primary)", letterSpacing: "0.04em", textTransform: "uppercase" }}>SurgiVision</span>
+      {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
+    </header>
+  );
+
   // ──── UPLOAD STAGE ────
   if (stage === "upload") {
     return (
       <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
-        <header style={{ padding: "12px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-          <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>SurgiVision</span>
-        </header>
-        <div style={{ height: "calc(100vh - 49px)" }}>
+        {navBar()}
+        <div style={{ height: "calc(100vh - 45px)" }}>
           <UploadPanel onUploadComplete={handleUploadComplete} onUseSample={handleUseSample} />
         </div>
       </div>
@@ -330,31 +335,30 @@ function AppPage() {
   // ──── RECONSTRUCTING STAGE ────
   if (stage === "reconstructing") {
     return (
-      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20 }}>
-        <div style={{ width: 32, height: 32, border: "2px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-        <div style={{ textAlign: "center" }}>
-          <h2 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6 }}>Reconstructing 3D Model</h2>
-          <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem" }}>{reconstructMessage || "Processing..."}</p>
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <div style={{ width: 24, height: 24, border: "1.5px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <div style={{ textAlign: "center" }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--accent)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Reconstructing</p>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 400 }}>{reconstructMessage || "Processing volume data..."}</p>
+          </div>
         </div>
-        <div style={{ width: 280, height: 3, borderRadius: 2, backgroundColor: "var(--border)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${reconstructProgress}%`, backgroundColor: "var(--accent)", borderRadius: 2, transition: "width 0.4s ease" }} />
+        <div style={{ width: 240, height: 2, backgroundColor: "var(--border)", overflow: "hidden", borderRadius: 1 }}>
+          <div style={{ height: "100%", width: `${reconstructProgress}%`, backgroundColor: "var(--accent)", transition: "width 0.4s ease" }} />
         </div>
-        <p style={{ color: "var(--text-muted)", fontSize: "0.7rem" }}>{reconstructProgress}%</p>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--text-muted)", letterSpacing: "0.04em" }}>{reconstructProgress}%</span>
       </div>
     );
   }
 
   // ──── SIMULATION STAGE ────
   return (
-    <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateColumns: "1fr 380px", gridTemplateRows: "auto 1fr auto", overflow: "hidden" }}>
-      {/* Header */}
-      <header style={{ gridColumn: "1 / -1", padding: "10px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)" }}>
+    <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateColumns: "1fr 360px", gridTemplateRows: "auto 1fr auto", overflow: "hidden" }}>
+      <header style={{ gridColumn: "1 / -1", padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
-          <div>
-            <span style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>SurgiVision</span>
-            <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: 8 }}>Simulation</span>
-          </div>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
+          <span style={{ fontSize: "0.72rem", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-primary)", letterSpacing: "0.04em", textTransform: "uppercase" }}>SurgiVision</span>
+          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -365,18 +369,14 @@ function AppPage() {
                 key={mode}
                 onClick={() => setViewerMode(mode)}
                 style={{
-                  padding: "6px 14px",
-                  border: "none",
-                  backgroundColor: viewerMode === mode ? "var(--accent-glow)" : "transparent",
-                  color: viewerMode === mode ? "var(--accent-light)" : "var(--text-muted)",
-                  fontSize: "0.72rem",
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  textTransform: "capitalize",
+                  padding: "5px 12px", border: "none",
+                  backgroundColor: viewerMode === mode ? "var(--accent-dim)" : "transparent",
+                  color: viewerMode === mode ? "var(--accent)" : "var(--text-muted)",
+                  fontSize: "0.68rem", fontWeight: 500, fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.02em", textTransform: "uppercase",
                 }}
               >
-                {mode === "anatomy" ? "Anatomy" : "Splat"}
+                {mode === "anatomy" ? "Mesh" : "Splat"}
               </button>
             ))}
           </div>
@@ -386,25 +386,21 @@ function AppPage() {
           <button
             onClick={() => setHandTrackingEnabled((e) => !e)}
             style={{
-              padding: "7px 16px", borderRadius: 20,
+              padding: "5px 14px", borderRadius: "var(--radius-sm)",
               border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
-              backgroundColor: handTrackingEnabled ? "var(--accent-glow)" : "transparent",
-              color: handTrackingEnabled ? "var(--accent-light)" : "var(--text-secondary)",
-              fontSize: "0.78rem", fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s ease",
+              backgroundColor: handTrackingEnabled ? "var(--accent-dim)" : "transparent",
+              color: handTrackingEnabled ? "var(--accent)" : "var(--text-muted)",
+              fontSize: "0.68rem", fontWeight: 500,
             }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10V6a2 2 0 0 0-4 0v8" />
-              <path d="M18 8a2 2 0 1 1 4 0v5a8 8 0 0 1-8 8H9a8 8 0 0 1-4-1" />
-            </svg>
-            {handTrackingEnabled ? "Tracking" : "Hands"}
+            {handTrackingEnabled ? "Tracking On" : "Hands"}
           </button>
 
-          <button onClick={() => setShowSummary(true)} style={{ padding: "7px 16px", borderRadius: 20, border: "1px solid var(--border)", backgroundColor: "transparent", color: "var(--text-secondary)", fontSize: "0.78rem", fontWeight: 500, cursor: "pointer", transition: "all 0.2s ease", display: "flex", alignItems: "center", gap: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-              <polyline points="14,2 14,8 20,8" />
-            </svg>
+          <button onClick={() => setShowSummary(true)} style={{
+            padding: "5px 14px", borderRadius: "var(--radius-sm)",
+            border: "1px solid var(--border)", backgroundColor: "transparent",
+            color: "var(--text-muted)", fontSize: "0.68rem", fontWeight: 500,
+          }}>
             Report
           </button>
         </div>
