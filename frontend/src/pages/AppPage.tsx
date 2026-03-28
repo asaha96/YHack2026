@@ -72,13 +72,15 @@ function AppPage() {
         }));
 
         playAnnotations(mods);
+        // Store for voice agent context
+        currentAnnotationsRef.current = data.annotations;
       } catch (e) {
         console.error("Failed to generate annotations:", e);
       }
     };
 
-    // Delay slightly to let the viewer load first
-    const timer = setTimeout(generateAnnotations, 2000);
+    // Start immediately — annotations appear as soon as the model loads
+    const timer = setTimeout(generateAnnotations, 500);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [stage, sessionId, playAnnotations]);
 
@@ -258,9 +260,13 @@ function AppPage() {
       // Silent — just accumulate context, no AI call
       actionContextRef.current.push(`Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-      // PINCH triggers voice listening — start speech recognition
+      // PINCH triggers voice listening
       setIsVoiceListening(true);
-      try { recognitionRef.current?.start(); } catch {}
+      try {
+        recognitionRef.current?.start();
+      } catch {
+        // Browser may block non-user-gesture start — the UI button handles it
+      }
     },
     []
   );
@@ -517,16 +523,6 @@ function AppPage() {
 
           <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => {}} />
 
-          <button onClick={() => setTourActive((t) => !t)} style={{
-            padding: "5px 14px", borderRadius: "var(--radius-sm)",
-            border: `1px solid ${tourActive ? "var(--accent)" : "var(--border)"}`,
-            backgroundColor: tourActive ? "var(--accent-dim)" : "transparent",
-            color: tourActive ? "var(--accent)" : "var(--text-muted)",
-            fontSize: "0.65rem", fontWeight: 500,
-          }}>
-            {tourActive ? "Touring" : "Tour"}
-          </button>
-
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
             border: "1px solid var(--accent)",
@@ -558,19 +554,7 @@ function AppPage() {
           />
         )}
 
-        {/* Agent Tour */}
-        <AgentTour
-          active={tourActive}
-          onMoveTo={(camPos, target) => { console.log("[tour] Move to:", camPos, "→", target); }}
-          onNarrate={(text) => { setNarrationText(text); }}
-          onPOIChange={(poi) => { if (poi) setSelectedOrgan(poi.id); }}
-          onCommand={(cmd) => {
-            if (cmd === "free_explore") setTourActive(false);
-            else handleChatMessage(cmd);
-          }}
-        />
-
-        {/* Action log — top right toasts (user actions only, no narration subtitles) */}
+        {/* Action log — disabled */}
         {false && messages.length > 0 && (
           <div style={{
             position: "absolute", top: 12, right: 12, zIndex: 15,
@@ -593,19 +577,26 @@ function AppPage() {
           </div>
         )}
 
-        {/* Voice listening indicator */}
+        {/* Voice indicator — right side, clickable to start/retry mic */}
         {isVoiceListening && (
-          <div style={{
-            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-            padding: "16px 28px", borderRadius: "var(--radius-md)",
-            border: "1px solid var(--accent)", backgroundColor: "rgba(10, 10, 12, 0.9)",
-            zIndex: 20, display: "flex", alignItems: "center", gap: 10,
-          }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "var(--risk-high)", animation: "dotPulse 1s infinite" }} />
-            <span style={{ fontSize: "0.82rem", color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-              Listening...
+          <button
+            onClick={() => {
+              // User click = trusted gesture, can start recognition
+              try { recognitionRef.current?.start(); } catch {}
+            }}
+            style={{
+              position: "absolute", top: 16, right: 16,
+              padding: "8px 16px", borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--risk-high)", backgroundColor: "rgba(248, 113, 113, 0.1)",
+              zIndex: 20, display: "flex", alignItems: "center", gap: 8,
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--risk-high)", animation: "dotPulse 1s infinite" }} />
+            <span style={{ fontSize: "0.68rem", color: "var(--risk-high)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Voice Active
             </span>
-          </div>
+          </button>
         )}
 
         {/* Agent narration — minimal bottom bar */}
