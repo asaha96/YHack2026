@@ -62,18 +62,18 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const [isLoading, setIsLoading] = useState(true);
     const [loadProgress, setLoadProgress] = useState("");
     const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
-      skin: false,
-      muscles: false,
+      skin: true,
+      muscles: true,
       organs: true,
       vascular: true,
       skeleton: true,
     });
     const [layerOpacity, setLayerOpacity] = useState<Record<string, number>>({
-      skin: 0.25,
-      muscles: 0.6,
-      organs: 0.85,
-      vascular: 0.75,
-      skeleton: 0.9,
+      skin: 0.06,
+      muscles: 0.12,
+      organs: 0.9,
+      vascular: 0.85,
+      skeleton: 0.2,
     });
     const isDraggingRef = useRef(false);
     const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);

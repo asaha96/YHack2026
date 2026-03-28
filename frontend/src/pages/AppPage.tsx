@@ -24,7 +24,7 @@ interface ChatMessage {
 type AppStage = "upload" | "reconstructing" | "simulation";
 
 function AppPage() {
-  const [stage, setStage] = useState<AppStage>("upload");
+  const [stage, setStage] = useState<AppStage>("simulation");
   const [sessionId, setSessionId] = useState(`session-${Date.now()}`);
   const [splatPath, setSplatPath] = useState<string | null>(null);
   const [reconstructProgress, setReconstructProgress] = useState(0);
@@ -44,6 +44,43 @@ function AppPage() {
   const { visibleMods, animationProgress, playAnnotations } = useAnnotationSync();
   const [historicMods, setHistoricMods] = useState<Modification[]>([]);
   const allVisibleMods = [...historicMods, ...visibleMods];
+
+  // Auto-generate AI annotations when simulation loads
+  useEffect(() => {
+    if (stage !== "simulation") return;
+    let cancelled = false;
+
+    const generateAnnotations = async () => {
+      try {
+        const res = await fetch("http://localhost:8000/api/poi/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+        const data = await res.json();
+        if (cancelled || !data.annotations?.length) return;
+
+        // Convert annotations to timed modifications
+        const mods: Modification[] = data.annotations.map((ann: any, i: number) => ({
+          type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
+          coordinates: [ann.position || [0, -100, 1000]],
+          color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
+          label: ann.label || "",
+          delay_ms: i * 1500,
+          duration_ms: 800,
+          animation: "pulse" as const,
+        }));
+
+        playAnnotations(mods);
+      } catch (e) {
+        console.error("Failed to generate annotations:", e);
+      }
+    };
+
+    // Delay slightly to let the viewer load first
+    const timer = setTimeout(generateAnnotations, 2000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [stage, sessionId, playAnnotations]);
 
   // Reconstruction polling
   useEffect(() => {
@@ -398,10 +435,11 @@ function AppPage() {
 
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--border)", backgroundColor: "transparent",
-            color: "var(--text-muted)", fontSize: "0.65rem", fontWeight: 500,
+            border: "1px solid var(--accent)",
+            backgroundColor: "var(--accent-dim)",
+            color: "var(--accent)", fontSize: "0.65rem", fontWeight: 500,
           }}>
-            Report
+            Generate Report
           </button>
         </div>
       </header>
