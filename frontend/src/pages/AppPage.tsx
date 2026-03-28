@@ -520,8 +520,7 @@ function AppPage() {
             animationProgress={animationProgress}
             selectedOrgan={selectedOrgan}
             cursorPosition={cursorPosition}
-          />}
-
+          />
 
         {/* Voice indicator — right side, clickable to start/retry mic */}
         {isVoiceListening && (
