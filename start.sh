@@ -1,50 +1,92 @@
 #!/bin/bash
 # SurgiVision - Quick Start Script
 
-echo "🫀 SurgiVision - AI Surgical Planning Assistant"
-echo "================================================"
+echo "SurgiVision - Live Anatomy Overlay"
+echo "==================================="
+
+# Detect local IP for mobile access
+LOCAL_IP=$(ipconfig getifaddr en0 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$LOCAL_IP" ]; then
+  LOCAL_IP="localhost"
+fi
 
 # Check for .env
 if [ ! -f .env ]; then
   echo ""
-  echo "⚠️  No .env file found. Creating from template..."
+  echo "No .env file found. Creating from template..."
   cp .env.example .env
-  echo "📝 Please edit .env and add your API keys:"
-  echo "   - ANTHROPIC_API_KEY"
-  echo "   - ELEVENLABS_API_KEY"
+  echo "Please edit .env and add your API keys:"
+  echo "   - GROQ_API_KEY"
+  echo "   - LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET"
   echo ""
+  exit 1
+fi
+
+# Source .env for LiveKit check
+set -a
+source .env
+set +a
+
+if [ -z "$LIVEKIT_API_KEY" ] || [ "$LIVEKIT_API_KEY" = "devkey" ]; then
+  echo "WARNING: LIVEKIT_API_KEY not configured in .env"
+  echo "Set your LiveKit Cloud credentials before running."
+  echo ""
+fi
+
+# Generate self-signed certs for HTTPS (needed for mobile camera access)
+if [ ! -f certs/cert.pem ]; then
+  echo "Generating self-signed SSL certificate for HTTPS..."
+  mkdir -p certs
+  openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem \
+    -days 365 -nodes -subj '/CN=localhost' 2>/dev/null
 fi
 
 # Generate mesh data if needed
 if [ ! -f frontend/public/models/metadata.json ]; then
-  echo "🔧 Generating organ mesh data..."
+  echo "Generating organ mesh data..."
   python3 scripts/download_data.py
 fi
 
-# Start backend
+# Start backend (bound to 0.0.0.0 so phone can reach it)
 echo ""
-echo "🚀 Starting backend (port 8000)..."
+echo "Starting backend (port 8000)..."
 cd backend
 source .venv/bin/activate 2>/dev/null || python3 -m venv .venv && source .venv/bin/activate
 pip install -q -r requirements.txt
-uvicorn main:app --reload --port 8000 &
+uvicorn main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 cd ..
 
-# Start frontend
-echo "🚀 Starting frontend (port 5173)..."
+# Start LiveKit agent worker
+echo "Starting LiveKit agent worker..."
+cd backend
+source .venv/bin/activate 2>/dev/null
+python livekit_agent.py dev &
+AGENT_PID=$!
+cd ..
+
+# Start frontend (--host exposes on local network for mobile access)
+echo "Starting frontend (port 4739, network-accessible)..."
 cd frontend
-npm run dev &
+npm run dev -- --host &
 FRONTEND_PID=$!
 cd ..
 
-echo ""
-echo "✅ SurgiVision is running!"
-echo "   Frontend: http://localhost:5173"
-echo "   Backend:  http://localhost:8000"
-echo "   Health:   http://localhost:8000/health"
-echo ""
-echo "Press Ctrl+C to stop both servers"
+# Wait a moment for servers to start
+sleep 2
 
-trap "kill $BACKEND_PID $FRONTEND_PID 2>/dev/null; exit" INT
+echo ""
+echo "SurgiVision is running!"
+echo ""
+echo "  Laptop (live view):  https://localhost:4739/view"
+echo "  Backend API:         http://localhost:8000"
+echo ""
+echo "How to use:"
+echo "  1. Open https://localhost:4739/view on your laptop"
+echo "  2. Note the 6-character room code shown on screen"
+echo "  3. Open the camera URL on your phone using the room code"
+echo ""
+echo "Press Ctrl+C to stop all servers"
+
+trap "kill $BACKEND_PID $AGENT_PID $FRONTEND_PID 2>/dev/null; exit" INT TERM
 wait

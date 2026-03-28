@@ -12,3 +12,9 @@ Pillow
 pydicom
 nibabel
 scikit-image
+mediapipe>=0.10.14
+opencv-python-headless>=4.9.0
+livekit>=1.0.0
+livekit-api>=1.0.0
+livekit-agents>=1.0.0
+pydub>=0.25.1
