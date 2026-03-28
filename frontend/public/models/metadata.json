@@ -1,0 +1,92 @@
+{
+  "liver": {
+    "file": "liver.obj",
+    "color": "#8B4513",
+    "position": [
+      0,
+      0.5,
+      0.2
+    ],
+    "label": "Liver"
+  },
+  "left_kidney": {
+    "file": "left_kidney.obj",
+    "color": "#CD5C5C",
+    "position": [
+      -0.8,
+      -0.2,
+      -0.3
+    ],
+    "label": "Left Kidney"
+  },
+  "right_kidney": {
+    "file": "right_kidney.obj",
+    "color": "#CD5C5C",
+    "position": [
+      0.8,
+      -0.2,
+      -0.3
+    ],
+    "label": "Right Kidney"
+  },
+  "spleen": {
+    "file": "spleen.obj",
+    "color": "#800020",
+    "position": [
+      -1.0,
+      0.3,
+      0.1
+    ],
+    "label": "Spleen"
+  },
+  "stomach": {
+    "file": "stomach.obj",
+    "color": "#DEB887",
+    "position": [
+      -0.3,
+      0.8,
+      0.5
+    ],
+    "label": "Stomach"
+  },
+  "pancreas": {
+    "file": "pancreas.obj",
+    "color": "#F5DEB3",
+    "position": [
+      0.0,
+      -0.1,
+      -0.1
+    ],
+    "label": "Pancreas"
+  },
+  "aorta": {
+    "file": "aorta.obj",
+    "color": "#FF0000",
+    "position": [
+      0.0,
+      0.0,
+      -0.5
+    ],
+    "label": "Aorta"
+  },
+  "portal_vein": {
+    "file": "portal_vein.obj",
+    "color": "#4169E1",
+    "position": [
+      0.15,
+      0.3,
+      0.0
+    ],
+    "label": "Portal Vein"
+  },
+  "spine": {
+    "file": "spine.obj",
+    "color": "#FFFFF0",
+    "position": [
+      0.0,
+      0.0,
+      -0.7
+    ],
+    "label": "Spine"
+  }
+}

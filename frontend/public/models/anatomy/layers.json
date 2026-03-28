@@ -1,0 +1,807 @@
+{
+  "layers": {
+    "skeleton": {
+      "label": "Skeleton",
+      "color": "#f5f0e8",
+      "visible": true,
+      "parts": [
+        {
+          "name": "right_first_rib",
+          "file": "anatomy/skeleton/right_first_rib.obj",
+          "fma_id": "FMA7857",
+          "label": "Right First Rib"
+        },
+        {
+          "name": "right_second_rib",
+          "file": "anatomy/skeleton/right_second_rib.obj",
+          "fma_id": "FMA7882",
+          "label": "Right Second Rib"
+        },
+        {
+          "name": "right_third_rib",
+          "file": "anatomy/skeleton/right_third_rib.obj",
+          "fma_id": "FMA7909",
+          "label": "Right Third Rib"
+        },
+        {
+          "name": "right_fourth_rib",
+          "file": "anatomy/skeleton/right_fourth_rib.obj",
+          "fma_id": "FMA7957",
+          "label": "Right Fourth Rib"
+        },
+        {
+          "name": "right_fifth_rib",
+          "file": "anatomy/skeleton/right_fifth_rib.obj",
+          "fma_id": "FMA8066",
+          "label": "Right Fifth Rib"
+        },
+        {
+          "name": "right_sixth_rib",
+          "file": "anatomy/skeleton/right_sixth_rib.obj",
+          "fma_id": "FMA8175",
+          "label": "Right Sixth Rib"
+        },
+        {
+          "name": "right_seventh_rib",
+          "file": "anatomy/skeleton/right_seventh_rib.obj",
+          "fma_id": "FMA8229",
+          "label": "Right Seventh Rib"
+        },
+        {
+          "name": "right_eighth_rib",
+          "file": "anatomy/skeleton/right_eighth_rib.obj",
+          "fma_id": "FMA8283",
+          "label": "Right Eighth Rib"
+        },
+        {
+          "name": "right_ninth_rib",
+          "file": "anatomy/skeleton/right_ninth_rib.obj",
+          "fma_id": "FMA8364",
+          "label": "Right Ninth Rib"
+        },
+        {
+          "name": "right_tenth_rib",
+          "file": "anatomy/skeleton/right_tenth_rib.obj",
+          "fma_id": "FMA8445",
+          "label": "Right Tenth Rib"
+        },
+        {
+          "name": "right_eleventh_rib",
+          "file": "anatomy/skeleton/right_eleventh_rib.obj",
+          "fma_id": "FMA8531",
+          "label": "Right Eleventh Rib"
+        },
+        {
+          "name": "right_twelfth_rib",
+          "file": "anatomy/skeleton/right_twelfth_rib.obj",
+          "fma_id": "FMA8533",
+          "label": "Right Twelfth Rib"
+        },
+        {
+          "name": "left_first_rib",
+          "file": "anatomy/skeleton/left_first_rib.obj",
+          "fma_id": "FMA7987",
+          "label": "Left First Rib"
+        },
+        {
+          "name": "left_second_rib",
+          "file": "anatomy/skeleton/left_second_rib.obj",
+          "fma_id": "FMA8012",
+          "label": "Left Second Rib"
+        },
+        {
+          "name": "left_third_rib",
+          "file": "anatomy/skeleton/left_third_rib.obj",
+          "fma_id": "FMA8039",
+          "label": "Left Third Rib"
+        },
+        {
+          "name": "left_fourth_rib",
+          "file": "anatomy/skeleton/left_fourth_rib.obj",
+          "fma_id": "FMA8148",
+          "label": "Left Fourth Rib"
+        },
+        {
+          "name": "left_fifth_rib",
+          "file": "anatomy/skeleton/left_fifth_rib.obj",
+          "fma_id": "FMA8093",
+          "label": "Left Fifth Rib"
+        },
+        {
+          "name": "left_sixth_rib",
+          "file": "anatomy/skeleton/left_sixth_rib.obj",
+          "fma_id": "FMA8202",
+          "label": "Left Sixth Rib"
+        },
+        {
+          "name": "left_seventh_rib",
+          "file": "anatomy/skeleton/left_seventh_rib.obj",
+          "fma_id": "FMA8256",
+          "label": "Left Seventh Rib"
+        },
+        {
+          "name": "left_eighth_rib",
+          "file": "anatomy/skeleton/left_eighth_rib.obj",
+          "fma_id": "FMA8310",
+          "label": "Left Eighth Rib"
+        },
+        {
+          "name": "left_ninth_rib",
+          "file": "anatomy/skeleton/left_ninth_rib.obj",
+          "fma_id": "FMA8391",
+          "label": "Left Ninth Rib"
+        },
+        {
+          "name": "left_tenth_rib",
+          "file": "anatomy/skeleton/left_tenth_rib.obj",
+          "fma_id": "FMA8472",
+          "label": "Left Tenth Rib"
+        },
+        {
+          "name": "left_eleventh_rib",
+          "file": "anatomy/skeleton/left_eleventh_rib.obj",
+          "fma_id": "FMA8532",
+          "label": "Left Eleventh Rib"
+        },
+        {
+          "name": "left_twelfth_rib",
+          "file": "anatomy/skeleton/left_twelfth_rib.obj",
+          "fma_id": "FMA8534",
+          "label": "Left Twelfth Rib"
+        },
+        {
+          "name": "cervical_3",
+          "file": "anatomy/skeleton/cervical_3.obj",
+          "fma_id": "FMA12521",
+          "label": "Cervical 3"
+        },
+        {
+          "name": "cervical_4",
+          "file": "anatomy/skeleton/cervical_4.obj",
+          "fma_id": "FMA12522",
+          "label": "Cervical 4"
+        },
+        {
+          "name": "cervical_5",
+          "file": "anatomy/skeleton/cervical_5.obj",
+          "fma_id": "FMA12523",
+          "label": "Cervical 5"
+        },
+        {
+          "name": "cervical_6",
+          "file": "anatomy/skeleton/cervical_6.obj",
+          "fma_id": "FMA12524",
+          "label": "Cervical 6"
+        },
+        {
+          "name": "cervical_7",
+          "file": "anatomy/skeleton/cervical_7.obj",
+          "fma_id": "FMA12525",
+          "label": "Cervical 7"
+        },
+        {
+          "name": "thoracic_1",
+          "file": "anatomy/skeleton/thoracic_1.obj",
+          "fma_id": "FMA9165",
+          "label": "Thoracic 1"
+        },
+        {
+          "name": "thoracic_2",
+          "file": "anatomy/skeleton/thoracic_2.obj",
+          "fma_id": "FMA9187",
+          "label": "Thoracic 2"
+        },
+        {
+          "name": "thoracic_3",
+          "file": "anatomy/skeleton/thoracic_3.obj",
+          "fma_id": "FMA9209",
+          "label": "Thoracic 3"
+        },
+        {
+          "name": "thoracic_4",
+          "file": "anatomy/skeleton/thoracic_4.obj",
+          "fma_id": "FMA9248",
+          "label": "Thoracic 4"
+        },
+        {
+          "name": "thoracic_5",
+          "file": "anatomy/skeleton/thoracic_5.obj",
+          "fma_id": "FMA9922",
+          "label": "Thoracic 5"
+        },
+        {
+          "name": "thoracic_6",
+          "file": "anatomy/skeleton/thoracic_6.obj",
+          "fma_id": "FMA9945",
+          "label": "Thoracic 6"
+        },
+        {
+          "name": "thoracic_7",
+          "file": "anatomy/skeleton/thoracic_7.obj",
+          "fma_id": "FMA9968",
+          "label": "Thoracic 7"
+        },
+        {
+          "name": "thoracic_8",
+          "file": "anatomy/skeleton/thoracic_8.obj",
+          "fma_id": "FMA9991",
+          "label": "Thoracic 8"
+        },
+        {
+          "name": "thoracic_9",
+          "file": "anatomy/skeleton/thoracic_9.obj",
+          "fma_id": "FMA10014",
+          "label": "Thoracic 9"
+        },
+        {
+          "name": "thoracic_10",
+          "file": "anatomy/skeleton/thoracic_10.obj",
+          "fma_id": "FMA10037",
+          "label": "Thoracic 10"
+        },
+        {
+          "name": "thoracic_11",
+          "file": "anatomy/skeleton/thoracic_11.obj",
+          "fma_id": "FMA10059",
+          "label": "Thoracic 11"
+        },
+        {
+          "name": "thoracic_12",
+          "file": "anatomy/skeleton/thoracic_12.obj",
+          "fma_id": "FMA10081",
+          "label": "Thoracic 12"
+        },
+        {
+          "name": "lumbar_1",
+          "file": "anatomy/skeleton/lumbar_1.obj",
+          "fma_id": "FMA13072",
+          "label": "Lumbar 1"
+        },
+        {
+          "name": "lumbar_2",
+          "file": "anatomy/skeleton/lumbar_2.obj",
+          "fma_id": "FMA13073",
+          "label": "Lumbar 2"
+        },
+        {
+          "name": "lumbar_3",
+          "file": "anatomy/skeleton/lumbar_3.obj",
+          "fma_id": "FMA13074",
+          "label": "Lumbar 3"
+        },
+        {
+          "name": "lumbar_4",
+          "file": "anatomy/skeleton/lumbar_4.obj",
+          "fma_id": "FMA13075",
+          "label": "Lumbar 4"
+        },
+        {
+          "name": "lumbar_5",
+          "file": "anatomy/skeleton/lumbar_5.obj",
+          "fma_id": "FMA13076",
+          "label": "Lumbar 5"
+        },
+        {
+          "name": "sacrum",
+          "file": "anatomy/skeleton/sacrum.obj",
+          "fma_id": "FMA16202",
+          "label": "Sacrum"
+        },
+        {
+          "name": "right_femur",
+          "file": "anatomy/skeleton/right_femur.obj",
+          "fma_id": "FMA24474",
+          "label": "Right Femur"
+        },
+        {
+          "name": "left_femur",
+          "file": "anatomy/skeleton/left_femur.obj",
+          "fma_id": "FMA24475",
+          "label": "Left Femur"
+        },
+        {
+          "name": "right_tibia",
+          "file": "anatomy/skeleton/right_tibia.obj",
+          "fma_id": "FMA24477",
+          "label": "Right Tibia"
+        },
+        {
+          "name": "left_tibia",
+          "file": "anatomy/skeleton/left_tibia.obj",
+          "fma_id": "FMA24478",
+          "label": "Left Tibia"
+        },
+        {
+          "name": "right_fibula",
+          "file": "anatomy/skeleton/right_fibula.obj",
+          "fma_id": "FMA24480",
+          "label": "Right Fibula"
+        },
+        {
+          "name": "left_fibula",
+          "file": "anatomy/skeleton/left_fibula.obj",
+          "fma_id": "FMA24481",
+          "label": "Left Fibula"
+        },
+        {
+          "name": "right_humerus",
+          "file": "anatomy/skeleton/right_humerus.obj",
+          "fma_id": "FMA23130",
+          "label": "Right Humerus"
+        },
+        {
+          "name": "left_humerus",
+          "file": "anatomy/skeleton/left_humerus.obj",
+          "fma_id": "FMA23131",
+          "label": "Left Humerus"
+        },
+        {
+          "name": "right_radius",
+          "file": "anatomy/skeleton/right_radius.obj",
+          "fma_id": "FMA23464",
+          "label": "Right Radius"
+        },
+        {
+          "name": "left_radius",
+          "file": "anatomy/skeleton/left_radius.obj",
+          "fma_id": "FMA23465",
+          "label": "Left Radius"
+        },
+        {
+          "name": "right_ulna",
+          "file": "anatomy/skeleton/right_ulna.obj",
+          "fma_id": "FMA23467",
+          "label": "Right Ulna"
+        },
+        {
+          "name": "left_ulna",
+          "file": "anatomy/skeleton/left_ulna.obj",
+          "fma_id": "FMA23468",
+          "label": "Left Ulna"
+        },
+        {
+          "name": "right_patella",
+          "file": "anatomy/skeleton/right_patella.obj",
+          "fma_id": "FMA24486",
+          "label": "Right Patella"
+        },
+        {
+          "name": "left_patella",
+          "file": "anatomy/skeleton/left_patella.obj",
+          "fma_id": "FMA24487",
+          "label": "Left Patella"
+        },
+        {
+          "name": "sternum",
+          "file": "anatomy/skeleton/sternum.obj",
+          "fma_id": "FMA7487",
+          "label": "Sternum"
+        },
+        {
+          "name": "right_scapula",
+          "file": "anatomy/skeleton/right_scapula.obj",
+          "fma_id": "FMA13395",
+          "label": "Right Scapula"
+        },
+        {
+          "name": "left_scapula",
+          "file": "anatomy/skeleton/left_scapula.obj",
+          "fma_id": "FMA13396",
+          "label": "Left Scapula"
+        },
+        {
+          "name": "right_clavicle",
+          "file": "anatomy/skeleton/right_clavicle.obj",
+          "fma_id": "FMA13322",
+          "label": "Right Clavicle"
+        },
+        {
+          "name": "left_clavicle",
+          "file": "anatomy/skeleton/left_clavicle.obj",
+          "fma_id": "FMA13323",
+          "label": "Left Clavicle"
+        },
+        {
+          "name": "mandible",
+          "file": "anatomy/skeleton/mandible.obj",
+          "fma_id": "FMA52748",
+          "label": "Mandible"
+        },
+        {
+          "name": "right_maxilla",
+          "file": "anatomy/skeleton/right_maxilla.obj",
+          "fma_id": "FMA53649",
+          "label": "Right Maxilla"
+        },
+        {
+          "name": "left_maxilla",
+          "file": "anatomy/skeleton/left_maxilla.obj",
+          "fma_id": "FMA53650",
+          "label": "Left Maxilla"
+        }
+      ]
+    },
+    "organs": {
+      "label": "Organs",
+      "color": "#cc7766",
+      "visible": true,
+      "parts": [
+        {
+          "name": "liver",
+          "file": "anatomy/organs/liver.obj",
+          "fma_id": "FMA7197",
+          "label": "Liver"
+        },
+        {
+          "name": "stomach",
+          "file": "anatomy/organs/stomach.obj",
+          "fma_id": "FMA7148",
+          "label": "Stomach"
+        },
+        {
+          "name": "spleen",
+          "file": "anatomy/organs/spleen.obj",
+          "fma_id": "FMA7196",
+          "label": "Spleen"
+        },
+        {
+          "name": "right_kidney",
+          "file": "anatomy/organs/right_kidney.obj",
+          "fma_id": "FMA7204",
+          "label": "Right Kidney"
+        },
+        {
+          "name": "left_kidney",
+          "file": "anatomy/organs/left_kidney.obj",
+          "fma_id": "FMA7205",
+          "label": "Left Kidney"
+        },
+        {
+          "name": "gallbladder",
+          "file": "anatomy/organs/gallbladder.obj",
+          "fma_id": "FMA7202",
+          "label": "Gallbladder"
+        },
+        {
+          "name": "heart",
+          "file": "anatomy/organs/heart.obj",
+          "fma_id": "FMA7274",
+          "label": "Heart"
+        },
+        {
+          "name": "right_lung_upper",
+          "file": "anatomy/organs/right_lung_upper.obj",
+          "fma_id": "FMA7333",
+          "label": "Right Lung Upper"
+        },
+        {
+          "name": "right_lung_lower",
+          "file": "anatomy/organs/right_lung_lower.obj",
+          "fma_id": "FMA7337",
+          "label": "Right Lung Lower"
+        },
+        {
+          "name": "right_lung_middle",
+          "file": "anatomy/organs/right_lung_middle.obj",
+          "fma_id": "FMA7383",
+          "label": "Right Lung Middle"
+        },
+        {
+          "name": "left_lung_upper",
+          "file": "anatomy/organs/left_lung_upper.obj",
+          "fma_id": "FMA7370",
+          "label": "Left Lung Upper"
+        },
+        {
+          "name": "left_lung_lower",
+          "file": "anatomy/organs/left_lung_lower.obj",
+          "fma_id": "FMA7371",
+          "label": "Left Lung Lower"
+        },
+        {
+          "name": "ascending_aorta",
+          "file": "anatomy/organs/ascending_aorta.obj",
+          "fma_id": "FMA3736",
+          "label": "Ascending Aorta"
+        },
+        {
+          "name": "aortic_arch",
+          "file": "anatomy/organs/aortic_arch.obj",
+          "fma_id": "FMA3768",
+          "label": "Aortic Arch"
+        },
+        {
+          "name": "descending_aorta",
+          "file": "anatomy/organs/descending_aorta.obj",
+          "fma_id": "FMA3784",
+          "label": "Descending Aorta"
+        },
+        {
+          "name": "trachea",
+          "file": "anatomy/organs/trachea.obj",
+          "fma_id": "FMA7394",
+          "label": "Trachea"
+        },
+        {
+          "name": "bronchus",
+          "file": "anatomy/organs/bronchus.obj",
+          "fma_id": "FMA7409",
+          "label": "Bronchus"
+        },
+        {
+          "name": "diaphragm",
+          "file": "anatomy/organs/diaphragm.obj",
+          "fma_id": "FMA13295",
+          "label": "Diaphragm"
+        },
+        {
+          "name": "esophagus",
+          "file": "anatomy/organs/esophagus.obj",
+          "fma_id": "FMA7131",
+          "label": "Esophagus"
+        },
+        {
+          "name": "appendix",
+          "file": "anatomy/organs/appendix.obj",
+          "fma_id": "FMA14542",
+          "label": "Appendix"
+        },
+        {
+          "name": "rectum",
+          "file": "anatomy/organs/rectum.obj",
+          "fma_id": "FMA14544",
+          "label": "Rectum"
+        },
+        {
+          "name": "urinary_bladder",
+          "file": "anatomy/organs/urinary_bladder.obj",
+          "fma_id": "FMA15900",
+          "label": "Urinary Bladder"
+        },
+        {
+          "name": "right_adrenal",
+          "file": "anatomy/organs/right_adrenal.obj",
+          "fma_id": "FMA15629",
+          "label": "Right Adrenal"
+        },
+        {
+          "name": "left_adrenal",
+          "file": "anatomy/organs/left_adrenal.obj",
+          "fma_id": "FMA15630",
+          "label": "Left Adrenal"
+        },
+        {
+          "name": "thyroid_cartilage",
+          "file": "anatomy/organs/thyroid_cartilage.obj",
+          "fma_id": "FMA55099",
+          "label": "Thyroid Cartilage"
+        }
+      ]
+    },
+    "muscles": {
+      "label": "Muscles",
+      "color": "#c94040",
+      "visible": false,
+      "parts": [
+        {
+          "name": "external_intercostal",
+          "file": "anatomy/muscles/external_intercostal.obj",
+          "fma_id": "FMA9756",
+          "label": "External Intercostal"
+        },
+        {
+          "name": "internal_intercostal",
+          "file": "anatomy/muscles/internal_intercostal.obj",
+          "fma_id": "FMA9757",
+          "label": "Internal Intercostal"
+        },
+        {
+          "name": "right_external_oblique",
+          "file": "anatomy/muscles/right_external_oblique.obj",
+          "fma_id": "FMA13336",
+          "label": "Right External Oblique"
+        },
+        {
+          "name": "left_external_oblique",
+          "file": "anatomy/muscles/left_external_oblique.obj",
+          "fma_id": "FMA13337",
+          "label": "Left External Oblique"
+        },
+        {
+          "name": "right_rectus_abdominis",
+          "file": "anatomy/muscles/right_rectus_abdominis.obj",
+          "fma_id": "FMA13377",
+          "label": "Right Rectus Abdominis"
+        },
+        {
+          "name": "left_rectus_abdominis",
+          "file": "anatomy/muscles/left_rectus_abdominis.obj",
+          "fma_id": "FMA13378",
+          "label": "Left Rectus Abdominis"
+        },
+        {
+          "name": "right_latissimus_dorsi",
+          "file": "anatomy/muscles/right_latissimus_dorsi.obj",
+          "fma_id": "FMA13358",
+          "label": "Right Latissimus Dorsi"
+        },
+        {
+          "name": "left_latissimus_dorsi",
+          "file": "anatomy/muscles/left_latissimus_dorsi.obj",
+          "fma_id": "FMA13359",
+          "label": "Left Latissimus Dorsi"
+        },
+        {
+          "name": "right_gluteus_maximus",
+          "file": "anatomy/muscles/right_gluteus_maximus.obj",
+          "fma_id": "FMA22328",
+          "label": "Right Gluteus Maximus"
+        },
+        {
+          "name": "left_gluteus_maximus",
+          "file": "anatomy/muscles/left_gluteus_maximus.obj",
+          "fma_id": "FMA22329",
+          "label": "Left Gluteus Maximus"
+        },
+        {
+          "name": "right_rectus_femoris",
+          "file": "anatomy/muscles/right_rectus_femoris.obj",
+          "fma_id": "FMA38928",
+          "label": "Right Rectus Femoris"
+        },
+        {
+          "name": "left_rectus_femoris",
+          "file": "anatomy/muscles/left_rectus_femoris.obj",
+          "fma_id": "FMA38929",
+          "label": "Left Rectus Femoris"
+        },
+        {
+          "name": "right_pectoralis_major_clav",
+          "file": "anatomy/muscles/right_pectoralis_major_clav.obj",
+          "fma_id": "FMA34690",
+          "label": "Right Pectoralis Major Clav"
+        },
+        {
+          "name": "left_pectoralis_major_clav",
+          "file": "anatomy/muscles/left_pectoralis_major_clav.obj",
+          "fma_id": "FMA34691",
+          "label": "Left Pectoralis Major Clav"
+        },
+        {
+          "name": "right_pectoralis_major_stern",
+          "file": "anatomy/muscles/right_pectoralis_major_stern.obj",
+          "fma_id": "FMA79979",
+          "label": "Right Pectoralis Major Stern"
+        },
+        {
+          "name": "left_pectoralis_major_stern",
+          "file": "anatomy/muscles/left_pectoralis_major_stern.obj",
+          "fma_id": "FMA79980",
+          "label": "Left Pectoralis Major Stern"
+        },
+        {
+          "name": "right_deltoid_acr",
+          "file": "anatomy/muscles/right_deltoid_acr.obj",
+          "fma_id": "FMA34680",
+          "label": "Right Deltoid Acr"
+        },
+        {
+          "name": "left_deltoid_acr",
+          "file": "anatomy/muscles/left_deltoid_acr.obj",
+          "fma_id": "FMA34681",
+          "label": "Left Deltoid Acr"
+        },
+        {
+          "name": "right_deltoid_acr2",
+          "file": "anatomy/muscles/right_deltoid_acr2.obj",
+          "fma_id": "FMA34682",
+          "label": "Right Deltoid Acr2"
+        },
+        {
+          "name": "left_deltoid_acr2",
+          "file": "anatomy/muscles/left_deltoid_acr2.obj",
+          "fma_id": "FMA34683",
+          "label": "Left Deltoid Acr2"
+        },
+        {
+          "name": "right_trapezius_desc",
+          "file": "anatomy/muscles/right_trapezius_desc.obj",
+          "fma_id": "FMA33586",
+          "label": "Right Trapezius Desc"
+        },
+        {
+          "name": "left_trapezius_desc",
+          "file": "anatomy/muscles/left_trapezius_desc.obj",
+          "fma_id": "FMA33587",
+          "label": "Left Trapezius Desc"
+        }
+      ]
+    },
+    "vascular": {
+      "label": "Vascular",
+      "color": "#4466cc",
+      "visible": false,
+      "parts": [
+        {
+          "name": "inferior_vena_cava",
+          "file": "anatomy/vascular/inferior_vena_cava.obj",
+          "fma_id": "FMA10951",
+          "label": "Inferior Vena Cava"
+        },
+        {
+          "name": "superior_vena_cava",
+          "file": "anatomy/vascular/superior_vena_cava.obj",
+          "fma_id": "FMA4720",
+          "label": "Superior Vena Cava"
+        },
+        {
+          "name": "pulmonary_artery",
+          "file": "anatomy/vascular/pulmonary_artery.obj",
+          "fma_id": "FMA66326",
+          "label": "Pulmonary Artery"
+        },
+        {
+          "name": "pulmonary_vein",
+          "file": "anatomy/vascular/pulmonary_vein.obj",
+          "fma_id": "FMA66643",
+          "label": "Pulmonary Vein"
+        },
+        {
+          "name": "celiac_artery",
+          "file": "anatomy/vascular/celiac_artery.obj",
+          "fma_id": "FMA50737",
+          "label": "Celiac Artery"
+        },
+        {
+          "name": "superior_mesenteric",
+          "file": "anatomy/vascular/superior_mesenteric.obj",
+          "fma_id": "FMA14749",
+          "label": "Superior Mesenteric"
+        },
+        {
+          "name": "inferior_mesenteric",
+          "file": "anatomy/vascular/inferior_mesenteric.obj",
+          "fma_id": "FMA14750",
+          "label": "Inferior Mesenteric"
+        },
+        {
+          "name": "left_coronary",
+          "file": "anatomy/vascular/left_coronary.obj",
+          "fma_id": "FMA4685",
+          "label": "Left Coronary"
+        },
+        {
+          "name": "right_coronary",
+          "file": "anatomy/vascular/right_coronary.obj",
+          "fma_id": "FMA3802",
+          "label": "Right Coronary"
+        },
+        {
+          "name": "left_renal_artery",
+          "file": "anatomy/vascular/left_renal_artery.obj",
+          "fma_id": "FMA14753",
+          "label": "Left Renal Artery"
+        },
+        {
+          "name": "right_renal_artery",
+          "file": "anatomy/vascular/right_renal_artery.obj",
+          "fma_id": "FMA14752",
+          "label": "Right Renal Artery"
+        }
+      ]
+    },
+    "skin": {
+      "label": "Skin",
+      "color": "#e8beaa",
+      "visible": false,
+      "parts": [
+        {
+          "name": "skin",
+          "file": "anatomy/skin/skin.obj",
+          "fma_id": "FMA7163",
+          "label": "Skin"
+        }
+      ]
+    }
+  }
+}
