@@ -1,0 +1,24 @@
+{
+  "name": "praxis-movie",
+  "version": "1.0.0",
+  "description": "Praxis demo movie",
+  "scripts": {
+    "start": "remotion studio",
+    "build": "remotion render",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.441",
+    "@remotion/cli": "4.0.441",
+    "@remotion/media-utils": "4.0.441",
+    "@remotion/player": "4.0.441",
+    "@remotion/renderer": "4.0.441",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.441"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.1",
+    "typescript": "5.0.0"
+  }
+}
