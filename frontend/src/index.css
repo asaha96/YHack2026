@@ -1,4 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent-ui);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border-ui);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
 
 :root {
   /* Clinical dark — like a PACS radiology viewer */
@@ -36,6 +59,26 @@
 
   --font-sans: 'DM Sans', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --background: #0a0a0c;
+  --foreground: #dcdce0;
+  --card: #141417;
+  --card-foreground: #dcdce0;
+  --popover: #141417;
+  --popover-foreground: #dcdce0;
+  --primary: #2dd4bf;
+  --primary-foreground: #03110f;
+  --secondary: #141417;
+  --secondary-foreground: #dcdce0;
+  --muted: #101014;
+  --muted-foreground: #85858f;
+  --accent-ui: #1a1a1e;
+  --accent-foreground: #dcdce0;
+  --destructive: #f87171;
+  --destructive-foreground: #fff5f5;
+  --border-ui: #1f1f24;
+  --input: #1f1f24;
+  --ring: #2dd4bf;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -83,6 +126,39 @@ html, body, #root {
   100% { transform: translateY(100vh); }
 }
 
+@keyframes heroWordIn {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes heroSubtitleIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes explorePulse {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(4px);
+  }
+}
+
 /* Base button reset */
 button {
   font-family: var(--font-sans);
@@ -92,4 +168,295 @@ button {
 
 button:active {
   transform: scale(0.98);
+}
+
+.hero-futuristic {
+  position: relative;
+  min-height: calc(100vh - 76px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(360px, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  padding: 36px 40px 72px;
+  isolation: isolate;
+}
+
+.hero-futuristic__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), transparent 92%);
+  z-index: -3;
+}
+
+.hero-futuristic__glow {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(80px);
+  opacity: 0.35;
+  z-index: -2;
+}
+
+.hero-futuristic__glow--top {
+  top: 4%;
+  left: 10%;
+  width: 360px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.32) 0%, rgba(45, 212, 191, 0) 72%);
+}
+
+.hero-futuristic__glow--bottom {
+  right: 5%;
+  bottom: 8%;
+  width: 420px;
+  height: 320px;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.26) 0%, rgba(129, 140, 248, 0) 72%);
+}
+
+.hero-futuristic__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 620px;
+  padding: 52px 0 24px;
+}
+
+.hero-futuristic__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 14px;
+  margin-bottom: 26px;
+  border: 1px solid rgba(45, 212, 191, 0.2);
+  border-radius: 999px;
+  background: rgba(9, 14, 20, 0.82);
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.05), 0 18px 40px rgba(0, 0, 0, 0.24);
+}
+
+.hero-futuristic__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.18em 0.3em;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  font-size: clamp(2.6rem, 7vw, 5.8rem);
+  font-weight: 700;
+  line-height: 0.94;
+  letter-spacing: -0.06em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.hero-futuristic__word {
+  display: inline-block;
+}
+
+.hero-futuristic__word--visible {
+  animation: heroWordIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-futuristic__subtitle {
+  max-width: 520px;
+  margin-bottom: 30px;
+  color: var(--text-secondary);
+  font-size: 0.98rem;
+  line-height: 1.75;
+}
+
+.hero-futuristic__subtitle--visible {
+  animation: heroSubtitleIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.hero-futuristic__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.hero-futuristic__primary,
+.hero-futuristic__secondary,
+.hero-futuristic__explore {
+  border-radius: 999px;
+  font-size: 0.84rem;
+  letter-spacing: 0.01em;
+}
+
+.hero-futuristic__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  border: 1px solid rgba(45, 212, 191, 0.42);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(45, 212, 191, 0.06));
+  color: var(--accent);
+  box-shadow: 0 14px 32px rgba(5, 15, 15, 0.34);
+}
+
+.hero-futuristic__primary:hover {
+  border-color: rgba(45, 212, 191, 0.56);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.24), rgba(45, 212, 191, 0.1));
+}
+
+.hero-futuristic__secondary {
+  padding: 12px 20px;
+  border: 1px solid var(--border);
+  background: rgba(20, 20, 23, 0.85);
+  color: var(--text-secondary);
+}
+
+.hero-futuristic__secondary:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.hero-futuristic__explore {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-futuristic__explore svg {
+  animation: explorePulse 1.6s ease-in-out infinite;
+}
+
+.hero-futuristic__visual {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 640px;
+}
+
+.hero-futuristic__visual::before {
+  content: "";
+  position: absolute;
+  inset: 9% 8%;
+  border-radius: 32px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    linear-gradient(135deg, rgba(16, 22, 29, 0.96), rgba(10, 10, 12, 0.72));
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 26px 80px rgba(0, 0, 0, 0.38);
+  z-index: 0;
+}
+
+.hero-futuristic__visual canvas,
+.hero-futuristic__fallback {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 640px;
+}
+
+.hero-futuristic__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 70px;
+}
+
+.hero-futuristic__poster {
+  width: min(100%, 580px);
+  object-fit: contain;
+  filter: drop-shadow(0 30px 45px rgba(0, 0, 0, 0.4));
+  opacity: 0.9;
+}
+
+@media (max-width: 1100px) {
+  .hero-futuristic {
+    grid-template-columns: 1fr;
+    padding-top: 20px;
+  }
+
+  .hero-futuristic__content {
+    max-width: none;
+    padding-top: 28px;
+  }
+
+  .hero-futuristic__visual {
+    min-height: 440px;
+  }
+
+  .hero-futuristic__visual canvas,
+  .hero-futuristic__fallback {
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 700px) {
+  .hero-futuristic {
+    gap: 12px;
+    padding: 20px 20px 52px;
+    min-height: auto;
+  }
+
+  .hero-futuristic__badge {
+    margin-bottom: 18px;
+    font-size: 0.62rem;
+  }
+
+  .hero-futuristic__title {
+    font-size: clamp(2.25rem, 15vw, 4rem);
+    line-height: 0.96;
+  }
+
+  .hero-futuristic__subtitle {
+    font-size: 0.92rem;
+  }
+
+  .hero-futuristic__actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .hero-futuristic__primary,
+  .hero-futuristic__secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-futuristic__visual {
+    min-height: 320px;
+  }
+
+  .hero-futuristic__visual::before {
+    inset: 0;
+    border-radius: 24px;
+  }
+
+  .hero-futuristic__visual canvas,
+  .hero-futuristic__fallback {
+    min-height: 320px;
+  }
+
+  .hero-futuristic__fallback {
+    padding: 36px;
+  }
 }

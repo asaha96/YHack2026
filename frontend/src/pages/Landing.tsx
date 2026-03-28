@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { HeroSection } from "../components/ui/hero-section-5";
 
 const STEPS = [
   { num: "01", label: "Upload", detail: "CT / MRI scan" },
@@ -10,186 +10,38 @@ const STEPS = [
 ];
 
 export default function Landing() {
-  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(t);
-  }, []);
+  useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);
 
   return (
-    <div style={{
-      width: "100vw", height: "100vh", overflow: "auto",
-      backgroundColor: "var(--bg-primary)",
-      position: "relative",
-    }}>
-      {/* Subtle grid background */}
-      <div style={{
-        position: "fixed", inset: 0, pointerEvents: "none",
-        backgroundImage: `
-          linear-gradient(rgba(45, 212, 191, 0.02) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(45, 212, 191, 0.02) 1px, transparent 1px)
-        `,
-        backgroundSize: "80px 80px",
-      }} />
+    <div style={{ width: "100vw", height: "100vh", overflow: "auto", backgroundColor: "var(--bg-primary)", fontFamily: "var(--font-sans)" }}>
+      {/* Hero with 3D background */}
+      <HeroSection />
 
-      {/* Nav */}
-      <nav style={{
-        position: "relative",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "18px 40px",
-        opacity: mounted ? 1 : 0,
-        transition: "opacity 0.6s ease 0.1s",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: "50%",
-            backgroundColor: "var(--accent)",
-            boxShadow: "0 0 6px var(--accent-muted)",
-          }} />
-          <span style={{
-            fontSize: "0.82rem", fontWeight: 600,
-            color: "var(--text-primary)",
-            fontFamily: "var(--font-mono)",
-            letterSpacing: "0.04em",
-            textTransform: "uppercase",
-          }}>
-            SurgiVision
-          </span>
-        </div>
-        <button
-          onClick={() => navigate("/app")}
-          style={{
-            padding: "8px 20px", borderRadius: "var(--radius-sm)",
-            border: "1px solid var(--border)",
-            backgroundColor: "transparent",
-            color: "var(--text-secondary)",
-            fontSize: "0.75rem", fontWeight: 500,
-            letterSpacing: "0.02em",
-          }}
-        >
-          Open Platform
-        </button>
-      </nav>
-
-      {/* Hero */}
-      <section style={{
-        maxWidth: 720, margin: "0 auto",
-        padding: "100px 40px 60px",
-        opacity: mounted ? 1 : 0,
-        transform: mounted ? "translateY(0)" : "translateY(8px)",
-        transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s",
-      }}>
-        <div style={{
-          display: "inline-block",
-          padding: "4px 12px", marginBottom: 24,
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
-          fontSize: "0.65rem", fontWeight: 500,
-          color: "var(--accent)",
-          fontFamily: "var(--font-mono)",
-          letterSpacing: "0.06em",
-          textTransform: "uppercase",
-        }}>
-          Surgical Simulation
-        </div>
-
-        <h1 style={{
-          fontSize: "clamp(2rem, 5vw, 3.2rem)",
-          fontWeight: 300,
-          lineHeight: 1.15,
-          letterSpacing: "-0.04em",
-          color: "var(--text-primary)",
-          marginBottom: 20,
-        }}>
-          Practice on your
-          <br />
-          <span style={{ fontWeight: 600 }}>patient's exact anatomy</span>
-        </h1>
-
-        <p style={{
-          fontSize: "0.92rem", lineHeight: 1.7,
-          color: "var(--text-secondary)",
-          maxWidth: 480, marginBottom: 40,
-        }}>
-          CT and MRI scans reconstructed into navigable 3D models.
-          Simulate procedures with hand tracking. AI-guided risk assessment.
-        </p>
-
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <button
-            onClick={() => navigate("/app")}
-            style={{
-              padding: "11px 28px", borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--accent)",
-              backgroundColor: "var(--accent-dim)",
-              color: "var(--accent)",
-              fontSize: "0.82rem", fontWeight: 500,
-              letterSpacing: "0.01em",
-            }}
-          >
-            Start Simulation
-          </button>
-          <span style={{
-            width: 1, height: 16,
-            backgroundColor: "var(--border)",
-          }} />
-          <button
-            onClick={() => document.getElementById("pipeline")?.scrollIntoView({ behavior: "smooth" })}
-            style={{
-              padding: "11px 20px", borderRadius: "var(--radius-sm)",
-              border: "none", backgroundColor: "transparent",
-              color: "var(--text-muted)",
-              fontSize: "0.82rem", fontWeight: 400,
-            }}
-          >
-            How it works
-          </button>
-        </div>
-      </section>
-
-      {/* Pipeline */}
+      {/* Workflow */}
       <section id="pipeline" style={{
-        maxWidth: 720, margin: "0 auto",
-        padding: "0 40px 80px",
+        maxWidth: 900, margin: "0 auto",
+        padding: "80px 40px 64px",
         opacity: mounted ? 1 : 0,
-        transition: "opacity 0.8s ease 0.6s",
+        transition: "opacity 0.8s ease 0.3s",
       }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: 0,
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-md)",
-          overflow: "hidden",
-        }}>
+        <p style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
+          Workflow
+        </p>
+        <h2 style={{ fontSize: "1.8rem", fontWeight: 500, lineHeight: 1.15, letterSpacing: "-0.03em", color: "var(--text-primary)", marginBottom: 32, maxWidth: 560 }}>
+          Five steps from imaging to rehearsal.
+        </h2>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
           {STEPS.map((s, i) => (
-            <div key={i} style={{
-              padding: "20px 16px",
-              borderRight: i < 4 ? "1px solid var(--border)" : "none",
-              backgroundColor: "var(--bg-surface)",
-            }}>
-              <div style={{
-                fontSize: "0.6rem",
-                fontFamily: "var(--font-mono)",
-                color: "var(--accent)",
-                marginBottom: 8,
-                letterSpacing: "0.04em",
-              }}>
+            <div key={i} style={{ padding: "20px 16px", backgroundColor: "var(--bg-surface)" }}>
+              <div style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--accent)", marginBottom: 10, letterSpacing: "0.06em" }}>
                 {s.num}
               </div>
-              <div style={{
-                fontSize: "0.78rem", fontWeight: 600,
-                color: "var(--text-primary)",
-                marginBottom: 4,
-              }}>
+              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, fontFamily: "var(--font-sans)" }}>
                 {s.label}
               </div>
-              <div style={{
-                fontSize: "0.68rem",
-                color: "var(--text-muted)",
-              }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, fontFamily: "var(--font-sans)" }}>
                 {s.detail}
               </div>
             </div>
@@ -197,12 +49,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features — editorial layout */}
-      <section style={{
-        maxWidth: 720, margin: "0 auto",
+      {/* Features */}
+      <section id="features" style={{
+        maxWidth: 900, margin: "0 auto",
         padding: "0 40px 80px",
         opacity: mounted ? 1 : 0,
-        transition: "opacity 0.8s ease 0.8s",
+        transition: "opacity 0.8s ease 0.5s",
       }}>
         {[
           {
@@ -222,34 +74,18 @@ export default function Landing() {
           },
         ].map((f, i) => (
           <div key={i} style={{
-            display: "grid",
-            gridTemplateColumns: "120px 1fr",
-            gap: 24,
+            display: "grid", gridTemplateColumns: "140px 1fr", gap: 24,
             padding: "28px 0",
             borderTop: "1px solid var(--border)",
           }}>
-            <div style={{
-              fontSize: "0.62rem",
-              fontFamily: "var(--font-mono)",
-              color: "var(--accent)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              paddingTop: 3,
-            }}>
+            <div style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--accent)", letterSpacing: "0.06em", textTransform: "uppercase", paddingTop: 3 }}>
               {f.label}
             </div>
             <div>
-              <h3 style={{
-                fontSize: "0.92rem", fontWeight: 500,
-                color: "var(--text-primary)",
-                marginBottom: 8, lineHeight: 1.4,
-              }}>
+              <h3 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text-primary)", marginBottom: 8, lineHeight: 1.4, fontFamily: "var(--font-sans)" }}>
                 {f.title}
               </h3>
-              <p style={{
-                fontSize: "0.8rem", lineHeight: 1.7,
-                color: "var(--text-secondary)",
-              }}>
+              <p style={{ fontSize: "0.85rem", lineHeight: 1.75, color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
                 {f.body}
               </p>
             </div>
@@ -258,17 +94,9 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer style={{
-        padding: "20px 40px",
-        borderTop: "1px solid var(--border)",
-        display: "flex", justifyContent: "space-between", alignItems: "center",
-      }}>
-        <span style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-          SurgiVision
-        </span>
-        <span style={{ fontSize: "0.62rem", color: "var(--text-muted)" }}>
-          Gaussian Splatting / Groq / MediaPipe / Three.js
-        </span>
+      <footer style={{ padding: "20px 40px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>SurgiVision</span>
+        <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>Three.js / Gaussian Splatting / Groq / MediaPipe</span>
       </footer>
     </div>
   );

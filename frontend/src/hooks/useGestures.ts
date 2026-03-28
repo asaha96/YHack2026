@@ -27,7 +27,7 @@ function isFingerExtended(
   return distance(tip, mcp) > distance(dip, mcp) * 1.1;
 }
 
-export function useGestures(videoWidth: number, viewerWidth: number) {
+export function useGestures(_videoWidth: number, viewerWidth: number) {
   const [gesture, setGesture] = useState<GestureState>({
     type: "none",
     screenPosition: null,

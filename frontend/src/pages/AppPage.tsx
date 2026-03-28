@@ -31,7 +31,6 @@ function AppPage() {
   const [viewerMode, setViewerMode] = useState<"anatomy" | "splat">("anatomy");
 
   const [selectedOrgan, setSelectedOrgan] = useState<string | null>(null);
-  const [modifications, setModifications] = useState<Modification[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [narrationText, setNarrationText] = useState<string | null>(null);
@@ -78,7 +77,7 @@ function AppPage() {
   }, [stage, sessionId]);
 
   // Upload handlers
-  const handleUploadComplete = useCallback((sid: string, path: string) => {
+  const handleUploadComplete = useCallback((sid: string, _path: string) => {
     setSessionId(sid);
     // Trigger reconstruction
     fetch("http://localhost:8000/api/reconstruct", {
@@ -120,7 +119,6 @@ function AppPage() {
     ]);
     setHistoricMods((prev) => [...prev, ...visibleMods]);
     playAnnotations(response.modifications);
-    setModifications((prev) => [...prev, ...response.modifications]);
     setNarrationText(response.narration);
     setIsLoading(false);
   }, [playAnnotations, visibleMods]);

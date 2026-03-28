@@ -14,20 +14,26 @@ export default function BlurText({
   style,
 }: BlurTextProps) {
   const [displayedChars, setDisplayedChars] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     intervalRef.current = setInterval(() => {
       setDisplayedChars((prev) => {
         if (prev >= text.length) {
-          clearInterval(intervalRef.current);
+          if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+          }
           return prev;
         }
         return prev + 1;
       });
     }, delay);
 
-    return () => clearInterval(intervalRef.current);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [text, delay]);
 
   return (
