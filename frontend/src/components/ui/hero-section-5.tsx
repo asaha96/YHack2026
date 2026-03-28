@@ -153,11 +153,8 @@ export function HeroSection() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "20px 40px",
       }}>
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", backgroundColor: "var(--accent)" }} />
-          <span style={{ fontSize: "0.78rem", fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--text-primary)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-            Praxis
-          </span>
+        <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "brightness(0) invert(1)" }} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <a href="#pipeline" style={{ padding: "7px 16px", borderRadius: 4, border: "1px solid var(--border)", backgroundColor: "transparent", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none" }}>

@@ -95,7 +95,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer style={{ padding: "20px 40px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>Praxis</span>
+        <img src="/logo.png" alt="Praxis" style={{ height: 18, filter: "brightness(0) invert(1)", opacity: 0.5 }} />
         <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>Three.js / Gaussian Splatting / Groq / MediaPipe</span>
       </footer>
     </div>
