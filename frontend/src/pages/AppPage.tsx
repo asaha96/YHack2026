@@ -8,6 +8,7 @@ import ChatPanel from "../components/ChatPanel";
 import NarrationPlayer from "../components/NarrationPlayer";
 import SummaryView from "../components/SummaryView";
 import UploadPanel from "../components/UploadPanel";
+import AgentTour from "../components/AgentTour";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
 import { sendAction, sendChat, sendSemanticQuery } from "../utils/api";
 import type { AgentResponse, Modification } from "../utils/api";
@@ -30,6 +31,7 @@ function AppPage() {
   const [reconstructMessage, setReconstructMessage] = useState("");
   const [viewerMode, setViewerMode] = useState<"anatomy" | "splat">("anatomy");
 
+  const [tourActive, setTourActive] = useState(true);
   const [selectedOrgan, setSelectedOrgan] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -394,6 +396,16 @@ function AppPage() {
             {handTrackingEnabled ? "Tracking On" : "Hands"}
           </button>
 
+          <button onClick={() => setTourActive((t) => !t)} style={{
+            padding: "5px 14px", borderRadius: "var(--radius-sm)",
+            border: `1px solid ${tourActive ? "var(--accent)" : "var(--border)"}`,
+            backgroundColor: tourActive ? "var(--accent-dim)" : "transparent",
+            color: tourActive ? "var(--accent)" : "var(--text-muted)",
+            fontSize: "0.68rem", fontWeight: 500,
+          }}>
+            {tourActive ? "Touring" : "Tour"}
+          </button>
+
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
             border: "1px solid var(--border)", backgroundColor: "transparent",
@@ -423,6 +435,29 @@ function AppPage() {
             modifications={allVisibleMods}
           />
         )}
+
+        {/* Agent Tour overlay */}
+        <AgentTour
+          active={tourActive}
+          onMoveTo={(camPos, target) => {
+            // TODO: animate camera to position — for now just log
+            console.log("[tour] Move to:", camPos, "→", target);
+          }}
+          onNarrate={(text) => {
+            setNarrationText(text);
+            setMessages((prev) => [...prev, { role: "assistant", content: text }]);
+          }}
+          onPOIChange={(poi) => {
+            if (poi) setSelectedOrgan(poi.id);
+          }}
+          onCommand={(cmd) => {
+            if (cmd === "free_explore") {
+              setTourActive(false);
+            } else {
+              handleChatMessage(cmd);
+            }
+          }}
+        />
 
         {handTrackingEnabled && (
           <div style={{ position: "absolute", bottom: 16, left: 16, width: 240, height: 180, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)" }}>

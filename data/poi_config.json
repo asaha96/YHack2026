@@ -1,0 +1,84 @@
+{
+  "points_of_interest": [
+    {
+      "id": "overview",
+      "position": [0, -100, 800],
+      "camera_position": [0, -100, 2000],
+      "camera_target": [0, -100, 800],
+      "label": "Patient Overview",
+      "narration": "This is the patient's reconstructed abdominal anatomy from their CT scan. I'll guide you through the key structures and my surgical recommendations. Let's begin with the hepatic region.",
+      "type": "info",
+      "tags": ["overview", "start"]
+    },
+    {
+      "id": "liver",
+      "position": [-45, -120, 1100],
+      "camera_position": [-200, -80, 1300],
+      "camera_target": [-45, -120, 1100],
+      "label": "Liver — Anterior Surface",
+      "narration": "The liver sits here in the right upper quadrant. Note the smooth anterior surface — this is where we'd plan the primary approach. The parenchyma is well-perfused. I'm flagging the hepatic hilum just medial to our current view.",
+      "type": "info",
+      "tags": ["liver", "hepatic", "organ"]
+    },
+    {
+      "id": "portal_vein",
+      "position": [15, -130, 1050],
+      "camera_position": [100, -100, 1200],
+      "camera_target": [15, -130, 1050],
+      "label": "Portal Vein — DANGER",
+      "narration": "Critical structure. The portal vein runs here, approximately 4 millimeters from the proposed incision path. A laceration would cause severe hemorrhage that's difficult to control in the field. Any approach must identify this vessel visually before proceeding deeper.",
+      "type": "danger",
+      "tags": ["portal_vein", "vascular", "critical", "danger"]
+    },
+    {
+      "id": "incision_recommended",
+      "position": [-60, -140, 1150],
+      "camera_position": [-150, -120, 1350],
+      "camera_target": [-60, -140, 1150],
+      "label": "Recommended Incision Path",
+      "narration": "I recommend beginning the incision here, along the anterior surface of the left hepatic lobe. The tissue is thinnest at this point — approximately 8 millimeters — with the widest safety margin from the portal vein and hepatic artery. Proceed parallel to the costal margin.",
+      "type": "action",
+      "tags": ["incision", "recommended", "approach"]
+    },
+    {
+      "id": "aorta",
+      "position": [0, -130, 900],
+      "camera_position": [150, -80, 1100],
+      "camera_target": [0, -130, 900],
+      "label": "Descending Aorta",
+      "narration": "The descending aorta runs along the posterior midline here. It's well-protected by the vertebral column but be aware of the celiac trunk branching anteriorly at this level. Retraction in this area should be gentle and controlled.",
+      "type": "danger",
+      "tags": ["aorta", "vascular", "major_vessel"]
+    },
+    {
+      "id": "stomach",
+      "position": [-30, -150, 1200],
+      "camera_position": [-100, -130, 1400],
+      "camera_target": [-30, -150, 1200],
+      "label": "Stomach",
+      "narration": "The stomach is visible here in the left upper quadrant. It may need to be retracted inferiorly to access the splenic hilum. Watch for the short gastric vessels along the greater curvature — they're fragile and bleed freely when torn.",
+      "type": "info",
+      "tags": ["stomach", "organ", "gi_tract"]
+    },
+    {
+      "id": "right_kidney",
+      "position": [80, -130, 850],
+      "camera_position": [200, -100, 1050],
+      "camera_target": [80, -130, 850],
+      "label": "Right Kidney",
+      "narration": "The right kidney sits retroperitoneally here. The renal artery enters from the medial aspect. If this is a nephrectomy case, we'd need to isolate the renal pedicle — artery first, then vein. The ureter descends inferomedially.",
+      "type": "info",
+      "tags": ["kidney", "renal", "organ"]
+    },
+    {
+      "id": "diaphragm",
+      "position": [0, -170, 1250],
+      "camera_position": [0, -250, 1400],
+      "camera_target": [0, -170, 1250],
+      "label": "Diaphragm — Superior Limit",
+      "narration": "This is the diaphragm forming the superior boundary of the abdominal cavity. Any approach to the liver dome requires awareness of the diaphragm's position. Inadvertent perforation would create a pneumothorax. Stay below this line.",
+      "type": "danger",
+      "tags": ["diaphragm", "boundary", "danger"]
+    }
+  ]
+}
