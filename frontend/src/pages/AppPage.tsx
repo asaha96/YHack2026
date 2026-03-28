@@ -186,20 +186,61 @@ function AppPage() {
     setIsLoading(false);
   }, [playAnnotations, visibleMods]);
 
+  // Track annotations currently on screen for the guide
+  const currentAnnotationsRef = useRef<any[]>([]);
+
   const handleOrganClick = useCallback(
     async (organName: string, point: number[], _normal: number[]) => {
       setSelectedOrgan(organName);
       setIsLoading(true);
-      const userMsg = `Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(", ")}]`;
+
+      // Call the AI guide with full view state
       try {
-        const response = await sendAction(sessionId, "point", [point], organName);
-        handleResponse(response, userMsg);
-      } catch (e: any) {
-        setMessages((prev) => [...prev, { role: "user", content: userMsg }, { role: "assistant", content: `Error: ${e.message}` }]);
+        const res = await fetch("http://localhost:8000/api/guide", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionId,
+            selected_structure: organName,
+            existing_annotations: currentAnnotationsRef.current.slice(-5),
+            camera_region: `viewing ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`,
+          }),
+        });
+        const guide = await res.json();
+
+        // Narrate — the agent speaks about what's on screen
+        if (guide.narration) {
+          setNarrationText(guide.narration);
+        }
+
+        // Add new annotations from the guide to the model
+        if (guide.new_annotations?.length) {
+          const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
+            type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
+            coordinates: [ann.position || point],
+            color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
+            label: ann.label || "",
+            delay_ms: i * 1000,
+            duration_ms: 600,
+            animation: "pulse" as const,
+          }));
+          setHistoricMods((prev) => [...prev, ...visibleMods]);
+          playAnnotations(mods);
+          currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
+        }
+
         setIsLoading(false);
+      } catch (e: any) {
+        // Fallback to regular action
+        try {
+          const response = await sendAction(sessionId, "point", [point], organName);
+          handleResponse(response, `Selected ${organName.replace(/_/g, " ")}`);
+        } catch {
+          setIsLoading(false);
+        }
       }
     },
-    [sessionId, handleResponse]
+    [sessionId, handleResponse, playAnnotations, visibleMods]
   );
 
   const handleIncisionTrace = useCallback(
@@ -520,6 +561,21 @@ function AppPage() {
                 </div>
               )
             ))}
+          </div>
+        )}
+
+        {/* Agent narration — minimal bottom bar */}
+        {narrationText && (
+          <div style={{
+            position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
+            maxWidth: 560, width: "80%", padding: "8px 14px",
+            borderRadius: "var(--radius-sm)", border: "1px solid var(--border)",
+            backgroundColor: "rgba(10, 10, 12, 0.75)",
+            zIndex: 15, pointerEvents: "none",
+          }}>
+            <p style={{ fontSize: "0.72rem", lineHeight: 1.5, color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
+              {narrationText}
+            </p>
           </div>
         )}
 
