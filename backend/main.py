@@ -29,6 +29,7 @@ from routes.query import router as query_router
 from routes.upload import router as upload_router
 from routes.reconstruct import router as reconstruct_router
 from routes.poi import router as poi_router
+from routes.skeleton import router as skeleton_router
 
 app.include_router(action_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
@@ -38,3 +39,4 @@ app.include_router(query_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
 app.include_router(reconstruct_router, prefix="/api")
 app.include_router(poi_router, prefix="/api")
+app.include_router(skeleton_router, prefix="/api")

@@ -111,6 +111,31 @@ export async function sendSemanticQuery(
   return res.json();
 }
 
+export interface SkeletonResponse {
+  organ_positions: Record<string, number[]>;
+  organ_count: number;
+  skeleton_detected: boolean;
+}
+
+export async function sendSkeleton(
+  sessionId: string,
+  keypoints: { x: number; y: number; z?: number }[]
+): Promise<SkeletonResponse> {
+  const res = await fetch(`${API_BASE}/skeleton`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ session_id: sessionId, keypoints }),
+  });
+  if (!res.ok) throw new Error(`Skeleton failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function getReferencePositions(): Promise<SkeletonResponse> {
+  const res = await fetch(`${API_BASE}/skeleton/reference`);
+  if (!res.ok) throw new Error(`Reference failed: ${res.statusText}`);
+  return res.json();
+}
+
 export async function getSummary(
   sessionId: string
 ): Promise<SummaryResponse> {
