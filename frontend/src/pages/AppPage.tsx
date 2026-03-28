@@ -186,77 +186,104 @@ function AppPage() {
     setIsLoading(false);
   }, [playAnnotations, visibleMods]);
 
-  // Track annotations currently on screen for the guide
+  // Accumulated action context — incisions, selections, etc. (silent, no AI call)
+  const actionContextRef = useRef<string[]>([]);
   const currentAnnotationsRef = useRef<any[]>([]);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  // Setup speech recognition once
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const recognition = new SR();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+    recognition.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript;
+      setIsVoiceListening(false);
+      handleVoiceInput(transcript);
+    };
+    recognition.onerror = () => setIsVoiceListening(false);
+    recognition.onend = () => setIsVoiceListening(false);
+    recognitionRef.current = recognition;
+  }, []);
+
+  // Voice input handler — sends user's speech + accumulated context to the AI guide
+  const handleVoiceInput = useCallback(async (transcript: string) => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("http://localhost:8000/api/guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          selected_structure: selectedOrgan,
+          existing_annotations: currentAnnotationsRef.current.slice(-5),
+          camera_region: `User said: "${transcript}". Recent actions: ${actionContextRef.current.slice(-5).join("; ")}`,
+        }),
+      });
+      const guide = await res.json();
+
+      if (guide.narration) setNarrationText(guide.narration);
+
+      if (guide.new_annotations?.length) {
+        const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
+          type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
+          coordinates: [ann.position || [0, -100, 1000]],
+          color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
+          label: ann.label || "",
+          delay_ms: i * 1000,
+          duration_ms: 600,
+          animation: "pulse" as const,
+        }));
+        setHistoricMods((prev) => [...prev, ...visibleMods]);
+        playAnnotations(mods);
+        currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
+      }
+
+      // Clear action context after the agent has used it
+      actionContextRef.current = [];
+    } catch {
+      setNarrationText("Couldn't reach the AI guide. Try again.");
+    }
+    setIsLoading(false);
+  }, [sessionId, selectedOrgan, playAnnotations, visibleMods]);
 
   const handleOrganClick = useCallback(
     async (organName: string, point: number[], _normal: number[]) => {
       setSelectedOrgan(organName);
-      setIsLoading(true);
 
-      // Call the AI guide with full view state
-      try {
-        const res = await fetch("http://localhost:8000/api/guide", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            session_id: sessionId,
-            selected_structure: organName,
-            existing_annotations: currentAnnotationsRef.current.slice(-5),
-            camera_region: `viewing ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`,
-          }),
-        });
-        const guide = await res.json();
+      // Silent — just accumulate context, no AI call
+      actionContextRef.current.push(`Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-        // Narrate — the agent speaks about what's on screen
-        if (guide.narration) {
-          setNarrationText(guide.narration);
-        }
-
-        // Add new annotations from the guide to the model
-        if (guide.new_annotations?.length) {
-          const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
-            type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
-            coordinates: [ann.position || point],
-            color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
-            label: ann.label || "",
-            delay_ms: i * 1000,
-            duration_ms: 600,
-            animation: "pulse" as const,
-          }));
-          setHistoricMods((prev) => [...prev, ...visibleMods]);
-          playAnnotations(mods);
-          currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
-        }
-
-        setIsLoading(false);
-      } catch (e: any) {
-        // Fallback to regular action
-        try {
-          const response = await sendAction(sessionId, "point", [point], organName);
-          handleResponse(response, `Selected ${organName.replace(/_/g, " ")}`);
-        } catch {
-          setIsLoading(false);
-        }
-      }
+      // PINCH triggers voice listening — start speech recognition
+      setIsVoiceListening(true);
+      try { recognitionRef.current?.start(); } catch {}
     },
-    [sessionId, handleResponse, playAnnotations, visibleMods]
+    []
   );
 
   const handleIncisionTrace = useCallback(
     async (organName: string, points: number[][]) => {
       setSelectedOrgan(organName);
-      setIsLoading(true);
-      const userMsg = `Traced incision on ${organName.replace(/_/g, " ")} (${points.length} points)`;
-      try {
-        const response = await sendAction(sessionId, "incision", points, organName);
-        handleResponse(response, userMsg);
-      } catch (e: any) {
-        setMessages((prev) => [...prev, { role: "user", content: userMsg }, { role: "assistant", content: `Error: ${e.message}` }]);
-        setIsLoading(false);
-      }
+      // Silent — just accumulate context for when the user speaks
+      actionContextRef.current.push(`Traced incision on ${organName.replace(/_/g, " ")} (${points.length} points)`);
+      // Still render the incision line visually
+      const mods: Modification[] = [{
+        type: "incision",
+        coordinates: points,
+        color: "#f87171",
+        label: "Incision",
+        delay_ms: 0,
+        duration_ms: 300,
+        animation: "draw",
+      }];
+      setHistoricMods((prev) => [...prev, ...visibleMods]);
+      playAnnotations(mods);
     },
-    [sessionId, handleResponse]
+    [playAnnotations, visibleMods]
   );
 
   const handleChatMessage = useCallback(
@@ -566,8 +593,23 @@ function AppPage() {
           </div>
         )}
 
+        {/* Voice listening indicator */}
+        {isVoiceListening && (
+          <div style={{
+            position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+            padding: "16px 28px", borderRadius: "var(--radius-md)",
+            border: "1px solid var(--accent)", backgroundColor: "rgba(10, 10, 12, 0.9)",
+            zIndex: 20, display: "flex", alignItems: "center", gap: 10,
+          }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "var(--risk-high)", animation: "dotPulse 1s infinite" }} />
+            <span style={{ fontSize: "0.82rem", color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Listening...
+            </span>
+          </div>
+        )}
+
         {/* Agent narration — minimal bottom bar */}
-        {narrationText && (
+        {narrationText && !isVoiceListening && (
           <div style={{
             position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
             maxWidth: 560, width: "80%", padding: "8px 14px",
