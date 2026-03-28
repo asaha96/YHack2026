@@ -1,7 +1,7 @@
 import os
 import base64
 from io import BytesIO
-from typing import Any
+from typing import Any, Union, Optional
 
 _model = None
 _processor = None
@@ -38,8 +38,8 @@ def _lazy_load():
 
 async def semantic_query(
     query_text: str,
-    image_base64: str | None = None,
-    organ_metadata: dict[str, Any] | None = None,
+    image_base64: Optional[str] = None,
+    organ_metadata: Optional[dict[str, Any]] = None,
 ) -> dict:
     """
     Process a semantic query about the anatomy.
@@ -89,7 +89,7 @@ async def _biomedclip_query(query_text: str, image_base64: str) -> dict:
 
 
 async def _llm_fallback_query(
-    query_text: str, organ_metadata: dict[str, Any] | None
+    query_text: str, organ_metadata: Optional[dict[str, Any]]
 ) -> dict:
     """Use Groq LLM to reason about the query based on known anatomy."""
     import json

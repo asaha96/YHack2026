@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+from typing import Optional
 from services.biomedclip import semantic_query
 
 router = APIRouter()
@@ -8,7 +9,7 @@ router = APIRouter()
 class QueryRequest(BaseModel):
     session_id: str
     query_text: str
-    image_base64: str | None = None
+    image_base64: Optional[str] = None
 
 
 class RegionResult(BaseModel):
@@ -20,7 +21,7 @@ class RegionResult(BaseModel):
 
 class QueryResponse(BaseModel):
     method: str
-    similarity_score: float | None = None
+    similarity_score: Optional[float] = None
     regions: list[RegionResult]
     explanation: str
 

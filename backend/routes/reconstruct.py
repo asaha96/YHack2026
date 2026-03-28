@@ -4,6 +4,7 @@ import glob
 from pathlib import Path
 from fastapi import APIRouter
 from pydantic import BaseModel
+from typing import Optional, List, Dict
 
 router = APIRouter()
 
@@ -23,10 +24,10 @@ class ReconstructStatus(BaseModel):
     session_id: str
     status: str  # "processing" | "complete" | "error"
     progress: int
-    splat_path: str | None = None
-    mesh_dir: str | None = None
+    splat_path: Optional[str] = None
+    mesh_dir: Optional[str] = None
     message: str = ""
-    structures: list[dict] | None = None
+    structures: Optional[List[Dict]] = None
 
 
 @router.post("/reconstruct", response_model=ReconstructStatus)
