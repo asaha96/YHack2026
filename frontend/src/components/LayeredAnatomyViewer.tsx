@@ -98,19 +98,20 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       const height = container.clientHeight;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0f0f14);
+      scene.background = new THREE.Color(0x080a0e);
       sceneRef.current = scene;
 
-      const camera = new THREE.PerspectiveCamera(45, width / height, 1, 10000);
-      camera.position.set(0, -100, 2500);
-      camera.lookAt(0, -100, 800);
+      const camera = new THREE.PerspectiveCamera(40, width / height, 1, 10000);
+      camera.position.set(400, -50, 1800);
+      camera.lookAt(0, -120, 900);
       cameraRef.current = camera;
 
       const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setSize(width, height);
-      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
       container.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
@@ -126,23 +127,32 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      controls.target.set(0, -100, 800);
-      controls.minDistance = 300;
-      controls.maxDistance = 5000;
+      controls.target.set(0, -120, 1000);
+      controls.minDistance = 400;
+      controls.maxDistance = 4000;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.5;
       controlsRef.current = controls;
 
-      // Lighting — scaled for mm-range anatomy
-      scene.add(new THREE.AmbientLight(0x445566, 0.8));
-      const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
-      mainLight.position.set(500, 0, 2000);
+      // Lighting — clinical, well-lit anatomy
+      scene.add(new THREE.AmbientLight(0x556677, 1.0));
+
+      const mainLight = new THREE.DirectionalLight(0xfff5ee, 1.4);
+      mainLight.position.set(600, 100, 2000);
       mainLight.castShadow = true;
       scene.add(mainLight);
-      const fillLight = new THREE.DirectionalLight(0x7c5cfc, 0.15);
-      fillLight.position.set(-500, -200, 500);
+
+      const fillLight = new THREE.DirectionalLight(0x2dd4bf, 0.25);
+      fillLight.position.set(-500, -200, 800);
       scene.add(fillLight);
-      const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-      backLight.position.set(0, 200, -500);
+
+      const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+      backLight.position.set(-200, 300, -400);
       scene.add(backLight);
+
+      const rimLight = new THREE.DirectionalLight(0xeeddcc, 0.3);
+      rimLight.position.set(300, -400, 1200);
+      scene.add(rimLight);
 
       modGroupRef.current.name = "modifications";
       scene.add(modGroupRef.current);

@@ -154,7 +154,7 @@ export function HeroSection() {
         padding: "20px 40px",
       }}>
         <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "invert(1) hue-rotate(180deg)", mixBlendMode: "screen" }} />
+          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "brightness(0) invert(1)" }} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <a href="#pipeline" style={{ padding: "7px 16px", borderRadius: 4, border: "1px solid var(--border)", backgroundColor: "transparent", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none" }}>

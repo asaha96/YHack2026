@@ -256,13 +256,8 @@ function AppPage() {
       // Silent — just accumulate context, no AI call
       actionContextRef.current.push(`Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-      // PINCH triggers voice listening
+      // PINCH shows the mic button — user taps it to speak (browser requires user gesture)
       setIsVoiceListening(true);
-      try {
-        recognitionRef.current?.start();
-      } catch {
-        // Browser may block non-user-gesture start — the UI button handles it
-      }
     },
     []
   );
@@ -445,7 +440,7 @@ function AppPage() {
 
   const navBar = (label?: string) => (
     <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "invert(1) hue-rotate(180deg)", mixBlendMode: "screen" }} />
+      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -487,24 +482,11 @@ function AppPage() {
       {/* Header — minimal */}
       <header style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "invert(1) hue-rotate(180deg)", mixBlendMode: "screen" }} />
+          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ display: "flex", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", overflow: "hidden" }}>
-            {(["anatomy", "splat"] as const).map((mode) => (
-              <button key={mode} onClick={() => setViewerMode(mode)} style={{
-                padding: "5px 12px", border: "none",
-                backgroundColor: viewerMode === mode ? "var(--accent-dim)" : "transparent",
-                color: viewerMode === mode ? "var(--accent)" : "var(--text-muted)",
-                fontSize: "0.65rem", fontWeight: 500, fontFamily: "var(--font-mono)", textTransform: "uppercase",
-              }}>
-                {mode === "anatomy" ? "Mesh" : "Splat"}
-              </button>
-            ))}
-          </div>
-
           <button onClick={() => setHandTrackingEnabled((e) => !e)} style={{
             padding: "5px 14px", borderRadius: "var(--radius-sm)",
             border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
@@ -530,8 +512,7 @@ function AppPage() {
 
       {/* Full-screen 3D Viewer */}
       <main style={{ position: "relative", overflow: "hidden" }}>
-        {viewerMode === "anatomy" ? (
-          <LayeredAnatomyViewer
+        <LayeredAnatomyViewer
             ref={viewerRef}
             onOrganClick={handleOrganClick}
             onIncisionTrace={handleIncisionTrace}
@@ -539,35 +520,40 @@ function AppPage() {
             animationProgress={animationProgress}
             selectedOrgan={selectedOrgan}
             cursorPosition={cursorPosition}
-          />
-        ) : (
-          <SplatViewer
-            splatPath={splatPath || "/splats/sample.splat"}
-            onPointClick={(point) => handleOrganClick("anatomy", point, [0, 1, 0])}
-            modifications={allVisibleMods}
-          />
-        )}
+          />}
 
 
         {/* Voice indicator — right side, clickable to start/retry mic */}
         {isVoiceListening && (
           <button
             onClick={() => {
-              // User click = trusted gesture, can start recognition
-              try { recognitionRef.current?.start(); } catch {}
+              try {
+                recognitionRef.current?.start();
+              } catch {
+                // Already started or not available
+              }
             }}
             style={{
               position: "absolute", top: 16, right: 16,
-              padding: "8px 16px", borderRadius: "var(--radius-sm)",
-              border: "1px solid var(--risk-high)", backgroundColor: "rgba(248, 113, 113, 0.1)",
-              zIndex: 20, display: "flex", alignItems: "center", gap: 8,
+              padding: "12px 20px", borderRadius: "var(--radius-md)",
+              border: "1px solid var(--accent)", backgroundColor: "rgba(10, 10, 12, 0.9)",
+              zIndex: 20, display: "flex", alignItems: "center", gap: 10,
               cursor: "pointer",
             }}
           >
-            <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: "var(--risk-high)", animation: "dotPulse 1s infinite" }} />
-            <span style={{ fontSize: "0.68rem", color: "var(--risk-high)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-              Voice Active
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            </svg>
+            <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Tap to speak
             </span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setIsVoiceListening(false); }}
+              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.8rem", cursor: "pointer", padding: "0 0 0 4px" }}
+            >
+              ×
+            </button>
           </button>
         )}
 
