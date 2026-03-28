@@ -171,6 +171,52 @@ Provide the summary as JSON:
     }
 
 
+LIVE_ANATOMY_PROMPT = """You are an anatomy education assistant. A person is standing in front of a camera, and their body pose has been detected using computer vision. Based on the detected body landmarks and computed organ positions, provide educational labels and explanations about their anatomy.
+
+When the user speaks or asks a question, respond with relevant anatomical labels positioned on their body. Focus on the areas they mention or that are most visible.
+
+Respond in valid JSON:
+{
+  "labels": [
+    {"organ": "string - organ name matching the organ_positions keys", "text": "string - short 2-4 word label", "detail": "string - 1-sentence educational explanation"}
+  ],
+  "narration": "string - brief 1-2 sentence educational narration about the visible anatomy"
+}
+
+Include 3-6 labels. Focus on major organs and structures that would be visible given the person's pose. If the user asked a specific question, focus labels on the relevant area."""
+
+
+async def analyze_live_pose(
+    organ_positions: dict[str, list[float]],
+    visible_landmarks: list[str],
+    user_speech: str | None = None,
+) -> dict:
+    """Generate educational anatomy labels based on detected pose."""
+    organs_str = ", ".join(organ_positions.keys())
+    landmarks_str = ", ".join(visible_landmarks[:15])
+
+    user_message = f"""Detected body landmarks: {landmarks_str}
+
+Available organ positions: {organs_str}
+
+{f'The person said: "{user_speech}"' if user_speech else 'Generate initial anatomy labels for the visible body.'}
+
+Provide educational anatomy labels for overlay on the video feed."""
+
+    messages = [
+        {"role": "system", "content": LIVE_ANATOMY_PROMPT},
+        {"role": "user", "content": user_message},
+    ]
+
+    text = await _call_groq(messages, max_tokens=800)
+    result = _parse_json_response(text)
+
+    return {
+        "labels": result.get("labels", []),
+        "narration": result.get("narration", ""),
+    }
+
+
 async def _call_agent(user_message: str, session: list[dict]) -> dict:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 

@@ -9,7 +9,7 @@ app = FastAPI(title="Praxis API", version="0.1.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,6 +31,7 @@ from routes.reconstruct import router as reconstruct_router
 from routes.poi import router as poi_router
 from routes.skeleton import router as skeleton_router
 from routes.guide import router as guide_router
+from routes.livekit_token import router as livekit_router
 
 app.include_router(action_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
@@ -42,3 +43,4 @@ app.include_router(reconstruct_router, prefix="/api")
 app.include_router(poi_router, prefix="/api")
 app.include_router(skeleton_router, prefix="/api")
 app.include_router(guide_router, prefix="/api")
+app.include_router(livekit_router, prefix="/api")
