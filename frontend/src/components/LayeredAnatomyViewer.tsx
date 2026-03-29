@@ -419,6 +419,29 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           labelGroupRef.current.add(labelObj);
         }
       });
+
+      // De-overlap labels: nudge any that are too close in 3D space
+      const labels = labelGroupRef.current.children as THREE.Object3D[];
+      const MIN_DIST = 45; // minimum distance between label positions
+      for (let i = 0; i < labels.length; i++) {
+        for (let j = i + 1; j < labels.length; j++) {
+          const a = labels[i].position;
+          const b = labels[j].position;
+          const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist < MIN_DIST) {
+            const push = (MIN_DIST - dist) / 2;
+            // Push apart vertically (Y axis) so they stack neatly
+            if (a.y >= b.y) {
+              a.y += push;
+              b.y -= push;
+            } else {
+              a.y -= push;
+              b.y += push;
+            }
+          }
+        }
+      }
     }, [modifications, animationProgress]);
 
     // Mouse handlers
