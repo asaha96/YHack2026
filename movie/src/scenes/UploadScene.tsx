@@ -2,7 +2,8 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
-import { VideoDropIn, UploadMock } from "../components/VideoDropIn";
+import { VideoDropIn } from "../components/VideoDropIn";
+import { CTScanAccordion } from "../components/CTScanAccordion";
 import { PetCat, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
@@ -78,7 +79,7 @@ export const UploadScene: React.FC = () => {
               </>
             }
           >
-            <UploadMock />
+            <CTScanAccordion />
           </VideoDropIn>
         </div>
       </AbsoluteFill>
