@@ -132,8 +132,9 @@ if [ ! -f .env ]; then
   echo "No .env file found. Creating from template..."
   cp .env.example .env
   echo "Please edit .env and add your API keys:"
-  echo "   - GROQ_API_KEY"
+  echo "   - K2_API_KEY (K2 Think inference; optional Moonshot via KIMI_BASE_URL)"
   echo "   - LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET"
+  echo "   - Optional: GROQ_API_KEY for TTS narration only"
   echo ""
   exit 1
 fi
