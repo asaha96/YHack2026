@@ -268,10 +268,10 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     objectTimersRef.current.push(timer);
   };
 
-  /** Pan camera to a point at a scheduled time */
-  const panTo = (point: [number, number, number], delayMs: number, zoom = 0.12, duration = 1200) => {
+  /** Orbit camera to view a point from a specific angle */
+  const orbitTo = (point: [number, number, number], delayMs: number, dist: number, yaw: number, pitch: number, duration = 1400) => {
     const timer = setTimeout(() => {
-      viewerRef.current?.zoomToAnatomyPoint(point, zoom, duration);
+      viewerRef.current?.orbitToPoint(point, dist, yaw, pitch, duration);
     }, delayMs);
     objectTimersRef.current.push(timer);
   };
@@ -315,7 +315,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(approachArrow, 3500);
     addBeacon(tp, COLORS.approach, 3500, 6800);
-    panTo(approachMid, 3300, 0.18, 1400);
+    orbitTo(approachMid, 3300, 0.18, -0.6, 0.3);  // front-left, slightly above
 
     // ── Step 3 (7000ms): Hilum arrow — purple arrow to hilum ──
     const hilumTarget: [number, number, number] = [80, -110, 890];
@@ -326,14 +326,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(hilumArrow, 7000);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.suture, 7000, 10300);
-    panTo(hilumTarget, 6800, 0.12, 1400);
+    orbitTo(hilumTarget, 6800, 0.12, 0.8, -0.2);  // right side, slightly below
 
     // ── Step 4 (10500ms): Vascular clamp — yellow X-mark ──
     const clampTarget: [number, number, number] = [50, -100, 880];
     const clampMark = makeXMark(new THREE.Vector3(...clampTarget), 10, COLORS.clamp);
     addObj(clampMark, 10500);
     addBeacon(new THREE.Vector3(...clampTarget), COLORS.clamp, 10500, 13800);
-    panTo(clampTarget, 10300, 0.10, 1200);
+    orbitTo(clampTarget, 10300, 0.10, 1.2, 0.1);  // further right, level
 
     // ── Step 5 (14000ms): Resection margin — red dashed loop ──
     const marginPts = [
@@ -352,14 +352,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     });
     addObj(margin, 14000);
     addBeacon(tp, COLORS.danger, 14000, 17300);
-    panTo(TUMOR_POSITION, 13800, 0.20, 1400);
+    orbitTo(TUMOR_POSITION, 13800, 0.20, -0.3, 0.5);  // front, looking down to see margin loop
 
     // ── Step 6 (17500ms): Checkmark — mass excised ──
     const checkTarget: [number, number, number] = [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18];
     const check = makeCheckmark(new THREE.Vector3(...checkTarget), 14, COLORS.safe);
     addObj(check, 17500);
     addBeacon(new THREE.Vector3(...checkTarget), COLORS.safe, 17500, 20800);
-    panTo(checkTarget, 17300, 0.10, 1200);
+    orbitTo(checkTarget, 17300, 0.10, 0.0, 0.4);  // straight on, above
 
     // ── Step 7 (21000ms): Suture dots — closure ──
     const closureTarget: [number, number, number] = [115, -85, 875];
@@ -393,13 +393,13 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     }
     addObj(sutureGroup, 21000);
     addBeacon(closurePt, COLORS.suture, 21000, 24300);
-    panTo(closureTarget, 20800, 0.10, 1200);
+    orbitTo(closureTarget, 20800, 0.10, -0.5, 0.15);  // front-left, level
 
     // ── Step 8 (24500ms): Reperfusion — green ring at hilum ──
     const finalRing = makeRing(new THREE.Vector3(...hilumTarget), 12, 2, COLORS.safe);
     addObj(finalRing, 24500);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.safe, 24500, 28000);
-    panTo(hilumTarget, 24300, 0.14, 1400);
+    orbitTo(hilumTarget, 24300, 0.14, 0.5, 0.2);  // right, slightly above
   };
 
   useEffect(() => {

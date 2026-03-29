@@ -62,6 +62,8 @@ export interface LayeredViewerHandle {
   gestureInput: GestureInput;
   /** Smoothly move camera to look at an anatomy-local point */
   zoomToAnatomyPoint: (localPoint: [number, number, number], distance?: number, durationMs?: number) => void;
+  /** Smoothly orbit camera to view a point from a specific angle (yaw/pitch in radians) */
+  orbitToPoint: (localPoint: [number, number, number], distance: number, yaw: number, pitch: number, durationMs?: number) => void;
   /** Hide/restore layers for surgical visibility */
   hideForSurgery: () => void;
   restoreFromSurgery: () => void;
@@ -158,19 +160,51 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         }
         animate();
       },
+      orbitToPoint: (localPoint: [number, number, number], distance: number, yaw: number, pitch: number, durationMs = 1500) => {
+        const camera = cameraRef.current;
+        const viewer = splatViewerRef.current;
+        if (!camera || !viewer) return;
+
+        const grp = anatomyGroupRef.current;
+        const targetWorld = new THREE.Vector3(...localPoint)
+          .multiplyScalar(grp.scale.x)
+          .add(grp.position);
+
+        // Compute camera end position from spherical coords around target
+        const endPos = new THREE.Vector3(
+          Math.sin(yaw) * Math.cos(pitch) * distance,
+          Math.sin(pitch) * distance,
+          Math.cos(yaw) * Math.cos(pitch) * distance,
+        ).add(targetWorld);
+
+        const startPos = camera.position.clone();
+        const startTarget = viewer.controls?.target?.clone() || targetWorld.clone();
+        const startTime = performance.now();
+
+        function animate() {
+          const t = Math.min((performance.now() - startTime) / durationMs, 1);
+          const ease = t * t * (3 - 2 * t);
+          camera.position.lerpVectors(startPos, endPos, ease);
+          if (viewer.controls?.target) {
+            viewer.controls.target.lerpVectors(startTarget, targetWorld, ease);
+          }
+          if (t < 1) requestAnimationFrame(animate);
+        }
+        animate();
+      },
       hideForSurgery: () => {
-        ["skin", "muscles", "skeleton"].forEach(name => {
+        ["skin", "skeleton"].forEach(name => {
           const group = layerGroupsRef.current.get(name);
           if (group) group.visible = false;
         });
-        setLayerVisibility(prev => ({ ...prev, skin: false, muscles: false, skeleton: false }));
+        setLayerVisibility(prev => ({ ...prev, skin: false, skeleton: false }));
       },
       restoreFromSurgery: () => {
-        ["skin", "muscles", "skeleton"].forEach(name => {
+        ["skin", "skeleton"].forEach(name => {
           const group = layerGroupsRef.current.get(name);
           if (group) group.visible = true;
         });
-        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, skeleton: true }));
+        setLayerVisibility(prev => ({ ...prev, skin: true, skeleton: true }));
       },
     }));
 
