@@ -30,6 +30,7 @@ interface StepCard {
   detail: string;
   color: string;
   delayMs: number;
+  camera: { target: [number, number, number]; dist: number; yaw: number; pitch: number };
 }
 
 const STEP_CARDS: StepCard[] = [
@@ -37,41 +38,49 @@ const STEP_CARDS: StepCard[] = [
     num: 1, title: "Tumor Identification",
     detail: "CT imaging reveals a 2.3cm renal mass on the upper pole of the right kidney. The mass is well-circumscribed with a clear fat plane — ideal for nephron-sparing partial nephrectomy.",
     color: "#ef4444", delayMs: 0,
+    camera: { target: TUMOR_POSITION, dist: 0.35, yaw: 0, pitch: 0 },
   },
   {
     num: 2, title: "Surgical Approach",
     detail: "Planning a retroperitoneal laparoscopic approach. The arrow shows the optimal trajectory — lateral to the psoas muscle, avoiding the duodenum and IVC. Port placement at the 12th rib tip.",
     color: "#60a5fa", delayMs: 3500,
+    camera: { target: [(TUMOR_POSITION[0] - 45 + TUMOR_POSITION[0]) / 2, (TUMOR_POSITION[1] + 35 + TUMOR_POSITION[1]) / 2, (TUMOR_POSITION[2] - 20 + TUMOR_POSITION[2]) / 2], dist: 0.45, yaw: -0.6, pitch: -0.9 },
   },
   {
     num: 3, title: "Hilum Dissection",
     detail: "Identifying the renal hilum — renal artery, renal vein, and ureter must be individually isolated. The artery lies posterior to the vein. Careful dissection avoids injury to accessory vessels.",
     color: "#a78bfa", delayMs: 7000,
+    camera: { target: [80, -110, 890], dist: 0.45, yaw: 1.0, pitch: -0.1 },
   },
   {
     num: 4, title: "Vascular Clamping",
     detail: "Bulldog clamp applied to the main renal artery. Warm ischemia time begins — target under 25 minutes. Mannitol administered pre-clamp for renal protection. Kidney should blanch uniformly.",
     color: "#f59e0b", delayMs: 10500,
+    camera: { target: [50, -100, 880], dist: 0.42, yaw: 0.9, pitch: -0.4 },
   },
   {
     num: 5, title: "Resection Margin",
     detail: "Scoring the parenchyma with electrocautery at 5mm clear margin around the tumor. The dashed line shows the planned excision boundary. Intraoperative ultrasound confirms tumor depth and margin adequacy.",
     color: "#ef4444", delayMs: 14000,
+    camera: { target: TUMOR_POSITION, dist: 0.48, yaw: -0.4, pitch: -1.0 },
   },
   {
     num: 6, title: "Mass Excision",
     detail: "Tumor excised en bloc with negative margins. Specimen sent for frozen section pathology. The collecting system is inspected — any entry points will require repair with 4-0 Vicryl before renorrhaphy.",
     color: "#34d399", delayMs: 17500,
+    camera: { target: [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18], dist: 0.44, yaw: 0.3, pitch: -0.4 },
   },
   {
     num: 7, title: "Renorrhaphy & Closure",
     detail: "Running suture closure of the renal defect using 2-0 V-Loc barbed suture over Surgicel bolsters. Inner layer seals the collecting system, outer layer achieves parenchymal hemostasis.",
     color: "#a78bfa", delayMs: 21000,
+    camera: { target: [115, -85, 875], dist: 0.44, yaw: -0.7, pitch: -0.8 },
   },
   {
     num: 8, title: "Reperfusion Check",
     detail: "Bulldog clamp released — warm ischemia 18 minutes, within safe limits. Kidney reperfuses with good cortical color return. No active bleeding from the suture line. Estimated blood loss: 150cc.",
     color: "#34d399", delayMs: 24500,
+    camera: { target: [80, -110, 890], dist: 0.46, yaw: 0.6, pitch: -0.15 },
   },
 ];
 
@@ -206,6 +215,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   const animFramesRef = useRef<number[]>([]);
   const startCamRef = useRef<{ pos: THREE.Vector3; target: THREE.Vector3 } | null>(null);
   const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [browsing, setBrowsing] = useState(false);
 
   useEffect(() => {
     const check = setInterval(() => {
@@ -331,6 +341,43 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     objectTimersRef.current.push(timer);
   };
 
+  /** Navigate to a specific step (used when browsing) */
+  const goToStep = (stepNum: number) => {
+    const card = STEP_CARDS.find(c => c.num === stepNum);
+    if (!card) return;
+    setActiveStep(stepNum);
+    const { target, dist, yaw, pitch } = card.camera;
+    viewerRef.current?.orbitToPoint(target, dist, yaw, pitch, 1000);
+  };
+
+  /** Exit the simulation — restore camera + layers, cleanup */
+  const exitSimulation = () => {
+    setActiveStep(null);
+    setBrowsing(false);
+    // Animate camera back to starting position
+    const saved = startCamRef.current;
+    const cam = viewerRef.current?.getCamera();
+    if (saved && cam) {
+      const startPos = cam.position.clone();
+      const endPos = saved.pos;
+      const t0 = performance.now();
+      function animateBack() {
+        const p = Math.min((performance.now() - t0) / 2000, 1);
+        const ease = p * p * (3 - 2 * p);
+        cam!.position.lerpVectors(startPos, endPos, ease);
+        if (p < 1) requestAnimationFrame(animateBack);
+      }
+      animateBack();
+    }
+    // Fade layers back
+    setTimeout(() => viewerRef.current?.fadeRestoreLayers(2000), 500);
+    // Cleanup objects
+    setTimeout(() => {
+      cleanupAll();
+      hasPlayedRef.current = false;
+    }, 3000);
+  };
+
   const createSurgicalObjects = () => {
     const tp = new THREE.Vector3(...TUMOR_POSITION);
 
@@ -370,7 +417,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(approachArrow, 3500);
     addBeacon(tp, COLORS.approach, 3500, 6800);
-    orbitTo(approachMid, 3300, 0.45, -0.6, -0.9);  // front-left, high
+    { const c = STEP_CARDS[1].camera; orbitTo(c.target, 3300, c.dist, c.yaw, c.pitch); }
 
     // ── Step 3 (7000ms): Hilum arrow — purple arrow to hilum ──
     const hilumTarget: [number, number, number] = [80, -110, 890];
@@ -381,14 +428,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(hilumArrow, 7000);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.suture, 7000, 10300);
-    orbitTo(hilumTarget, 6800, 0.45, 1.0, -0.1);  // right side, higher
+    { const c = STEP_CARDS[2].camera; orbitTo(c.target, 6800, c.dist, c.yaw, c.pitch); }
 
     // ── Step 4 (10500ms): Vascular clamp — yellow X-mark ──
     const clampTarget: [number, number, number] = [50, -100, 880];
     const clampMark = makeXMark(new THREE.Vector3(...clampTarget), 10, COLORS.clamp);
     addObj(clampMark, 10500);
     addBeacon(new THREE.Vector3(...clampTarget), COLORS.clamp, 10500, 13800);
-    orbitTo(clampTarget, 10300, 0.42, 0.9, -0.4);  // right, higher
+    { const c = STEP_CARDS[3].camera; orbitTo(c.target, 10300, c.dist, c.yaw, c.pitch); }
 
     // ── Step 5 (14000ms): Resection margin — red dashed loop ──
     const marginPts = [
@@ -407,14 +454,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     });
     addObj(margin, 14000);
     addBeacon(tp, COLORS.danger, 14000, 17300);
-    orbitTo(TUMOR_POSITION, 13800, 0.48, -0.4, -1.0);  // front-left, high
+    { const c = STEP_CARDS[4].camera; orbitTo(c.target, 13800, c.dist, c.yaw, c.pitch); }
 
     // ── Step 6 (17500ms): Checkmark — mass excised ──
     const checkTarget: [number, number, number] = [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18];
     const check = makeCheckmark(new THREE.Vector3(...checkTarget), 14, COLORS.safe);
     addObj(check, 17500);
     addBeacon(new THREE.Vector3(...checkTarget), COLORS.safe, 17500, 20800);
-    orbitTo(checkTarget, 17300, 0.44, 0.3, -0.4);  // slight right, high
+    { const c = STEP_CARDS[5].camera; orbitTo(c.target, 17300, c.dist, c.yaw, c.pitch); }
 
     // ── Step 7 (21000ms): Suture dots — closure ──
     const closureTarget: [number, number, number] = [115, -85, 875];
@@ -448,13 +495,13 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     }
     addObj(sutureGroup, 21000);
     addBeacon(closurePt, COLORS.suture, 21000, 24300);
-    orbitTo(closureTarget, 20800, 0.44, -0.7, -0.8);  // front-left, high
+    { const c = STEP_CARDS[6].camera; orbitTo(c.target, 20800, c.dist, c.yaw, c.pitch); }
 
     // ── Step 8 (24500ms): Reperfusion — green ring at hilum ──
     const finalRing = makeRing(new THREE.Vector3(...hilumTarget), 12, 2, COLORS.safe);
     addObj(finalRing, 24500);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.safe, 24500, 28000);
-    orbitTo(hilumTarget, 24300, 0.46, 0.6, -0.15);  // right, higher
+    { const c = STEP_CARDS[7].camera; orbitTo(c.target, 24300, c.dist, c.yaw, c.pitch); }
   };
 
   useEffect(() => {
@@ -485,34 +532,11 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       objectTimersRef.current.push(setTimeout(() => setActiveStep(card.num), card.delayMs));
     });
 
-    const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
-
-    // Smooth outro: return camera to starting position, fade layers in, then cleanup
+    // After last step finishes, enter browse mode (stay on step 8)
+    const lastCardDelay = STEP_CARDS[STEP_CARDS.length - 1].delayMs;
     objectTimersRef.current.push(setTimeout(() => {
-      setActiveStep(null);
-      const saved = startCamRef.current;
-      const cam = viewerRef.current?.getCamera();
-      if (saved && cam) {
-        const startPos = cam.position.clone();
-        const endPos = saved.pos;
-        const t0 = performance.now();
-        function animateBack() {
-          const p = Math.min((performance.now() - t0) / 2500, 1);
-          const ease = p * p * (3 - 2 * p);
-          cam!.position.lerpVectors(startPos, endPos, ease);
-          if (p < 1) requestAnimationFrame(animateBack);
-        }
-        animateBack();
-      }
-    }, lastDelay + 1000));
-
-    objectTimersRef.current.push(setTimeout(() => {
-      viewerRef.current?.fadeRestoreLayers(2000);
-    }, lastDelay + 2500));
-
-    objectTimersRef.current.push(setTimeout(() => {
-      cleanupAll();
-    }, lastDelay + 5000));
+      setBrowsing(true);
+    }, lastCardDelay + 2000));
   }, [triggered, viewerRef, playAnnotations, onNarrate]);
 
   // ── Step card overlay ──
@@ -538,6 +562,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
         zIndex: 20,
       }}
     >
+      {/* Header with step number, title, counter, and X */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <div style={{
           width: 28, height: 28, borderRadius: "50%",
@@ -549,31 +574,74 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
         <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.02em" }}>
           {card.title}
         </div>
-        <div style={{
-          marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.4)",
-          fontFamily: "var(--font-mono, monospace)", fontWeight: 500,
-        }}>
-          {card.num}/{STEP_CARDS.length}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{
+            fontSize: 10, color: "rgba(255,255,255,0.4)",
+            fontFamily: "var(--font-mono, monospace)", fontWeight: 500,
+          }}>
+            {card.num}/{STEP_CARDS.length}
+          </span>
+          {browsing && (
+            <button
+              onClick={exitSimulation}
+              style={{
+                background: "none", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6,
+                color: "rgba(255,255,255,0.5)", cursor: "pointer", padding: "2px 5px",
+                fontSize: 12, lineHeight: 1, display: "flex", alignItems: "center",
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
+      {/* Detail text */}
       <div style={{
         fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.7)",
         fontWeight: 400,
       }}>
         {card.detail}
       </div>
-      {/* Progress dots */}
-      <div style={{ display: "flex", gap: 5, marginTop: 12 }}>
-        {STEP_CARDS.map(s => (
-          <div
-            key={s.num}
+      {/* Navigation: arrows + clickable dots */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+        {browsing && (
+          <button
+            onClick={() => goToStep(Math.max(1, card.num - 1))}
+            disabled={card.num === 1}
             style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: s.num === card.num ? card.color : s.num < card.num ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
-              transition: "background 0.3s",
+              background: "none", border: "none", color: card.num === 1 ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)",
+              cursor: card.num === 1 ? "default" : "pointer", padding: 0, fontSize: 16, lineHeight: 1,
             }}
-          />
-        ))}
+          >
+            ‹
+          </button>
+        )}
+        <div style={{ display: "flex", gap: 5, flex: 1, justifyContent: "center" }}>
+          {STEP_CARDS.map(s => (
+            <div
+              key={s.num}
+              onClick={browsing ? () => goToStep(s.num) : undefined}
+              style={{
+                width: 6, height: 6, borderRadius: "50%",
+                background: s.num === card.num ? card.color : s.num < card.num ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
+                transition: "background 0.3s",
+                cursor: browsing ? "pointer" : "default",
+              }}
+            />
+          ))}
+        </div>
+        {browsing && (
+          <button
+            onClick={() => goToStep(Math.min(STEP_CARDS.length, card.num + 1))}
+            disabled={card.num === STEP_CARDS.length}
+            style={{
+              background: "none", border: "none", color: card.num === STEP_CARDS.length ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.6)",
+              cursor: card.num === STEP_CARDS.length ? "default" : "pointer", padding: 0, fontSize: 16, lineHeight: 1,
+            }}
+          >
+            ›
+          </button>
+        )}
       </div>
     </div>
   ) : null;
