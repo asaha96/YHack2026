@@ -632,7 +632,6 @@ function AppPage() {
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
-          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.02em" }}>Praxis</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

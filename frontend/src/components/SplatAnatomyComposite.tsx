@@ -79,7 +79,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
     const labelRendererRef = useRef<CSS2DRenderer | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
-    const [loadProgress, setLoadProgress] = useState("Initializing world...");
+    const [loadProgress, setLoadProgress] = useState("Loading...");
     const [cameraDebug, setCameraDebug] = useState({ x: 0, y: 0, z: 0, zoom: 0 });
     const cameraDebugFrameRef = useRef(0);
 
@@ -488,22 +488,33 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       const data: LayersMetadata = await res.json();
       const loader = new OBJLoader();
       const layerEntries = Object.entries(data.layers);
-      let layerIdx = 0;
 
+      // Hide anatomy until all parts are loaded for a seamless reveal
+      anatomyGroupRef.current.visible = false;
+
+      const allFetches: { layerName: string; part: typeof data.layers[string]["parts"][number]; promise: Promise<string> }[] = [];
       for (const [layerName, layerData] of layerEntries) {
-        // Report per-layer progress (0.55 → 0.95 range)
-        const layerProgress = 0.55 + (layerIdx / layerEntries.length) * 0.40;
-        const label = layerData.label || layerName;
-        onLoadProgress?.(`Building ${label.toLowerCase()} layer...`, layerProgress);
-        layerIdx++;
+        for (const part of layerData.parts) {
+          allFetches.push({
+            layerName, part,
+            promise: fetch(`/models/${part.file}`).then(r => r.text()).catch(() => ""),
+          });
+        }
+      }
+
+      const results = await Promise.all(allFetches.map(f => f.promise));
+
+      // Build all layer groups from fetched data
+      let idx = 0;
+      for (const [layerName, layerData] of layerEntries) {
         const group = new THREE.Group();
         group.name = layerName;
         group.visible = true;
 
         for (const part of layerData.parts) {
+          const objText = results[idx++];
+          if (!objText) continue;
           try {
-            setLoadProgress(`${layerData.label}: ${part.label}`);
-            const objText = await (await fetch(`/models/${part.file}`)).text();
             const obj = loader.parse(objText);
 
             obj.traverse((child) => {
@@ -517,7 +528,6 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
                   side: layerName === "skin" ? THREE.DoubleSide : THREE.FrontSide,
                   depthWrite: layerName !== "skin",
                 });
-                // Give nerves a subtle glow so they stand out against other layers
                 if (layerName === "nervous") {
                   mat.emissive = new THREE.Color(0x504010);
                   mat.emissiveIntensity = 0.3;
@@ -541,6 +551,9 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         anatomyGroupRef.current.add(group);
         layerGroupsRef.current.set(layerName, group);
       }
+
+      // Reveal anatomy all at once
+      anatomyGroupRef.current.visible = true;
     };
 
     // ── Reactively update anatomy placement when scale/offset change ───
