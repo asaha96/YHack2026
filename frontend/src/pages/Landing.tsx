@@ -144,8 +144,8 @@ export default function Landing() {
         width: "100%", maxWidth: 520,
         padding: "0 24px",
         opacity: intakeVisible ? 1 : 0,
-        transform: intakeVisible ? "translateY(0)" : "translateY(20px)",
-        transition: "opacity 0.8s ease, transform 0.8s ease, filter 0.6s ease",
+        transform: intakeVisible ? "translateY(0) scale(1)" : "translateY(30px) scale(0.97)",
+        transition: "opacity 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), transform 0.9s cubic-bezier(0.22, 0.61, 0.36, 1), filter 0.6s ease",
         filter: isProcessing ? "blur(14px)" : "none",
         pointerEvents: isProcessing ? "none" : "auto",
       }}>

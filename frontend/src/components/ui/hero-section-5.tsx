@@ -88,7 +88,7 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
       const right = new THREE.Vector3(Math.cos(angle + Math.PI) * radius, y, Math.sin(angle + Math.PI) * radius);
 
       for (const pt of [left, right]) {
-        const count = 6 + Math.floor(Math.random() * 4);
+        const count = 2 + Math.floor(Math.random() * 2);
         for (let j = 0; j < count; j++) {
           const geo = geos[Math.floor(Math.random() * geos.length)];
           const spread = j < 2 ? 0 : 0.12;
@@ -100,7 +100,14 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
           );
           mesh.userData.baseY = mesh.position.y;
           mesh.userData.baseZ = mesh.position.z;
+          mesh.userData.baseX = mesh.position.x;
           mesh.userData.normalizedY = t; // 0 = bottom, 1 = top
+          // Per-particle randomness for organic motion
+          mesh.userData.driftX = (Math.random() - 0.5) * 2.0;
+          mesh.userData.driftY = -(0.8 + Math.random() * 1.4); // always falls down
+          mesh.userData.driftZ = (Math.random() - 0.5) * 1.2;
+          mesh.userData.spinSpeed = (Math.random() - 0.5) * 4;
+          mesh.userData.delayJitter = Math.random() * 0.06; // slight timing variation
           group.add(mesh);
           allMeshes.push(mesh);
         }
@@ -117,7 +124,13 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
         cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
         cyl.userData.baseY = cyl.position.y;
         cyl.userData.baseZ = cyl.position.z;
+        cyl.userData.baseX = cyl.position.x;
         cyl.userData.normalizedY = t;
+        cyl.userData.driftX = (Math.random() - 0.5) * 1.5;
+        cyl.userData.driftY = -(0.6 + Math.random() * 1.0);
+        cyl.userData.driftZ = (Math.random() - 0.5) * 0.8;
+        cyl.userData.spinSpeed = (Math.random() - 0.5) * 3;
+        cyl.userData.delayJitter = Math.random() * 0.06;
         group.add(cyl);
         allMeshes.push(cyl);
       }
@@ -134,7 +147,7 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
     let t = 0;
     let callbackFired = false;
     let allGone = false;
-    const DISSOLVE_DURATION = 3000; // ms for DNA to fully disappear
+    const DISSOLVE_DURATION = 1600; // ms for DNA to fully disappear
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
@@ -145,21 +158,38 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
         const elapsed = performance.now() - dissolveStartRef.current;
         const progress = Math.min(1, elapsed / DISSOLVE_DURATION);
 
-        // Dissolve from bottom to top — each piece falls down and backward
+        // Dissolve from bottom to top with organic, eased motion
         for (const mesh of allMeshes) {
           const ny = mesh.userData.normalizedY as number;
-          const fadeStart = ny * 0.85;
+          const jitter = mesh.userData.delayJitter as number;
+          const fadeStart = ny * 0.85 + jitter;
           const fadeDuration = 0.2;
-          const localProgress = Math.max(0, Math.min(1, (progress - fadeStart) / fadeDuration));
+          const linearProgress = Math.max(0, Math.min(1, (progress - fadeStart) / fadeDuration));
 
-          if (localProgress > 0) {
+          if (linearProgress > 0) {
+            // Ease-out cubic: fast start, gentle deceleration
+            const p = linearProgress;
+            const eased = 1 - Math.pow(1 - p, 3);
+            // Ease-in for opacity: slow fade start, accelerates
+            const opacityEased = p * p;
+
             const material = mesh.material as THREE.MeshPhysicalMaterial;
-            material.opacity = 1 - localProgress;
-            mesh.scale.setScalar(1 - localProgress * 0.5);
-            mesh.position.y = (mesh.userData.baseY as number) - localProgress * 1.5;
-            mesh.position.z = (mesh.userData.baseZ as number) - localProgress * 0.3;
+            material.opacity = 1 - opacityEased;
+            mesh.scale.setScalar(1 - eased * 0.6);
+
+            // Each particle drifts in its own random direction
+            const dx = mesh.userData.driftX as number;
+            const dy = mesh.userData.driftY as number;
+            const dz = mesh.userData.driftZ as number;
+            mesh.position.x = (mesh.userData.baseX as number) + eased * dx;
+            mesh.position.y = (mesh.userData.baseY as number) + eased * dy;
+            mesh.position.z = (mesh.userData.baseZ as number) + eased * dz;
+
+            // Spin as it falls
+            mesh.rotation.x += (mesh.userData.spinSpeed as number) * 0.02;
+            mesh.rotation.z += (mesh.userData.spinSpeed as number) * 0.015;
           }
-          if (localProgress >= 1) {
+          if (linearProgress >= 1) {
             mesh.visible = false;
           }
         }
@@ -204,10 +234,10 @@ interface HeroSectionProps {
 
 export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }: HeroSectionProps) {
   const contentFadeStyle: React.CSSProperties = {
-    transition: "opacity 1.3s cubic-bezier(0.4, 0, 0.2, 1), filter 1.3s cubic-bezier(0.4, 0, 0.2, 1), transform 1.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    transition: "opacity 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), filter 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.3s cubic-bezier(0.22, 0.61, 0.36, 1)",
     opacity: fading ? 0 : 1,
     filter: fading ? "blur(6px)" : "none",
-    transform: fading ? "translateY(-12px)" : "none",
+    transform: fading ? "translateY(-16px) scale(0.98)" : "none",
   };
 
   return (
