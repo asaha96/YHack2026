@@ -124,6 +124,24 @@ function makeCheckmark(position: THREE.Vector3, size: number, color: number): TH
   return g;
 }
 
+/** Soft glowing beacon sphere — marks where the camera is focusing */
+function makeBeacon(position: THREE.Vector3, color: number, radius = 8): THREE.Group {
+  const g = new THREE.Group();
+  // Inner bright core
+  g.add(new THREE.Mesh(
+    new THREE.SphereGeometry(radius * 0.3, 12, 12),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.7, transparent: true, opacity: 0.9 }),
+  ));
+  // Outer soft glow
+  g.add(new THREE.Mesh(
+    new THREE.SphereGeometry(radius, 16, 16),
+    new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.12, depthWrite: false }),
+  ));
+  g.position.copy(position);
+  g.name = "_beacon";
+  return g;
+}
+
 // ── Component ────────────────────────────────────────────────────────
 
 export default function SurgicalSimulation({ triggered, viewerRef, playAnnotations, onNarrate }: Props) {
@@ -168,7 +186,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     animFramesRef.current.forEach(id => cancelAnimationFrame(id));
     animFramesRef.current = [];
     // Restore skin layer
-    viewerRef.current?.restoreSkin();
+    viewerRef.current?.restoreFromSurgery();
     if (tumorMeshRef.current) {
       tumorMeshRef.current.geometry.dispose();
       (tumorMeshRef.current.material as THREE.Material).dispose();
@@ -188,6 +206,43 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     surgicalObjectsRef.current = [];
     narrationTimersRef.current.forEach(clearTimeout);
     objectTimersRef.current.forEach(clearTimeout);
+  };
+
+  /** Add a glowing beacon at a point — appears at showMs, fades out at hideMs */
+  const addBeacon = (pos: THREE.Vector3, color: number, showMs: number, hideMs: number) => {
+    const beacon = makeBeacon(pos, color);
+    beacon.frustumCulled = false;
+    beacon.visible = false;
+    beacon.traverse(c => { c.frustumCulled = false; });
+    const ag = viewerRef.current?.getScene()?.getObjectByName("anatomy");
+    if (!ag) return;
+    ag.add(beacon);
+    surgicalObjectsRef.current.push(beacon);
+
+    // Show with pulse-in
+    objectTimersRef.current.push(setTimeout(() => {
+      beacon.visible = true;
+      beacon.scale.setScalar(0.01);
+      const t0 = performance.now();
+      function grow() {
+        const p = Math.min((performance.now() - t0) / 400, 1);
+        beacon.scale.setScalar(p * p * (3 - 2 * p));
+        if (p < 1) requestAnimationFrame(grow);
+      }
+      grow();
+    }, showMs));
+
+    // Fade out
+    objectTimersRef.current.push(setTimeout(() => {
+      const t0 = performance.now();
+      function fade() {
+        const p = Math.min((performance.now() - t0) / 500, 1);
+        beacon.scale.setScalar(1 - p);
+        if (p < 1) requestAnimationFrame(fade);
+        else { beacon.visible = false; }
+      }
+      fade();
+    }, hideMs));
   };
 
   const addObj = (obj: THREE.Object3D, delayMs: number) => {
@@ -227,7 +282,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     // ── Step 1 (0ms): Danger ring — thick red torus around tumor ──
     const dangerRing = makeRing(tp, TUMOR_RADIUS + 5, 2, COLORS.danger);
     addObj(dangerRing, 0);
-    // Camera already zoomed to tumor in trigger effect
+    addBeacon(tp, COLORS.danger, 0, 3300);
 
     // Pulse animation on danger ring
     const pulseStart = performance.now() + 600;
@@ -259,7 +314,8 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       COLORS.approach, 2.5,
     );
     addObj(approachArrow, 3500);
-    panTo(approachMid, 3300, 0.18, 1400); // pull back a bit to see the full arrow
+    addBeacon(tp, COLORS.approach, 3500, 6800);
+    panTo(approachMid, 3300, 0.18, 1400);
 
     // ── Step 3 (7000ms): Hilum arrow — purple arrow to hilum ──
     const hilumTarget: [number, number, number] = [80, -110, 890];
@@ -269,12 +325,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       COLORS.suture, 2,
     );
     addObj(hilumArrow, 7000);
+    addBeacon(new THREE.Vector3(...hilumTarget), COLORS.suture, 7000, 10300);
     panTo(hilumTarget, 6800, 0.12, 1400);
 
     // ── Step 4 (10500ms): Vascular clamp — yellow X-mark ──
     const clampTarget: [number, number, number] = [50, -100, 880];
     const clampMark = makeXMark(new THREE.Vector3(...clampTarget), 10, COLORS.clamp);
     addObj(clampMark, 10500);
+    addBeacon(new THREE.Vector3(...clampTarget), COLORS.clamp, 10500, 13800);
     panTo(clampTarget, 10300, 0.10, 1200);
 
     // ── Step 5 (14000ms): Resection margin — red dashed loop ──
@@ -293,12 +351,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       margin.add(dot);
     });
     addObj(margin, 14000);
-    panTo(TUMOR_POSITION, 13800, 0.20, 1400); // pull back to see the full margin loop
+    addBeacon(tp, COLORS.danger, 14000, 17300);
+    panTo(TUMOR_POSITION, 13800, 0.20, 1400);
 
     // ── Step 6 (17500ms): Checkmark — mass excised ──
     const checkTarget: [number, number, number] = [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18];
     const check = makeCheckmark(new THREE.Vector3(...checkTarget), 14, COLORS.safe);
     addObj(check, 17500);
+    addBeacon(new THREE.Vector3(...checkTarget), COLORS.safe, 17500, 20800);
     panTo(checkTarget, 17300, 0.10, 1200);
 
     // ── Step 7 (21000ms): Suture dots — closure ──
@@ -332,11 +392,13 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       sutureGroup.add(stitch);
     }
     addObj(sutureGroup, 21000);
+    addBeacon(closurePt, COLORS.suture, 21000, 24300);
     panTo(closureTarget, 20800, 0.10, 1200);
 
     // ── Step 8 (24500ms): Reperfusion — green ring at hilum ──
     const finalRing = makeRing(new THREE.Vector3(...hilumTarget), 12, 2, COLORS.safe);
     addObj(finalRing, 24500);
+    addBeacon(new THREE.Vector3(...hilumTarget), COLORS.safe, 24500, 28000);
     panTo(hilumTarget, 24300, 0.14, 1400);
   };
 
@@ -345,7 +407,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     hasPlayedRef.current = true;
 
     // Hide skin so internal structures are visible
-    viewerRef.current?.hideSkin();
+    viewerRef.current?.hideForSurgery();
 
     viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.15, 1500);
 

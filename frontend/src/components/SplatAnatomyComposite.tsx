@@ -62,9 +62,9 @@ export interface LayeredViewerHandle {
   gestureInput: GestureInput;
   /** Smoothly move camera to look at an anatomy-local point */
   zoomToAnatomyPoint: (localPoint: [number, number, number], distance?: number, durationMs?: number) => void;
-  /** Hide/restore skin layer for surgical visibility */
-  hideSkin: () => void;
-  restoreSkin: () => void;
+  /** Hide/restore layers for surgical visibility */
+  hideForSurgery: () => void;
+  restoreFromSurgery: () => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -158,19 +158,19 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         }
         animate();
       },
-      hideSkin: () => {
-        const skinGroup = layerGroupsRef.current.get("skin");
-        if (skinGroup) {
-          skinGroup.visible = false;
-          setLayerVisibility(prev => ({ ...prev, skin: false }));
-        }
+      hideForSurgery: () => {
+        ["skin", "muscles", "skeleton"].forEach(name => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) group.visible = false;
+        });
+        setLayerVisibility(prev => ({ ...prev, skin: false, muscles: false, skeleton: false }));
       },
-      restoreSkin: () => {
-        const skinGroup = layerGroupsRef.current.get("skin");
-        if (skinGroup) {
-          skinGroup.visible = true;
-          setLayerVisibility(prev => ({ ...prev, skin: true }));
-        }
+      restoreFromSurgery: () => {
+        ["skin", "muscles", "skeleton"].forEach(name => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) group.visible = true;
+        });
+        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, skeleton: true }));
       },
     }));
 
