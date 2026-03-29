@@ -30,20 +30,20 @@ find_python() {
     "python3.11"
     "/opt/homebrew/bin/python3.11"
     "python3.12"
-    "/opt/homebrew/bin/python3.13"
     "python3.13"
+    "/opt/homebrew/bin/python3.13"
     "python3"
   )
 
   for candidate in "${candidates[@]}"; do
     [ -z "$candidate" ] && continue
     if command -v "$candidate" >/dev/null 2>&1; then
-      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
+      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
         echo "$candidate"
         return 0
       fi
     elif [ -x "$candidate" ]; then
-      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
+      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
         echo "$candidate"
         return 0
       fi
@@ -141,8 +141,8 @@ fi
 PYTHON_CMD="$(find_python || true)"
 if [ -z "$PYTHON_CMD" ]; then
   echo ""
-  echo "ERROR: Praxis needs Python 3.11 or 3.12 for the backend and LiveKit agent."
-  echo "Install Python 3.11/3.12 and rerun the script."
+  echo "ERROR: Praxis needs Python 3.11–3.13 for the backend and LiveKit agent."
+  echo "Install Python 3.11/3.12/3.13 and rerun the script."
   exit 1
 fi
 
@@ -184,7 +184,7 @@ fi
 echo ""
 echo "Preparing backend environment..."
 if [ -x backend/.venv/bin/python ]; then
-  if ! backend/.venv/bin/python -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
+  if ! backend/.venv/bin/python -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
     echo "Rebuilding backend virtualenv with Python 3.11/3.12..."
     rm -rf backend/.venv
   fi

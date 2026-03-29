@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as THREE from "three";
-import LayeredAnatomyViewer from "../components/LayeredAnatomyViewer";
-import type { LayeredViewerHandle } from "../components/LayeredAnatomyViewer";
+import SplatAnatomyComposite from "../components/SplatAnatomyComposite";
+import type { LayeredViewerHandle } from "../components/SplatAnatomyComposite";
 import SplatViewer from "../components/SplatViewer";
 import HandTracker from "../components/HandTracker";
 import ChatPanel from "../components/ChatPanel";
@@ -574,8 +574,9 @@ function AppPage() {
 
       {/* Full-screen 3D Viewer */}
       <main style={{ position: "relative", overflow: "hidden" }}>
-        <LayeredAnatomyViewer
+        <SplatAnatomyComposite
           ref={viewerRef}
+          worldId={import.meta.env.VITE_WORLD_LABS_WORLD_ID}
           onOrganClick={handleOrganClick}
           onIncisionTrace={handleIncisionTrace}
           modifications={allVisibleMods}
