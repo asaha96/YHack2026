@@ -1,6 +1,6 @@
 import React from "react";
 import { interpolate, useCurrentFrame } from "remotion";
-import { C, fade, mono, sans, serif } from "../constants";
+import { C, fade, mono } from "../constants";
 import { WindowChrome } from "./Panels";
 
 /**
@@ -23,12 +23,15 @@ export const VideoDropIn: React.FC<{
   overlayContent?: React.ReactNode;
   /** Overall scale — useful for fitting in constrained layouts */
   scale?: number;
+  /** Optional placeholder badge for mock footage */
+  showFootageBadge?: boolean;
 }> = ({
   children,
   windowTitle = "praxis — localhost:5173",
   stepLabel,
   overlayContent,
   scale = 1,
+  showFootageBadge = false,
 }) => {
   const W = 1320 * scale;
   const H = 760 * scale;
@@ -60,35 +63,36 @@ export const VideoDropIn: React.FC<{
             }}
           />
 
-          {/* FOOTAGE PLACEHOLDER badge — remove when real video is added */}
-          <div
-            style={{
-              position: "absolute",
-              top: 16,
-              right: 16,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "7px 14px",
-              borderRadius: 999,
-              background: "rgba(18,14,11,0.54)",
-              border: "1px solid rgba(255,255,255,0.14)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <RecDot />
-            <span
+          {showFootageBadge ? (
+            <div
               style={{
-                fontFamily: mono,
-                fontSize: 10,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: "rgba(245,240,230,0.8)",
+                position: "absolute",
+                top: 16,
+                right: 16,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "7px 14px",
+                borderRadius: 999,
+                background: "rgba(18,14,11,0.54)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                backdropFilter: "blur(8px)",
               }}
             >
-              drop footage here
-            </span>
-          </div>
+              <RecDot />
+              <span
+                style={{
+                  fontFamily: mono,
+                  fontSize: 10,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "rgba(245,240,230,0.8)",
+                }}
+              >
+                drop footage here
+              </span>
+            </div>
+          ) : null}
 
           {/* Overlay content (pets, annotations) */}
           {overlayContent && (
@@ -212,26 +216,20 @@ export const UploadMock: React.FC = () => {
         <div style={{ fontSize: 56 }}>🫁</div>
         <div
           style={{
-            fontFamily: serif,
-            fontSize: 26,
-            color: C.ink,
-            letterSpacing: "-0.03em",
-            textAlign: "center",
+            width: 280,
+            height: 20,
+            borderRadius: 999,
+            background: "rgba(47,39,31,0.08)",
           }}
-        >
-          Drop your CT or MRI scan here
-        </div>
+        />
         <div
           style={{
-            fontFamily: mono,
-            fontSize: 11,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: C.inkMuted,
+            width: 220,
+            height: 10,
+            borderRadius: 999,
+            background: "rgba(47,39,31,0.05)",
           }}
-        >
-          DICOM · NIfTI · Any format, really
-        </div>
+        />
       </div>
 
       {/* File being uploaded */}
@@ -257,41 +255,33 @@ export const UploadMock: React.FC = () => {
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <span style={{ fontSize: 22 }}>📁</span>
-            <div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div
                 style={{
-                  fontFamily: mono,
-                  fontSize: 12,
-                  color: C.ink,
-                  letterSpacing: "0.02em",
+                  width: 180,
+                  height: 10,
+                  borderRadius: 999,
+                  background: "rgba(47,39,31,0.08)",
                 }}
-              >
-                patient_4471_ct.dcm
-              </div>
+              />
               <div
                 style={{
-                  fontFamily: mono,
-                  fontSize: 10,
-                  color: C.inkMuted,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                  marginTop: 3,
+                  width: 110,
+                  height: 8,
+                  borderRadius: 999,
+                  background: "rgba(47,39,31,0.05)",
                 }}
-              >
-                218 MB · DICOM Series
-              </div>
+              />
             </div>
           </div>
           <div
             style={{
-              fontFamily: mono,
-              fontSize: 11,
-              color: C.sage,
-              letterSpacing: "0.1em",
+              width: 42,
+              height: 10,
+              borderRadius: 999,
+              background: "rgba(130,144,125,0.2)",
             }}
-          >
-            {Math.round(progress)}%
-          </div>
+          />
         </div>
         <div
           style={{
@@ -400,15 +390,12 @@ export const ReconstructMock: React.FC = () => {
       >
         <div
           style={{
-            fontFamily: mono,
-            fontSize: 11,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: "rgba(200,188,176,0.7)",
+            width: 220,
+            height: 10,
+            borderRadius: 999,
+            background: "rgba(255,255,255,0.08)",
           }}
-        >
-          Reconstructing volume · {Math.round(buildProgress)}%
-        </div>
+        />
         <div
           style={{
             width: "100%",
@@ -431,12 +418,12 @@ export const ReconstructMock: React.FC = () => {
 
       {/* Labels */}
       {[
-        { x: "22%", y: "32%", label: "left lung", color: C.sage },
-        { x: "64%", y: "42%", label: "portal vein", color: C.ember },
-        { x: "55%", y: "68%", label: "safe plane", color: "rgba(200,188,176,0.7)" },
+        { x: "22%", y: "32%", color: C.sage },
+        { x: "64%", y: "42%", color: C.ember },
+        { x: "55%", y: "68%", color: "rgba(200,188,176,0.7)" },
       ].map((tag) => (
         <div
-          key={tag.label}
+          key={`${tag.x}-${tag.y}`}
           style={{
             position: "absolute",
             left: tag.x,
@@ -455,17 +442,14 @@ export const ReconstructMock: React.FC = () => {
               boxShadow: `0 0 8px ${tag.color}`,
             }}
           />
-          <span
+          <div
             style={{
-              fontFamily: mono,
-              fontSize: 10,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: tag.color,
+              width: 56,
+              height: 8,
+              borderRadius: 999,
+              background: `${tag.color}33`,
             }}
-          >
-            {tag.label}
-          </span>
+          />
         </div>
       ))}
     </div>
@@ -590,29 +574,23 @@ export const HandTrackMock: React.FC = () => {
             opacity: pulse,
           }}
         >
-          <span
+          <div
             style={{
-              fontFamily: mono,
-              fontSize: 12,
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-              color: "rgba(232,200,122,0.9)",
+              width: 180,
+              height: 10,
+              borderRadius: 999,
+              background: "rgba(232,200,122,0.45)",
             }}
-          >
-            Gesture Detected: PINCH
-          </span>
+          />
         </div>
         <div
           style={{
-            fontFamily: mono,
-            fontSize: 10,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "rgba(200,188,176,0.5)",
+            width: 120,
+            height: 8,
+            borderRadius: 999,
+            background: "rgba(200,188,176,0.18)",
           }}
-        >
-          Hand tracking active · 30fps
-        </div>
+        />
       </div>
 
       {/* Corner HUD */}
@@ -626,19 +604,16 @@ export const HandTrackMock: React.FC = () => {
           gap: 6,
         }}
       >
-        {["MEDIAPIPE HANDS", "CONFIDENCE 94%", "LANDMARKS 21"].map((t) => (
+        {[68, 88, 54].map((width, i) => (
           <div
-            key={t}
+            key={i}
             style={{
-              fontFamily: mono,
-              fontSize: 10,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: "rgba(130,144,125,0.7)",
+              width,
+              height: 8,
+              borderRadius: 999,
+              background: "rgba(130,144,125,0.28)",
             }}
-          >
-            {t}
-          </div>
+          />
         ))}
       </div>
     </div>
@@ -647,7 +622,6 @@ export const HandTrackMock: React.FC = () => {
 
 export const AIMock: React.FC = () => {
   const frame = useCurrentFrame();
-  const cursorBlink = Math.floor(frame / 18) % 2 === 0;
   const thirdMessageOpacity = interpolate(frame, [60, 90], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -668,29 +642,17 @@ export const AIMock: React.FC = () => {
     >
       <div
         style={{
-          fontFamily: serif,
-          fontSize: 20,
-          color: C.ink,
-          letterSpacing: "-0.03em",
+          width: 240,
+          height: 18,
+          borderRadius: 999,
+          background: "rgba(47,39,31,0.08)",
           marginBottom: 4,
         }}
-      >
-        Surgical Guidance Assistant
-      </div>
+      />
 
       {(
-        [
-          [
-            "surgeon",
-            "Reconstruction looks good. What's the safest approach for the hepatectomy?",
-          ],
-          [
-            "assistant",
-            "Recommend a right subcostal incision, 2 cm below the costal margin. Maintain 12–15 mm clearance from the hepatic artery throughout. The portal vein bifurcation is atypically positioned in this patient — flag it before clamping.",
-          ],
-          ["surgeon", "Any contraindications I should know about?"],
-        ] as [string, string][]
-      ).map(([role, body], i) => (
+        ["surgeon", "assistant", "surgeon"] as const
+      ).map((role, i) => (
         <div
           key={i}
           style={{
@@ -707,25 +669,35 @@ export const AIMock: React.FC = () => {
         >
           <div
             style={{
-              fontFamily: mono,
-              fontSize: 10,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: C.inkMuted,
-              marginBottom: 8,
+              width: role === "surgeon" ? 48 : 68,
+              height: 8,
+              borderRadius: 999,
+              background: "rgba(47,39,31,0.12)",
+              marginBottom: 12,
             }}
-          >
-            {role === "surgeon" ? "You" : "Praxis AI"}
-          </div>
-          <div
-            style={{
-              fontFamily: sans,
-              fontSize: 15,
-              lineHeight: 1.65,
-              color: C.ink,
-            }}
-          >
-            {body}
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {[100, 92, role === "assistant" ? 86 : 70].map((width, index) => (
+              <div
+                key={index}
+                style={{
+                  width: `${width}%`,
+                  height: 10,
+                  borderRadius: 999,
+                  background: "rgba(47,39,31,0.08)",
+                }}
+              />
+            ))}
+            {role === "assistant" ? (
+              <div
+                style={{
+                  width: "64%",
+                  height: 10,
+                  borderRadius: 999,
+                  background: "rgba(47,39,31,0.08)",
+                }}
+              />
+            ) : null}
           </div>
         </div>
       ))}
@@ -753,16 +725,14 @@ export const AIMock: React.FC = () => {
             }}
           />
         ))}
-        <span
+        <div
           style={{
-            fontFamily: mono,
-            fontSize: 10,
-            color: C.inkMuted,
-            letterSpacing: "0.1em",
+            width: 120,
+            height: 8,
+            borderRadius: 999,
+            background: "rgba(47,39,31,0.08)",
           }}
-        >
-          Praxis is thinking…
-        </span>
+        />
       </div>
     </div>
   );
@@ -772,11 +742,11 @@ export const SummaryMock: React.FC = () => {
   const frame = useCurrentFrame();
 
   const steps = [
-    { label: "Patient", detail: "Case 4471-B · Male · 58y · High risk", done: true },
-    { label: "Incision", detail: "Right subcostal, 2 cm below costal margin", done: true },
-    { label: "Approach", detail: "Left lateral — avoid hepatic artery", done: true },
-    { label: "Clearance", detail: "12 mm minimum from portal vein bifurcation", done: true },
-    { label: "Contingency", detail: "Flag atypical portal vein before clamping", done: false },
+    { done: true },
+    { done: true },
+    { done: true },
+    { done: true },
+    { done: false },
   ];
 
   const exportProgress = Math.min(100, ((frame - 80) / 60) * 100);
@@ -796,25 +766,20 @@ export const SummaryMock: React.FC = () => {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
         <div
           style={{
-            fontFamily: serif,
-            fontSize: 26,
-            color: C.ink,
-            letterSpacing: "-0.04em",
+            width: 220,
+            height: 20,
+            borderRadius: 999,
+            background: "rgba(47,39,31,0.08)",
           }}
-        >
-          Surgical Plan
-        </div>
+        />
         <div
           style={{
-            fontFamily: mono,
-            fontSize: 10,
-            letterSpacing: "0.14em",
-            textTransform: "uppercase",
-            color: C.inkMuted,
+            width: 160,
+            height: 8,
+            borderRadius: 999,
+            background: "rgba(47,39,31,0.05)",
           }}
-        >
-          Generated · Case 4471-B
-        </div>
+        />
         <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
           {steps.map((step, i) => (
             <div
@@ -850,28 +815,23 @@ export const SummaryMock: React.FC = () => {
               >
                 {step.done ? "✓" : `0${i + 1}`}
               </div>
-              <div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div
                   style={{
-                    fontFamily: serif,
-                    fontSize: 15,
-                    color: C.ink,
-                    letterSpacing: "-0.02em",
+                    width: 96,
+                    height: 10,
+                    borderRadius: 999,
+                    background: "rgba(47,39,31,0.08)",
                   }}
-                >
-                  {step.label}
-                </div>
+                />
                 <div
                   style={{
-                    fontFamily: sans,
-                    fontSize: 12,
-                    color: C.inkSoft,
-                    lineHeight: 1.5,
-                    marginTop: 3,
+                    width: 260,
+                    height: 8,
+                    borderRadius: 999,
+                    background: "rgba(47,39,31,0.05)",
                   }}
-                >
-                  {step.detail}
-                </div>
+                />
               </div>
             </div>
           ))}
@@ -901,15 +861,13 @@ export const SummaryMock: React.FC = () => {
           <div style={{ fontSize: 32, textAlign: "center" }}>📄</div>
           <div
             style={{
-              fontFamily: serif,
-              fontSize: 18,
-              color: C.ink,
-              letterSpacing: "-0.03em",
-              textAlign: "center",
+              width: 128,
+              height: 14,
+              borderRadius: 999,
+              background: "rgba(47,39,31,0.08)",
+              alignSelf: "center",
             }}
-          >
-            Export to PDF
-          </div>
+          />
           <div
             style={{
               height: 4,
@@ -930,17 +888,14 @@ export const SummaryMock: React.FC = () => {
           </div>
           <div
             style={{
-              fontFamily: mono,
-              fontSize: 10,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: C.sage,
-              textAlign: "center",
+              width: 92,
+              height: 8,
+              borderRadius: 999,
+              background: "rgba(130,144,125,0.25)",
+              alignSelf: "center",
               opacity: frame > 140 ? 1 : 0,
             }}
-          >
-            Ready · 2 pages
-          </div>
+          />
         </div>
       </div>
     </div>

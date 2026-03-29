@@ -2,7 +2,6 @@ import { staticFile } from "remotion";
 import type { SubtitleEntry, SubtitleStyle } from "./components/Subtitles";
 
 export const MOVIE_FPS = 30;
-const AUDIO_PADDING_FRAMES = 6;
 const LINE_GAP_FRAMES = 8;
 const SCENE_TAIL_FRAMES = 24;
 
@@ -16,6 +15,8 @@ export type SceneId =
   | "summary"
   | "hero"
   | "closing";
+
+export type SpeakerId = "nik" | "sujal" | "aritra" | "vedant";
 
 export interface SceneTiming {
   id: SceneId;
@@ -36,163 +37,124 @@ interface SceneTemplate {
 
 interface SubtitleTemplate {
   sceneId: SceneId;
+  speaker: SpeakerId;
   offsetInFrames: number;
   minDurationInFrames: number;
   text: string;
   style?: SubtitleStyle;
-  audio: string;
+  audio?: string;
 }
 
 const SCENE_TEMPLATES: SceneTemplate[] = [
-  { id: "title", minDurationInFrames: 180 },
-  { id: "problem", minDurationInFrames: 180 },
-  { id: "upload", minDurationInFrames: 180 },
-  { id: "reconstruct", minDurationInFrames: 180 },
-  { id: "handTracking", minDurationInFrames: 180 },
-  { id: "ai", minDurationInFrames: 180 },
-  { id: "summary", minDurationInFrames: 180 },
-  { id: "hero", minDurationInFrames: 180 },
-  { id: "closing", minDurationInFrames: 150 },
+  { id: "title", minDurationInFrames: 200 },
+  { id: "problem", minDurationInFrames: 200 },
+  { id: "upload", minDurationInFrames: 200 },
+  { id: "reconstruct", minDurationInFrames: 200 },
+  { id: "handTracking", minDurationInFrames: 200 },
+  { id: "ai", minDurationInFrames: 200 },
+  { id: "summary", minDurationInFrames: 200 },
+  { id: "hero", minDurationInFrames: 200 },
+  { id: "closing", minDurationInFrames: 200 },
 ];
 
 const SUBTITLE_TEMPLATES: SubtitleTemplate[] = [
+  // ── 60 second cut: one narration block per scene, one uploaded file per speaker switch
   {
     sceneId: "title",
-    offsetInFrames: 15,
-    minDurationInFrames: 71,
-    text: "Meet Praxis.",
+    speaker: "nik",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "Every year, 250,000 surgical complications happen in the US, and a quarter are preventable.",
     style: "punchline",
-    audio: "line-01.mp3",
-  },
-  {
-    sceneId: "title",
-    offsetInFrames: 90,
-    minDurationInFrames: 79,
-    text: "It knows your patient before you do.",
-    audio: "line-02.mp3",
   },
   {
     sceneId: "problem",
-    offsetInFrames: 15,
-    minDurationInFrames: 136,
-    text: "Most surgeons see their patient's anatomy for the first time. In the OR.",
-    audio: "line-03.mp3",
-  },
-  {
-    sceneId: "problem",
-    offsetInFrames: 160,
-    minDurationInFrames: 81,
-    text: "Surgeons practice on real patients. Which is… fine. (It's not fine.)",
-    audio: "line-04.mp3",
+    speaker: "sujal",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "Praxis lets surgeons upload a patient scan, see their exact anatomy, and rehearse before the first incision.",
+    style: "punchline",
   },
   {
     sceneId: "upload",
-    offsetInFrames: 10,
-    minDurationInFrames: 61,
-    text: "But we thought we could build something better.",
-    style: "punchline",
-    audio: "line-05.mp3",
-  },
-  {
-    sceneId: "upload",
-    offsetInFrames: 75,
-    minDurationInFrames: 94,
-    text: "Upload a CT or MRI scan. Any scan. Yes, even that one.",
-    audio: "line-06.mp3",
+    speaker: "aritra",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "Start with a CT, MRI, or PET scan. Praxis processes roughly 48 million voxels in under 90 seconds.",
   },
   {
     sceneId: "reconstruct",
-    offsetInFrames: 10,
-    minDurationInFrames: 89,
-    text: "Praxis reconstructs the full 3D anatomy in seconds.",
-    audio: "line-07.mp3",
-  },
-  {
-    sceneId: "reconstruct",
-    offsetInFrames: 103,
-    minDurationInFrames: 68,
-    text: "Your patient's actual liver. Their actual heart.",
-    audio: "line-08.mp3",
+    speaker: "vedant",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "We turn that scan into a navigable 3D world model of the patient's actual anatomy.",
+    style: "punchline",
   },
   {
     sceneId: "handTracking",
-    offsetInFrames: 10,
-    minDurationInFrames: 81,
-    text: "Rehearse the operation with your real hands.",
-    audio: "line-09.mp3",
-  },
-  {
-    sceneId: "handTracking",
-    offsetInFrames: 95,
-    minDurationInFrames: 76,
-    text: "No $50k haptic gloves. Just a webcam and courage.",
-    audio: "line-10.mp3",
+    speaker: "nik",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "Then surgeons rehearse the procedure with webcam hand tracking, no expensive hardware required.",
   },
   {
     sceneId: "ai",
-    offsetInFrames: 8,
-    minDurationInFrames: 71,
-    text: "Stuck? Ask the AI anything.",
-    style: "punchline",
-    audio: "line-11.mp3",
-  },
-  {
-    sceneId: "ai",
-    offsetInFrames: 83,
-    minDurationInFrames: 86,
-    text: "Like a brilliant colleague who never says 'just Google it.'",
-    audio: "line-12.mp3",
+    speaker: "vedant",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "They can compare surgical approaches and use AI to pull relevant case studies and recommendations.",
   },
   {
     sceneId: "summary",
-    offsetInFrames: 8,
-    minDurationInFrames: 81,
-    text: "Export the full surgical plan to PDF.",
-    audio: "line-13.mp3",
-  },
-  {
-    sceneId: "summary",
-    offsetInFrames: 93,
-    minDurationInFrames: 78,
-    text: "Print it. Frame it. Impress your attendings.",
-    audio: "line-14.mp3",
+    speaker: "aritra",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "When they're done, Praxis exports an annotated surgical plan the whole team can use.",
   },
   {
     sceneId: "hero",
-    offsetInFrames: 8,
-    minDurationInFrames: 81,
-    text: "Workflow. Anatomy. Guidance. All in one platform.",
-    audio: "line-15.mp3",
-  },
-  {
-    sceneId: "hero",
-    offsetInFrames: 93,
-    minDurationInFrames: 76,
-    text: "Because the OR is not the place to wing it.",
-    audio: "line-16.mp3",
-  },
-  {
-    sceneId: "closing",
-    offsetInFrames: 15,
-    minDurationInFrames: 66,
-    text: "Praxis.",
+    speaker: "sujal",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "We're building the rehearsal layer for surgery, so preparation becomes patient-specific instead of guesswork.",
     style: "punchline",
-    audio: "line-17.mp3",
   },
   {
     sceneId: "closing",
-    offsetInFrames: 85,
-    minDurationInFrames: 54,
-    text: "Practice makes perfect. Now you can.",
-    audio: "line-18.mp3",
+    speaker: "nik",
+    offsetInFrames: 20,
+    minDurationInFrames: 156,
+    text: "Praxis helps teams practice on the patient they're about to treat, not the one in the textbook.",
+    style: "punchline",
   },
 ];
 
-const toFrameCount = (seconds: number) =>
-  Math.max(1, Math.ceil(seconds * MOVIE_FPS) + AUDIO_PADDING_FRAMES);
+const withAudioAssignedAtSpeakerSwitches = (
+  entries: SubtitleTemplate[]
+): SubtitleTemplate[] => {
+  let previousSpeaker: SpeakerId | null = null;
+  let segmentIndex = 0;
+
+  return entries.map((entry) => {
+    if (entry.speaker !== previousSpeaker) {
+      previousSpeaker = entry.speaker;
+      segmentIndex += 1;
+
+      return {
+        ...entry,
+        audio: `line-${String(segmentIndex).padStart(2, "0")}.mp3`,
+      };
+    }
+
+    return entry;
+  });
+};
+
+const TIMED_SUBTITLE_TEMPLATES =
+  withAudioAssignedAtSpeakerSwitches(SUBTITLE_TEMPLATES);
 
 export const buildTimelineData = (
-  audioDurationsInSeconds: Record<string, number | undefined>
+  _audioDurationsInSeconds: Record<string, number | undefined>
 ): TimelineData => {
   const scenes: SceneTiming[] = [];
   const subtitles: SubtitleEntry[] = [];
@@ -200,30 +162,25 @@ export const buildTimelineData = (
   let currentSceneStart = 0;
 
   for (const scene of SCENE_TEMPLATES) {
-    const sceneEntries = SUBTITLE_TEMPLATES.filter(
+    const sceneEntries = TIMED_SUBTITLE_TEMPLATES.filter(
       (entry) => entry.sceneId === scene.id
     );
 
     let previousLineEndExclusive = 0;
 
     for (const entry of sceneEntries) {
-      const audioFrames = audioDurationsInSeconds[entry.audio]
-        ? toFrameCount(audioDurationsInSeconds[entry.audio] as number)
-        : 0;
-
-      const lineDurationInFrames = Math.max(
-        entry.minDurationInFrames,
-        audioFrames
-      );
+      // Keep the edit locked to the 60 second cut. New narration uploads
+      // should be recorded to fit these timings rather than stretching scenes.
+      const lineDurationInFrames = entry.minDurationInFrames;
 
       const plannedStart = entry.offsetInFrames;
       const safeStart =
         previousLineEndExclusive === 0
           ? plannedStart
           : Math.max(
-              plannedStart,
-              previousLineEndExclusive + LINE_GAP_FRAMES
-            );
+            plannedStart,
+            previousLineEndExclusive + LINE_GAP_FRAMES
+          );
 
       const lineEndExclusive = safeStart + lineDurationInFrames;
       previousLineEndExclusive = lineEndExclusive;
@@ -300,7 +257,11 @@ const resolveAudioDurationInNode = async (audio: string) => {
 
 export const resolveTimelineData = async (): Promise<TimelineData> => {
   const durations = await Promise.all(
-    SUBTITLE_TEMPLATES.map(async (entry) => {
+    TIMED_SUBTITLE_TEMPLATES
+      .filter((entry): entry is SubtitleTemplate & { audio: string } =>
+        Boolean(entry.audio)
+      )
+      .map(async (entry) => {
       try {
         const duration =
           typeof document === "undefined"
@@ -315,7 +276,7 @@ export const resolveTimelineData = async (): Promise<TimelineData> => {
         );
         return [entry.audio, undefined] as const;
       }
-    })
+      })
   );
 
   return buildTimelineData(Object.fromEntries(durations));

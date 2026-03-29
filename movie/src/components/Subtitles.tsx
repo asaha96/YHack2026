@@ -9,7 +9,7 @@ export interface SubtitleEntry {
   to: number;         // global frame the subtitle disappears
   text: string;
   style?: SubtitleStyle;
-  audio: string;      // filename inside public/narration/, e.g. "line-01.mp3"
+  audio?: string;     // filename inside public/narration/, e.g. "line-01.mp3"
 }
 
 const FADE_FRAMES = 10;
@@ -24,15 +24,19 @@ export const Subtitles: React.FC<{ entries: SubtitleEntry[] }> = ({ entries }) =
   // Render audio players for every line (each wrapped in a Sequence so it
   // fires at the right global frame). Rendered unconditionally so Remotion
   // can seek correctly during render.
-  const audioTracks = entries.map((entry, i) => (
-    <Sequence
-      key={`audio-${i}`}
-      from={entry.from}
-      durationInFrames={entry.to - entry.from + 1 + FADE_FRAMES}
-    >
-      <Audio src={staticFile(`narration/${entry.audio}`)} />
-    </Sequence>
-  ));
+  const audioTracks = entries.flatMap((entry, i) =>
+    entry.audio
+      ? [
+        <Sequence
+          key={`audio-${i}`}
+          from={entry.from}
+          durationInFrames={entry.to - entry.from + 1 + FADE_FRAMES}
+        >
+          <Audio src={staticFile(`narration/${entry.audio}`)} />
+        </Sequence>,
+      ]
+      : []
+  );
 
   if (active.length === 0) return <>{audioTracks}</>;
 
