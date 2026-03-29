@@ -1,10 +1,26 @@
 import * as React from "react";
 import * as THREE from "three";
-import { Link } from "react-router-dom";
 
-function DnaHelix() {
+interface DnaHelixProps {
+  dissolving: boolean;
+  onDissolveComplete?: () => void;
+}
+
+function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
   const mountRef = React.useRef<HTMLDivElement>(null);
   const frameRef = React.useRef<number | null>(null);
+  const dissolvingRef = React.useRef(false);
+  const dissolveStartRef = React.useRef(0);
+  const meshesRef = React.useRef<THREE.Mesh[]>([]);
+  const onCompleteRef = React.useRef(onDissolveComplete);
+  onCompleteRef.current = onDissolveComplete;
+
+  React.useEffect(() => {
+    if (dissolving && !dissolvingRef.current) {
+      dissolvingRef.current = true;
+      dissolveStartRef.current = performance.now();
+    }
+  }, [dissolving]);
 
   React.useEffect(() => {
     const el = mountRef.current;
@@ -12,8 +28,8 @@ function DnaHelix() {
 
     const scene = new THREE.Scene();
     const cam = new THREE.PerspectiveCamera(28, el.clientWidth / el.clientHeight, 0.1, 200);
-    cam.position.set(3, 0.5, 11);
-    cam.lookAt(0, 0, 0);
+    cam.position.set(0, 0.5, 11);
+    cam.lookAt(-3, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -37,7 +53,6 @@ function DnaHelix() {
     group.rotation.x = 0.08;
     scene.add(group);
 
-    // Thin spheres for the helix strands
     const geos = [
       new THREE.SphereGeometry(0.09, 8, 8),
       new THREE.SphereGeometry(0.065, 7, 7),
@@ -47,7 +62,7 @@ function DnaHelix() {
     const mats: THREE.Material[] = [];
 
     const mat = (color: number, rough: number) => {
-      const m = new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: 0.02, clearcoat: 0.5, clearcoatRoughness: 0.15 });
+      const m = new THREE.MeshPhysicalMaterial({ color, roughness: rough, metalness: 0.02, clearcoat: 0.5, clearcoatRoughness: 0.15, transparent: true });
       mats.push(m);
       return m;
     };
@@ -61,8 +76,9 @@ function DnaHelix() {
 
     const points = 120;
     const height = 18;
-    const radius = 1.2; // thinner radius
+    const radius = 1.2;
     const turns = 5;
+    const allMeshes: THREE.Mesh[] = [];
 
     for (let i = 0; i < points; i++) {
       const t = i / points;
@@ -71,9 +87,8 @@ function DnaHelix() {
       const left = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
       const right = new THREE.Vector3(Math.cos(angle + Math.PI) * radius, y, Math.sin(angle + Math.PI) * radius);
 
-      // Strand particles — fewer, smaller
       for (const pt of [left, right]) {
-        const count = 6 + Math.floor(Math.random() * 4);
+        const count = 2 + Math.floor(Math.random() * 2);
         for (let j = 0; j < count; j++) {
           const geo = geos[Math.floor(Math.random() * geos.length)];
           const spread = j < 2 ? 0 : 0.12;
@@ -83,11 +98,21 @@ function DnaHelix() {
             pt.y + (Math.random() - 0.5) * spread * 0.4,
             pt.z + (Math.random() - 0.5) * spread,
           );
+          mesh.userData.baseY = mesh.position.y;
+          mesh.userData.baseZ = mesh.position.z;
+          mesh.userData.baseX = mesh.position.x;
+          mesh.userData.normalizedY = t; // 0 = bottom, 1 = top
+          // Per-particle randomness for organic motion
+          mesh.userData.driftX = (Math.random() - 0.5) * 2.0;
+          mesh.userData.driftY = -(0.8 + Math.random() * 1.4); // always falls down
+          mesh.userData.driftZ = (Math.random() - 0.5) * 1.2;
+          mesh.userData.spinSpeed = (Math.random() - 0.5) * 4;
+          mesh.userData.delayJitter = Math.random() * 0.06; // slight timing variation
           group.add(mesh);
+          allMeshes.push(mesh);
         }
       }
 
-      // Rungs — thin cylinder bars connecting the two strands
       if (i % 3 === 0 && i > 0) {
         const dir = new THREE.Vector3().subVectors(right, left);
         const len = dir.length();
@@ -96,11 +121,21 @@ function DnaHelix() {
         const cylMat = mat(0x2dd4bf, 0.3);
         const cyl = new THREE.Mesh(cylGeo, cylMat);
         cyl.position.copy(mid);
-        // Orient cylinder along the rung direction
         cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        cyl.userData.baseY = cyl.position.y;
+        cyl.userData.baseZ = cyl.position.z;
+        cyl.userData.baseX = cyl.position.x;
+        cyl.userData.normalizedY = t;
+        cyl.userData.driftX = (Math.random() - 0.5) * 1.5;
+        cyl.userData.driftY = -(0.6 + Math.random() * 1.0);
+        cyl.userData.driftZ = (Math.random() - 0.5) * 0.8;
+        cyl.userData.spinSpeed = (Math.random() - 0.5) * 3;
+        cyl.userData.delayJitter = Math.random() * 0.06;
         group.add(cyl);
+        allMeshes.push(cyl);
       }
     }
+    meshesRef.current = allMeshes;
 
     const resize = () => {
       cam.aspect = el.clientWidth / el.clientHeight;
@@ -110,11 +145,66 @@ function DnaHelix() {
     resize();
 
     let t = 0;
+    let callbackFired = false;
+    let allGone = false;
+    const DISSOLVE_DURATION = 1600; // ms for DNA to fully disappear
+
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
       t += 0.0012;
       group.rotation.y = t;
-      group.rotation.x = 0.08 + Math.sin(t * 3) * 0.015;
+
+      if (dissolvingRef.current && !allGone) {
+        const elapsed = performance.now() - dissolveStartRef.current;
+        const progress = Math.min(1, elapsed / DISSOLVE_DURATION);
+
+        // Dissolve from bottom to top with organic, eased motion
+        for (const mesh of allMeshes) {
+          const ny = mesh.userData.normalizedY as number;
+          const jitter = mesh.userData.delayJitter as number;
+          const fadeStart = ny * 0.85 + jitter;
+          const fadeDuration = 0.2;
+          const linearProgress = Math.max(0, Math.min(1, (progress - fadeStart) / fadeDuration));
+
+          if (linearProgress > 0) {
+            // Ease-out cubic: fast start, gentle deceleration
+            const p = linearProgress;
+            const eased = 1 - Math.pow(1 - p, 3);
+            // Ease-in for opacity: slow fade start, accelerates
+            const opacityEased = p * p;
+
+            const material = mesh.material as THREE.MeshPhysicalMaterial;
+            material.opacity = 1 - opacityEased;
+            mesh.scale.setScalar(1 - eased * 0.6);
+
+            // Each particle drifts in its own random direction
+            const dx = mesh.userData.driftX as number;
+            const dy = mesh.userData.driftY as number;
+            const dz = mesh.userData.driftZ as number;
+            mesh.position.x = (mesh.userData.baseX as number) + eased * dx;
+            mesh.position.y = (mesh.userData.baseY as number) + eased * dy;
+            mesh.position.z = (mesh.userData.baseZ as number) + eased * dz;
+
+            // Spin as it falls
+            mesh.rotation.x += (mesh.userData.spinSpeed as number) * 0.02;
+            mesh.rotation.z += (mesh.userData.spinSpeed as number) * 0.015;
+          }
+          if (linearProgress >= 1) {
+            mesh.visible = false;
+          }
+        }
+
+        // Fire callback early so text fades while DNA keeps falling
+        if (progress >= 0.5 && !callbackFired) {
+          callbackFired = true;
+          onCompleteRef.current?.();
+        }
+
+        if (progress >= 1) {
+          allGone = true;
+        }
+      }
+
       renderer.render(scene, cam);
     };
     animate();
@@ -132,10 +222,24 @@ function DnaHelix() {
     };
   }, []);
 
-  return <div ref={mountRef} style={{ position: "absolute", inset: 0, opacity: 0.8 }} aria-hidden="true" />;
+  return <div ref={mountRef} style={{ position: "absolute", inset: 0, opacity: 0.8, transition: "opacity 0.5s ease" }} aria-hidden="true" />;
 }
 
-export function HeroSection() {
+interface HeroSectionProps {
+  dissolving: boolean;
+  fading: boolean;
+  onBegin: () => void;
+  onDissolveComplete: () => void;
+}
+
+export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }: HeroSectionProps) {
+  const contentFadeStyle: React.CSSProperties = {
+    transition: "opacity 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), filter 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.3s cubic-bezier(0.22, 0.61, 0.36, 1)",
+    opacity: fading ? 0 : 1,
+    filter: fading ? "blur(6px)" : "none",
+    transform: fading ? "translateY(-16px) scale(0.98)" : "none",
+  };
+
   return (
     <section style={{
       position: "relative",
@@ -144,30 +248,25 @@ export function HeroSection() {
       background: "var(--page-gradient)",
       fontFamily: "var(--font-sans)",
     }}>
-      <DnaHelix />
+      {/* DNA stays independent — keeps animating during text fade */}
+      <DnaHelix dissolving={dissolving} onDissolveComplete={onDissolveComplete} />
 
-      <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(47,39,31,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(47,39,31,0.03) 1px, transparent 1px)", backgroundSize: "120px 120px", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 92%)", pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ ...contentFadeStyle, position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(47,39,31,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(47,39,31,0.03) 1px, transparent 1px)", backgroundSize: "120px 120px", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 92%)", pointerEvents: "none", zIndex: 0 }} />
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 260, background: "linear-gradient(transparent, rgba(248,244,236,0.94))", pointerEvents: "none", zIndex: 5 }} />
 
       <header style={{
+        ...contentFadeStyle,
         position: "relative", zIndex: 20,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
+        display: "flex", alignItems: "center",
         padding: "20px 40px",
       }}>
-        <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "var(--logo-filter)" }} />
-        </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <a href="#pipeline" style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid var(--border)", backgroundColor: "rgba(255,252,247,0.5)", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none", backdropFilter: "blur(10px)" }}>
-            How it works
-          </a>
-          <Link to="/app" style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid var(--accent)", backgroundColor: "var(--accent-dim)", color: "var(--accent-light)", fontSize: "0.75rem", fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none", backdropFilter: "blur(10px)" }}>
-            Open Platform
-          </Link>
+        <div style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <img src="/logo.png" alt="Praxis" style={{ height: 44, filter: "var(--logo-filter)" }} />
         </div>
       </header>
 
       <div style={{
+        ...contentFadeStyle,
         position: "relative", zIndex: 10,
         maxWidth: 1200, margin: "0 auto",
         padding: "calc(18vh - 40px) 40px 0 60px",
@@ -207,30 +306,19 @@ export function HeroSection() {
           Upload patient imaging, reconstruct a 3D anatomy model, and simulate the intervention with hand tracking and AI-guided risk narration.
         </p>
 
-        <div style={{ display: "flex", gap: 10 }}>
-          <Link to="/app" style={{
+        <button
+          onClick={onBegin}
+          style={{
             padding: "12px 26px", borderRadius: 999,
             border: "1px solid var(--accent)",
             backgroundColor: "var(--accent-dim)",
             color: "var(--accent-light)",
             fontSize: "0.82rem", fontWeight: 600, fontFamily: "var(--font-sans)",
-            textDecoration: "none",
             backdropFilter: "blur(10px)",
-          }}>
-            Start simulation
-          </Link>
-          <a href="#pipeline" style={{
-            padding: "12px 22px", borderRadius: 999,
-            border: "1px solid var(--border)",
-            backgroundColor: "rgba(255,252,247,0.46)",
-            color: "var(--text-secondary)",
-            fontSize: "0.82rem", fontWeight: 500, fontFamily: "var(--font-sans)",
-            textDecoration: "none",
-            backdropFilter: "blur(10px)",
-          }}>
-            See workflow
-          </a>
-        </div>
+          }}
+        >
+          Begin
+        </button>
       </div>
     </section>
   );

@@ -101,6 +101,22 @@ html, body, #root {
   }
 }
 
+@keyframes dissolveOut {
+  to { opacity: 0; transform: translateY(-30px); filter: blur(12px); }
+}
+
+@keyframes statusFade {
+  0% { opacity: 0; transform: translateY(6px); }
+  15% { opacity: 1; transform: translateY(0); }
+  85% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(109, 98, 87, 0.15); }
+  50% { box-shadow: 0 0 20px rgba(109, 98, 87, 0.3); }
+}
+
 /* Base button reset */
 button {
   font-family: var(--font-sans);
