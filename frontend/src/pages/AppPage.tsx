@@ -440,8 +440,8 @@ function AppPage() {
   );
 
   const navBar = (label?: string) => (
-    <header style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "var(--logo-filter)" }} />
+    <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
+      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -484,8 +484,8 @@ function AppPage() {
       {/* Header — minimal */}
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "var(--logo-filter)" }} />
-          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Simulation</span>
+          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
+          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -499,7 +499,7 @@ function AppPage() {
             {handTrackingEnabled ? "Tracking" : "Hands"}
           </button>
 
-          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => {}} />
+          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => { }} />
 
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "999px",
@@ -515,14 +515,14 @@ function AppPage() {
       {/* Full-screen 3D Viewer */}
       <main style={{ position: "relative", overflow: "hidden" }}>
         <LayeredAnatomyViewer
-            ref={viewerRef}
-            onOrganClick={handleOrganClick}
-            onIncisionTrace={handleIncisionTrace}
-            modifications={allVisibleMods}
-            animationProgress={animationProgress}
-            selectedOrgan={selectedOrgan}
-            cursorPosition={cursorPosition}
-          />
+          ref={viewerRef}
+          onOrganClick={handleOrganClick}
+          onIncisionTrace={handleIncisionTrace}
+          modifications={allVisibleMods}
+          animationProgress={animationProgress}
+          selectedOrgan={selectedOrgan}
+          cursorPosition={cursorPosition}
+        />
 
         {/* Voice listening indicator — auto-started on pinch, no tap needed */}
         {isVoiceListening && (
