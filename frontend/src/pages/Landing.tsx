@@ -82,8 +82,11 @@ export default function Landing() {
       setStatusIndex(Math.min(STATUS_MESSAGES.length - 1, Math.floor(progress * STATUS_MESSAGES.length)));
 
       if (progress >= 1) {
-        setStage("transitioning");
-        setTimeout(() => navigate("/app", { state: { entered: true } }), 600);
+        // Hold on the completed state briefly, then fade out smoothly
+        setTimeout(() => {
+          setStage("transitioning");
+          setTimeout(() => navigate("/app", { state: { entered: true } }), 800);
+        }, 400);
       } else {
         raf = requestAnimationFrame(tick);
       }
@@ -106,20 +109,9 @@ export default function Landing() {
     );
   }
 
-  // ──── TRANSITIONING OUT ────
-  if (stage === "transitioning") {
-    return (
-      <div style={{
-        width: "100vw", height: "100vh",
-        background: "var(--bg-primary)",
-        transition: "opacity 0.5s ease",
-        opacity: 1,
-      }} />
-    );
-  }
-
-  // ──── INTAKE + PROCESSING ────
-  const isProcessing = stage === "processing";
+  // ──── INTAKE + PROCESSING + TRANSITIONING ────
+  const isProcessing = stage === "processing" || stage === "transitioning";
+  const isTransitioning = stage === "transitioning";
   const filledBlocks = Math.floor(processProgress * TOTAL_BLOCKS);
 
   return (
@@ -130,7 +122,40 @@ export default function Landing() {
       fontFamily: "var(--font-sans)",
       position: "relative",
       overflow: "hidden",
+      opacity: isTransitioning ? 0 : 1,
+      transition: "opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1)",
     }}>
+      {/* Background accents — teal glow orbs */}
+      <div style={{
+        position: "absolute", top: "-10%", right: "-5%",
+        width: 600, height: 600, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(45, 212, 191, 0.22) 0%, rgba(45, 212, 191, 0.08) 35%, transparent 65%)",
+        filter: "blur(80px)",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute", bottom: "-15%", left: "-8%",
+        width: 550, height: 550, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(20, 184, 166, 0.18) 0%, rgba(20, 184, 166, 0.06) 35%, transparent 65%)",
+        filter: "blur(70px)",
+        pointerEvents: "none",
+      }} />
+      <div style={{
+        position: "absolute", top: "25%", left: "5%",
+        width: 300, height: 300, borderRadius: "50%",
+        background: "radial-gradient(circle, rgba(45, 212, 191, 0.12) 0%, transparent 55%)",
+        filter: "blur(50px)",
+        pointerEvents: "none",
+      }} />
+      {/* Subtle grid */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backgroundImage: "linear-gradient(rgba(45, 212, 191, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(45, 212, 191, 0.04) 1px, transparent 1px)",
+        backgroundSize: "100px 100px",
+        maskImage: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.6), transparent 70%)",
+        pointerEvents: "none",
+      }} />
+
       {/* Header */}
       <header style={{
         position: "absolute", top: 0, left: 0, right: 0,
