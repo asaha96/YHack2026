@@ -1150,6 +1150,199 @@
           "label": "Skin"
         }
       ]
+    },
+    "nervous": {
+      "label": "Nervous System",
+      "color": "#f0d060",
+      "visible": true,
+      "parts": [
+        {
+          "name": "brain",
+          "file": "anatomy/nervous/brain.obj",
+          "fma_id": "FMA50801",
+          "label": "Brain"
+        },
+        {
+          "name": "spinal_cord",
+          "file": "anatomy/nervous/spinal_cord.obj",
+          "fma_id": "FMA7647",
+          "label": "Spinal Cord"
+        },
+        {
+          "name": "left_median_nerve",
+          "file": "anatomy/nervous/left_median_nerve.obj",
+          "fma_id": "FMA14385",
+          "label": "Left Median Nerve"
+        },
+        {
+          "name": "right_median_nerve",
+          "file": "anatomy/nervous/right_median_nerve.obj",
+          "fma_id": "FMA14385",
+          "label": "Right Median Nerve"
+        },
+        {
+          "name": "left_ulnar_nerve",
+          "file": "anatomy/nervous/left_ulnar_nerve.obj",
+          "fma_id": "FMA14386",
+          "label": "Left Ulnar Nerve"
+        },
+        {
+          "name": "right_ulnar_nerve",
+          "file": "anatomy/nervous/right_ulnar_nerve.obj",
+          "fma_id": "FMA14386",
+          "label": "Right Ulnar Nerve"
+        },
+        {
+          "name": "left_radial_nerve",
+          "file": "anatomy/nervous/left_radial_nerve.obj",
+          "fma_id": "FMA14387",
+          "label": "Left Radial Nerve"
+        },
+        {
+          "name": "right_radial_nerve",
+          "file": "anatomy/nervous/right_radial_nerve.obj",
+          "fma_id": "FMA14387",
+          "label": "Right Radial Nerve"
+        },
+        {
+          "name": "left_musculocutaneous_nerve",
+          "file": "anatomy/nervous/left_musculocutaneous_nerve.obj",
+          "fma_id": "FMA14136",
+          "label": "Left Musculocutaneous Nerve"
+        },
+        {
+          "name": "right_musculocutaneous_nerve",
+          "file": "anatomy/nervous/right_musculocutaneous_nerve.obj",
+          "fma_id": "FMA14136",
+          "label": "Right Musculocutaneous Nerve"
+        },
+        {
+          "name": "left_intercostal_nerve_t6",
+          "file": "anatomy/nervous/left_intercostal_nerve_t6.obj",
+          "fma_id": "FMA14250",
+          "label": "Left Intercostal Nerve T6"
+        },
+        {
+          "name": "right_intercostal_nerve_t6",
+          "file": "anatomy/nervous/right_intercostal_nerve_t6.obj",
+          "fma_id": "FMA14250",
+          "label": "Right Intercostal Nerve T6"
+        },
+        {
+          "name": "left_intercostal_nerve_t10",
+          "file": "anatomy/nervous/left_intercostal_nerve_t10.obj",
+          "fma_id": "FMA14254",
+          "label": "Left Intercostal Nerve T10"
+        },
+        {
+          "name": "right_intercostal_nerve_t10",
+          "file": "anatomy/nervous/right_intercostal_nerve_t10.obj",
+          "fma_id": "FMA14254",
+          "label": "Right Intercostal Nerve T10"
+        },
+        {
+          "name": "left_femoral_nerve",
+          "file": "anatomy/nervous/left_femoral_nerve.obj",
+          "fma_id": "FMA16263",
+          "label": "Left Femoral Nerve"
+        },
+        {
+          "name": "right_femoral_nerve",
+          "file": "anatomy/nervous/right_femoral_nerve.obj",
+          "fma_id": "FMA16263",
+          "label": "Right Femoral Nerve"
+        },
+        {
+          "name": "left_obturator_nerve",
+          "file": "anatomy/nervous/left_obturator_nerve.obj",
+          "fma_id": "FMA16264",
+          "label": "Left Obturator Nerve"
+        },
+        {
+          "name": "right_obturator_nerve",
+          "file": "anatomy/nervous/right_obturator_nerve.obj",
+          "fma_id": "FMA16264",
+          "label": "Right Obturator Nerve"
+        },
+        {
+          "name": "left_sciatic_nerve",
+          "file": "anatomy/nervous/left_sciatic_nerve.obj",
+          "fma_id": "FMA19034",
+          "label": "Left Sciatic Nerve"
+        },
+        {
+          "name": "right_sciatic_nerve",
+          "file": "anatomy/nervous/right_sciatic_nerve.obj",
+          "fma_id": "FMA19034",
+          "label": "Right Sciatic Nerve"
+        },
+        {
+          "name": "left_tibial_nerve",
+          "file": "anatomy/nervous/left_tibial_nerve.obj",
+          "fma_id": "FMA19035",
+          "label": "Left Tibial Nerve"
+        },
+        {
+          "name": "right_tibial_nerve",
+          "file": "anatomy/nervous/right_tibial_nerve.obj",
+          "fma_id": "FMA19035",
+          "label": "Right Tibial Nerve"
+        },
+        {
+          "name": "left_common_peroneal_nerve",
+          "file": "anatomy/nervous/left_common_peroneal_nerve.obj",
+          "fma_id": "FMA19036",
+          "label": "Left Common Peroneal Nerve"
+        },
+        {
+          "name": "right_common_peroneal_nerve",
+          "file": "anatomy/nervous/right_common_peroneal_nerve.obj",
+          "fma_id": "FMA19036",
+          "label": "Right Common Peroneal Nerve"
+        },
+        {
+          "name": "left_trigeminal_nerve",
+          "file": "anatomy/nervous/left_trigeminal_nerve.obj",
+          "fma_id": "FMA50866",
+          "label": "Left Trigeminal Nerve (V)"
+        },
+        {
+          "name": "right_trigeminal_nerve",
+          "file": "anatomy/nervous/right_trigeminal_nerve.obj",
+          "fma_id": "FMA50866",
+          "label": "Right Trigeminal Nerve (V)"
+        },
+        {
+          "name": "left_facial_nerve",
+          "file": "anatomy/nervous/left_facial_nerve.obj",
+          "fma_id": "FMA50867",
+          "label": "Left Facial Nerve (VII)"
+        },
+        {
+          "name": "right_facial_nerve",
+          "file": "anatomy/nervous/right_facial_nerve.obj",
+          "fma_id": "FMA50867",
+          "label": "Right Facial Nerve (VII)"
+        },
+        {
+          "name": "left_vagus_nerve",
+          "file": "anatomy/nervous/left_vagus_nerve.obj",
+          "fma_id": "FMA50870",
+          "label": "Left Vagus Nerve (X)"
+        },
+        {
+          "name": "right_vagus_nerve",
+          "file": "anatomy/nervous/right_vagus_nerve.obj",
+          "fma_id": "FMA50870",
+          "label": "Right Vagus Nerve (X)"
+        },
+        {
+          "name": "cauda_equina",
+          "file": "anatomy/nervous/cauda_equina.obj",
+          "fma_id": "FMA72486",
+          "label": "Cauda Equina"
+        }
+      ]
     }
   }
 }

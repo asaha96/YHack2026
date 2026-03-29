@@ -8,12 +8,12 @@ import { getWorld, selectSpzUrl } from "../utils/worldlabs";
 import type { Modification } from "../utils/api";
 
 // ── Constants ───────────────────────────────────────────────────────────
-const LAYER_ORDER = ["skin", "muscles", "organs", "vascular", "skeleton"];
+const LAYER_ORDER = ["skin", "muscles", "nervous", "organs", "vascular", "skeleton"];
 const LAYER_COLORS: Record<string, number> = {
-  skin: 0xe8beaa, muscles: 0xc94040, skeleton: 0xf5f0e8, organs: 0xcc7766, vascular: 0x4466cc,
+  skin: 0xe8beaa, muscles: 0xc94040, skeleton: 0xf5f0e8, organs: 0xcc7766, vascular: 0x4466cc, nervous: 0xf0d060,
 };
 const LAYER_OPACITY: Record<string, number> = {
-  skin: 0.25, muscles: 0.6, skeleton: 0.9, organs: 0.85, vascular: 0.75,
+  skin: 0.25, muscles: 0.6, skeleton: 0.9, organs: 0.85, vascular: 0.75, nervous: 0.85,
 };
 
 // Default scale & offset to place anatomy inside the splat world
@@ -68,10 +68,12 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
     const [loadProgress, setLoadProgress] = useState("Initializing world...");
 
     const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
-      skin: true, muscles: true, organs: true, vascular: true, skeleton: true,
+      skin: true, muscles: true, nervous: true, organs: true, vascular: true, skeleton: true,
     });
+    // Optimal showcase defaults: translucent skin reveals muscles + nerves underneath,
+    // skeleton subtle in back, organs/vascular prominent — each layer visible without overlap
     const [layerOpacity, setLayerOpacity] = useState<Record<string, number>>({
-      skin: 0.06, muscles: 0.12, organs: 0.9, vascular: 0.85, skeleton: 0.2,
+      skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15,
     });
 
     // Anatomy placement controls (tunable via UI)
@@ -371,15 +373,21 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
 
             obj.traverse((child) => {
               if (child instanceof THREE.Mesh) {
-                child.material = new THREE.MeshPhongMaterial({
+                const mat = new THREE.MeshPhongMaterial({
                   color: LAYER_COLORS[layerName] || 0xcccccc,
-                  specular: 0x222222,
-                  shininess: layerName === "skeleton" ? 60 : 20,
+                  specular: layerName === "nervous" ? 0x444400 : 0x222222,
+                  shininess: layerName === "skeleton" ? 60 : layerName === "nervous" ? 40 : 20,
                   transparent: true,
                   opacity: LAYER_OPACITY[layerName] || 0.8,
                   side: layerName === "skin" ? THREE.DoubleSide : THREE.FrontSide,
                   depthWrite: layerName !== "skin",
                 });
+                // Give nerves a subtle glow so they stand out against other layers
+                if (layerName === "nervous") {
+                  mat.emissive = new THREE.Color(0x504010);
+                  mat.emissiveIntensity = 0.3;
+                }
+                child.material = mat;
                 child.userData.organName = part.name;
                 child.userData.layerName = layerName;
                 child.name = part.name;
