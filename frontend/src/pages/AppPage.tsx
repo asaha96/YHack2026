@@ -127,29 +127,6 @@ function AppPage() {
 
   // No auto-annotation on load — annotations are triggered by user gestures only
 
-  // Poll for skeleton data from mobile phone (updates organ positions)
-  useEffect(() => {
-    if (stage !== "simulation") return;
-    const controller = new AbortController();
-
-    const poll = async () => {
-      while (!controller.signal.aborted) {
-        try {
-          const res = await fetch(`${API_BASE}/skeleton/latest/${sessionId}`, { signal: controller.signal });
-          const data = await res.json();
-          if (data.skeleton_detected) {
-            console.log("[skeleton] Received organ positions:", Object.keys(data.organ_positions).length);
-          }
-        } catch (e) {
-          if (controller.signal.aborted) return;
-        }
-        await new Promise((r) => setTimeout(r, 1000));
-      }
-    };
-
-    const timer = setTimeout(poll, 3000);
-    return () => { controller.abort(); clearTimeout(timer); };
-  }, [stage, sessionId]);
 
   // Reconstruction polling
   useEffect(() => {
@@ -293,64 +270,17 @@ function AppPage() {
   }, [sessionId, selectedOrgan, playAnnotations, visibleMods]);
 
   const handleOrganClick = useCallback(
-    (organName: string, point: number[], _normal: number[]) => {
-      setSelectedOrgan(organName);
-      actionContextRef.current.push(`Pinched/selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
-
-      // Start voice immediately — don't wait for annotation API
-      setIsVoiceListening(true);
-      try { recognitionRef.current?.start(); } catch { /* already started */ }
-
-      // Fire annotation call in background (non-blocking)
-      fetch("http://localhost:8000/api/guide", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          selected_structure: organName,
-          existing_annotations: currentAnnotationsRef.current.slice(-5),
-          camera_region: `User pinched and selected ${organName.replace(/_/g, " ")}. Recent actions: ${actionContextRef.current.slice(-5).join("; ")}. Provide a focused annotation for this structure — key anatomy, risks, and surgical relevance.`,
-        }),
-      }).then(r => r.json()).then(guide => {
-        if (guide.narration) setNarrationText(guide.narration);
-        if (guide.new_annotations?.length) {
-          const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
-            type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
-            coordinates: [ann.position || point],
-            color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
-            label: ann.label || "",
-            delay_ms: i * 800,
-            duration_ms: 600,
-            animation: "pulse" as const,
-          }));
-          setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
-          playAnnotations(mods);
-          currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
-        }
-      }).catch(() => { /* guide call failed */ });
+    (_organName: string, _point: number[], _normal: number[]) => {
+      // No-op in demo mode — simulation is driven by the hardcoded sequence only
     },
-    [sessionId, playAnnotations, visibleMods]
+    []
   );
 
   const handleIncisionTrace = useCallback(
-    async (organName: string, points: number[][]) => {
-      setSelectedOrgan(organName);
-      // Silent — just accumulate context for when the user speaks
-      actionContextRef.current.push(`Traced incision on ${organName.replace(/_/g, " ")} (${points.length} points)`);
-      // Still render the incision line visually
-      const mods: Modification[] = [{
-        type: "incision",
-        coordinates: points,
-        color: "#f87171",
-        label: "Incision",
-        delay_ms: 0,
-        duration_ms: 300,
-        animation: "draw",
-      }];
-      setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
-      playAnnotations(mods);
+    (_organName: string, _points: number[][]) => {
+      // No-op in demo mode
     },
-    [playAnnotations, visibleMods]
+    []
   );
 
   const handleChatMessage = useCallback(
@@ -407,7 +337,9 @@ function AppPage() {
   // Gesture handling
   const lastGestureActionRef = useRef<number>(0);
   const wasPinchingRef = useRef(false);
+  const pinchStartTimeRef = useRef(0);
   const lastPinchScreenRef = useRef<{ x: number; y: number } | null>(null);
+  const MIN_PINCH_HOLD_MS = 500; // must hold pinch for 500ms before it counts
   const lastHoverAnnotationRef = useRef<string>("");
   const hoverAnnotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -452,77 +384,27 @@ function AppPage() {
 
       // ── Organ interaction gestures ──────────────────────────────────
 
-      // Track pinch → release for first-pinch simulation trigger
+      // Track pinch — record start time on first frame
       if (type === "pinch" && screenPos) {
+        if (!wasPinchingRef.current) {
+          pinchStartTimeRef.current = now;
+        }
         wasPinchingRef.current = true;
         lastPinchScreenRef.current = { x: screenPos.x, y: screenPos.y };
-        return; // don't do anything while actively pinching
-      }
-
-      // Pinch just released
-      if (wasPinchingRef.current && type !== "pinch") {
-        wasPinchingRef.current = false;
-        if (!simulationTriggeredRef.current) {
-          // First pinch release → trigger simulation
-          simulationTriggeredRef.current = true;
-          setSimulationTriggered(true);
-          lastGestureActionRef.current = now;
-          return;
-        }
-        // Subsequent pinch releases → raycast to organ, open mic + annotations
-        if (lastPinchScreenRef.current) {
-          const px = lastPinchScreenRef.current.x / 640;
-          const py = lastPinchScreenRef.current.y / 480;
-          const hit = gestureRaycast(px, py);
-          if (hit) {
-            handleOrganClick(hit.organName, hit.point, hit.normal);
-          } else {
-            // No organ hit — still open mic for general voice query
-            setIsVoiceListening(true);
-            try { recognitionRef.current?.start(); } catch { /* already started */ }
-          }
-          lastGestureActionRef.current = now;
-        }
         return;
       }
 
-      // POINT: hover/inspect — highlight and auto-annotate after dwelling
-      if (type === "point" && screenPos) {
-        const hit = gestureRaycast(normX, normY);
-        if (hit) {
-          if (hit.organName !== selectedOrgan) {
-            setSelectedOrgan(hit.organName);
-          }
-          if (hit.organName !== lastHoverAnnotationRef.current) {
-            if (hoverAnnotationTimerRef.current) clearTimeout(hoverAnnotationTimerRef.current);
-            hoverAnnotationTimerRef.current = setTimeout(async () => {
-              if (lastHoverAnnotationRef.current === hit.organName) return;
-              lastHoverAnnotationRef.current = hit.organName;
-              actionContextRef.current.push(`Hovering over ${hit.organName.replace(/_/g, " ")}`);
-              try {
-                const res = await sendAction(sessionId, "hover", [hit.point], hit.organName, `User is pointing at ${hit.organName.replace(/_/g, " ")}. Provide a brief label annotation identifying this structure.`);
-                if (res.modifications?.length) {
-                  setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
-                  playAnnotations(res.modifications);
-                }
-                if (res.narration) setNarrationText(res.narration);
-                currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...(res.modifications || [])];
-              } catch { /* hover annotation failed silently */ }
-            }, 1500);
-          }
-        }
-      }
+      // Pinch just released — only the first valid pinch triggers the simulation
+      if (wasPinchingRef.current && type !== "pinch") {
+        wasPinchingRef.current = false;
+        const heldMs = now - pinchStartTimeRef.current;
+        if (heldMs < MIN_PINCH_HOLD_MS) return; // too short, ignore
 
-      // INCISION COMPLETE: two fingers lifted after tracing
-      if (type === "incision" && tracePath.length > 8 && !screenPos) {
-        const worldPoints: number[][] = [];
-        let traceOrgan = selectedOrgan || "anatomy";
-        for (let i = 0; i < tracePath.length; i += 3) {
-          const p = tracePath[i];
-          const hit = gestureRaycast(p.x / 640, p.y / 480);
-          if (hit) { worldPoints.push(hit.point); traceOrgan = hit.organName; }
+        if (!simulationTriggeredRef.current) {
+          simulationTriggeredRef.current = true;
+          setSimulationTriggered(true);
         }
-        if (worldPoints.length >= 2) handleIncisionTrace(traceOrgan, worldPoints);
+        return;
       }
     },
     [selectedOrgan, handleOrganClick, handleIncisionTrace, gestureRaycast, sessionId, playAnnotations, visibleMods]

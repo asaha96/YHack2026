@@ -11,14 +11,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route
-          path="/app"
-          element={
-            <ConversationProvider>
-              <AppPage />
-            </ConversationProvider>
-          }
-        />
+        <Route path="/app" element={<AppPage />} />
         <Route path="/mobile" element={<MobileCapture />} />
         <Route path="/camera/:roomCode" element={<CameraPage />} />
         <Route path="/view" element={<LiveViewPage />} />

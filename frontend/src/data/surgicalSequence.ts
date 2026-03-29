@@ -44,7 +44,7 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       animation: "pulse",
     },
     narration:
-      "CT imaging has identified a 2.3 centimeter renal mass on the upper pole of the right kidney. We'll perform a laparoscopic partial nephrectomy to remove the mass while preserving kidney function.",
+      "Alright, I can see the mass right here on the upper pole. Two point three centimeters. We're going to do a partial nephrectomy — take the tumor, save the kidney.",
   },
   {
     modification: {
@@ -57,7 +57,7 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       animation: "pulse",
     },
     narration:
-      "Isolating the right kidney. We mobilize the colon and dissect Gerota's fascia to expose the kidney surface and identify the tumor.",
+      "Mobilizing the kidney now. Getting Gerota's fascia off so we can see what we're working with.",
   },
   {
     modification: {
@@ -65,12 +65,12 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       coordinates: [HILUM],
       color: "#818cf8",
       label: "Renal Hilum",
-      delay_ms: 7000,
+      delay_ms: 6500,
       duration_ms: 800,
       animation: "pulse",
     },
     narration:
-      "Identifying the renal hilum — the renal artery, renal vein, and ureter. We'll need vascular control before any resection.",
+      "There's the hilum. Artery, vein, ureter — all identified. Need control here before we cut anything.",
   },
   {
     modification: {
@@ -79,12 +79,12 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       color: "#f59e0b",
       label: "Renal Artery — Clamp",
       radius: 14,
-      delay_ms: 10500,
+      delay_ms: 9500,
       duration_ms: 800,
       animation: "pulse",
     },
     narration:
-      "Clamping the renal artery with a bulldog clamp. Warm ischemia time starts now. We have 20 to 25 minutes to complete the resection and repair.",
+      "Clamping the artery. Clock starts now — we've got about twenty minutes of warm ischemia.",
   },
   {
     modification: {
@@ -92,12 +92,12 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       coordinates: RESECTION_MARGIN,
       color: "#f87171",
       label: "Resection Margin",
-      delay_ms: 14000,
+      delay_ms: 12000,
       duration_ms: 1500,
       animation: "draw",
     },
     narration:
-      "Scoring the resection margin with cautery — maintaining a 5 millimeter clear margin around the mass. This defines our excision boundary.",
+      "Scoring the margin. Five millimeters clear all the way around.",
   },
   {
     modification: {
@@ -106,12 +106,12 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       color: "#34d399",
       label: "Mass Excised",
       radius: 16,
-      delay_ms: 17500,
+      delay_ms: 15000,
       duration_ms: 800,
       animation: "pulse",
     },
     narration:
-      "Mass excised en bloc with clear margins. Sending specimen for frozen section pathology to confirm negative margins before we close.",
+      "Mass is out. Sending it for frozen section now.",
   },
   {
     modification: {
@@ -119,12 +119,12 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       coordinates: [CLOSURE_SITE],
       color: "#a78bfa",
       label: "Renorrhaphy",
-      delay_ms: 21000,
+      delay_ms: 17500,
       duration_ms: 800,
       animation: "pulse",
     },
     narration:
-      "Closing the renal defect. Running renorrhaphy suture with Lapra-Ty clips and bolster material to achieve hemostasis and seal the collecting system.",
+      "Closing the defect. Running suture with bolsters for hemostasis.",
   },
   {
     modification: {
@@ -133,24 +133,24 @@ export const SURGICAL_STEPS: SurgicalStep[] = [
       color: "#34d399",
       label: "Clamp Released",
       radius: 14,
-      delay_ms: 24500,
+      delay_ms: 20000,
       duration_ms: 800,
       animation: "pulse",
     },
     narration:
-      "Bulldog clamp released. Warm ischemia time: 18 minutes — well within safe limits. The kidney is reperfusing with good color return.",
+      "Clamp off. Eighteen minutes ischemia. Good color, kidney's perfusing well.",
   },
   {
     modification: {
       type: "label",
       coordinates: [KIDNEY_CENTER],
       color: "#34d399",
-      label: "Procedure Complete — EBL 150cc",
-      delay_ms: 28000,
+      label: "Procedure Complete",
+      delay_ms: 22500,
       duration_ms: 600,
       animation: "fade",
     },
     narration:
-      "Partial nephrectomy complete. Estimated blood loss 150 cc. Kidney function preserved. Frozen section confirms negative margins — no residual tumor.",
+      "That's it. Margins are clear on frozen. Hundred fifty cc blood loss. Good result.",
   },
 ];
