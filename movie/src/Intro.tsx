@@ -157,8 +157,8 @@ const WordLetter: React.FC<{ char: string; index: number }> = ({ char, index }) 
 const CharacterI: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const frame = useCurrentFrame();
   const scale = compact ? 0.48 : 1;
-  const sway = Math.sin(frame / 18) * 3.5;
-  const beam = 0.08 + (Math.sin(frame / 12) * 0.5 + 0.5) * 0.08;
+  const sway = Math.sin(frame / 36) * 1.2;
+  const beam = 0.06 + (Math.sin(frame / 24) * 0.5 + 0.5) * 0.05;
 
   return (
     <span
@@ -226,7 +226,25 @@ const PraxisWordmark: React.FC<{ compact?: boolean }> = ({ compact = false }) =>
         fontSize: compact ? 64 : 170,
         lineHeight: 0.9,
         letterSpacing: compact ? "0.1em" : "0.08em",
-        color: C.ink,
+        color: compact ? C.ink : "#f2ead8",
+        WebkitTextStroke: compact ? undefined : "2px #18110a",
+        textShadow: compact
+          ? undefined
+          : [
+              "-5px -5px 0 #9e7224",
+              "0 -5px 0 #9e7224",
+              "5px -5px 0 #9e7224",
+              "5px 0 0 #9e7224",
+              "5px 5px 0 #9e7224",
+              "0 5px 0 #9e7224",
+              "-5px 5px 0 #9e7224",
+              "-5px 0 0 #9e7224",
+              "-4px -4px 0 #9e7224",
+              "4px -4px 0 #9e7224",
+              "-4px 4px 0 #9e7224",
+              "4px 4px 0 #9e7224",
+              "0 24px 56px rgba(30,18,8,0.18)",
+            ].join(", "),
         opacity: compact ? 1 : fade(frame, 0, 40),
       }}
     >
@@ -234,7 +252,7 @@ const PraxisWordmark: React.FC<{ compact?: boolean }> = ({ compact = false }) =>
       <WordLetter char="r" index={1} />
       <WordLetter char="a" index={2} />
       <WordLetter char="x" index={3} />
-      <CharacterI compact={compact} />
+      <WordLetter char="i" index={4} />
       <WordLetter char="s" index={5} />
     </div>
   );
