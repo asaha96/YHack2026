@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLiveKit } from "../hooks/useLiveKit";
 import type { AgentLabel } from "../hooks/useLiveKit";
 import InteractiveVideoOverlay from "../components/InteractiveVideoOverlay";
+import PoseRiggedAnatomy from "../components/PoseRiggedAnatomy";
 import type { AnatomyLayer } from "../components/InteractiveVideoOverlay";
 import RoomSetup from "../components/RoomSetup";
 import HandTracker from "../components/HandTracker";
@@ -28,9 +29,13 @@ function generateRoomName(): string {
 }
 
 export default function LiveViewPage() {
+  const rigOnlyPreview = true;
   const [roomName] = useState(() => generateRoomName());
   const [handTrackingEnabled, setHandTrackingEnabled] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
+  const [show3dAnatomy, setShow3dAnatomy] = useState(true);
+  const [rigYOffset, setRigYOffset] = useState(0);
+  const [rigScale, setRigScale] = useState(1);
   const [visibleLayers, setVisibleLayers] = useState<Set<AnatomyLayer>>(
     () => new Set(["organs", "skeleton", "vascular"])
   );
@@ -93,6 +98,9 @@ export default function LiveViewPage() {
   const [incisionTrace, setIncisionTrace] = useState<{ x: number; y: number }[]>([]);
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [infoTitle, setInfoTitle] = useState<string>("Body Structure");
+  const [infoText, setInfoText] = useState<string>("Tap a mesh or label to explain it.");
+  const [infoLoading, setInfoLoading] = useState(false);
   const [sessionId] = useState(`session-${Date.now()}`);
 
   // ── Refs for callback stabilization ──
@@ -255,6 +263,41 @@ export default function LiveViewPage() {
       // Browser may block non-user-gesture start
     }
   }, [sendData]);
+
+  const explainStructure = useCallback(async (structure: string) => {
+    setSelectedOrgan(structure);
+    setInfoTitle(structure.replace(/_/g, " "));
+    setInfoLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          structure,
+          action: "explain",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Query failed: ${res.status}`);
+      }
+
+      const data = await res.json();
+      const text =
+        data.explanation ??
+        data.full_text ??
+        data.narration ??
+        data.response ??
+        "No explanation returned.";
+      setInfoText(String(text));
+    } catch {
+      setInfoText("Could not load explanation for this structure.");
+    } finally {
+      setInfoLoading(false);
+    }
+  }, [sessionId]);
 
   // Handle incision completion — reads ref for visibleMods
   const handleIncisionComplete = useCallback((organName: string, tracePoints: { x: number; y: number }[]) => {
@@ -531,6 +574,83 @@ export default function LiveViewPage() {
             Labels
           </button>
 
+          <button
+            onClick={() => setShow3dAnatomy((p) => !p)}
+            title="Rigid 3D anatomy from OBJ layers (no skinning)"
+            style={{
+              padding: "5px 10px",
+              borderRadius: 6,
+              border: "1px solid rgba(255,255,255,0.1)",
+              background: show3dAnatomy
+                ? "rgba(168, 85, 247, 0.15)"
+                : "transparent",
+              color: show3dAnatomy ? "#c084fc" : "rgba(255,255,255,0.35)",
+              fontSize: 11,
+              fontFamily: "'JetBrains Mono', monospace",
+              cursor: "pointer",
+            }}
+          >
+            3D rig
+          </button>
+
+          {show3dAnatomy && (
+            <>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0 4px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.45)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Y
+                </span>
+                <input
+                  type="range"
+                  min={-0.6}
+                  max={0.6}
+                  step={0.01}
+                  value={rigYOffset}
+                  onChange={(e) => setRigYOffset(Number(e.target.value))}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0 4px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: "rgba(255,255,255,0.45)",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  Scale
+                </span>
+                <input
+                  type="range"
+                  min={0.6}
+                  max={1.7}
+                  step={0.01}
+                  value={rigScale}
+                  onChange={(e) => setRigScale(Number(e.target.value))}
+                />
+              </div>
+            </>
+          )}
+
           <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
 
           <button
@@ -634,7 +754,67 @@ export default function LiveViewPage() {
               incisionTrace={incisionTrace}
               visibleLayers={visibleLayers}
               showLabels={showLabels}
+              hideStickSkeleton={show3dAnatomy}
+              hideOverlayAnnotations={rigOnlyPreview}
+              onStructureClick={explainStructure}
+              rigOverlay={
+                show3dAnatomy ? (
+                  <PoseRiggedAnatomy
+                    landmarks={landmarks}
+                    width={viewSize.width}
+                    height={viewSize.height}
+                    visibleLayers={visibleLayers}
+                    selectedStructure={selectedOrgan}
+                    scaleMultiplier={rigScale}
+                    yOffset={rigYOffset}
+                    onSelectStructure={explainStructure}
+                    enabled
+                  />
+                ) : null
+              }
             />
+
+            {!rigOnlyPreview && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  width: 250,
+                  maxHeight: "70%",
+                  overflowY: "auto",
+                  padding: "12px 14px",
+                  borderRadius: 12,
+                  background: "rgba(10, 10, 12, 0.72)",
+                  border: "1px solid rgba(45, 212, 191, 0.24)",
+                  backdropFilter: "blur(12px)",
+                  zIndex: 20,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#2dd4bf",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    fontFamily: "'JetBrains Mono', monospace",
+                  }}
+                >
+                  {infoTitle}
+                </div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 13,
+                    lineHeight: 1.5,
+                    color: "rgba(255,255,255,0.82)",
+                  }}
+                >
+                  {infoLoading ? "Loading explanation..." : infoText}
+                </div>
+              </div>
+            )}
 
             {/* Voice indicator overlay */}
             {isVoiceListening && (

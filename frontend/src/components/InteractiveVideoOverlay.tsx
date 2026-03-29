@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, type ReactNode } from "react";
 import type { GestureType } from "../hooks/useGestures";
 import type { Modification } from "../utils/api";
 
@@ -48,6 +48,13 @@ interface Props {
   incisionTrace: { x: number; y: number }[];
   visibleLayers: Set<AnatomyLayer>;
   showLabels: boolean;
+  /** MediaPipe stick figure (lines + joint dots). */
+  hideStickSkeleton?: boolean;
+  /** Hide 2D anatomy paint, labels, agent callouts, and annotation badges. */
+  hideOverlayAnnotations?: boolean;
+  /** Rendered above video, below 2D anatomy / interaction layers (e.g. WebGL anatomy rig). */
+  rigOverlay?: ReactNode;
+  onStructureClick?: (name: string) => void;
 }
 
 // Layer rendering colors — precomputed to avoid string ops in render loop
@@ -138,6 +145,10 @@ export default function InteractiveVideoOverlay({
   incisionTrace,
   visibleLayers,
   showLabels,
+  hideStickSkeleton = false,
+  hideOverlayAnnotations = false,
+  rigOverlay,
+  onStructureClick,
 }: Props) {
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const skeletonCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -181,6 +192,8 @@ export default function InteractiveVideoOverlay({
 
     if (!landmarks) return;
 
+    if (hideStickSkeleton) return;
+
     if (connections) {
       ctx.lineWidth = 3;
       for (const [a, b] of connections) {
@@ -210,7 +223,7 @@ export default function InteractiveVideoOverlay({
       ctx.lineWidth = 1;
       ctx.stroke();
     }
-  }, [landmarks, connections, width, height]);
+  }, [landmarks, connections, width, height, hideStickSkeleton]);
 
   // Draw all anatomy layers on canvas
   useEffect(() => {
@@ -223,6 +236,7 @@ export default function InteractiveVideoOverlay({
     canvas.height = height;
     ctx.clearRect(0, 0, width, height);
 
+    if (hideOverlayAnnotations) return;
     if (!organPositions) return;
 
     // Group parts by layer
@@ -332,7 +346,7 @@ export default function InteractiveVideoOverlay({
         }
       }
     }
-  }, [organPositions, selectedOrgan, visibleLayers, width, height]);
+  }, [organPositions, selectedOrgan, visibleLayers, width, height, hideOverlayAnnotations]);
 
   // Draw interactive elements: cursor, incision trace, modifications
   useEffect(() => {
@@ -344,6 +358,8 @@ export default function InteractiveVideoOverlay({
     canvas.width = width;
     canvas.height = height;
     ctx.clearRect(0, 0, width, height);
+
+    if (hideOverlayAnnotations) return;
 
     // Draw incision trace (live tracing)
     if (incisionTrace.length > 1) {
@@ -429,7 +445,7 @@ export default function InteractiveVideoOverlay({
     }
   }, [
     cursorPosition, currentGesture,
-    modifications, animationProgress, incisionTrace, width, height,
+    modifications, animationProgress, incisionTrace, width, height, hideOverlayAnnotations,
   ]);
 
   const getAgentLabelPosition = useCallback(
@@ -444,7 +460,7 @@ export default function InteractiveVideoOverlay({
 
   // Collect visible label entries for HTML rendering
   const labelEntries: [string, OrganOverlay][] = [];
-  if (organPositions && showLabels) {
+  if (organPositions && showLabels && !hideOverlayAnnotations) {
     for (const [name, pos] of Object.entries(organPositions)) {
       const layer = (pos.layer || "organs") as AnatomyLayer;
       if (!visibleLayers.has(layer)) continue;
@@ -474,8 +490,22 @@ export default function InteractiveVideoOverlay({
           left: 0,
           width: "100%",
           height: "100%",
+          zIndex: 0,
         }}
       />
+
+      {rigOverlay != null && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 2,
+            pointerEvents: "auto",
+          }}
+        >
+          {rigOverlay}
+        </div>
+      )}
 
       {/* Pose skeleton canvas */}
       <canvas
@@ -489,6 +519,7 @@ export default function InteractiveVideoOverlay({
           width: "100%",
           height: "100%",
           pointerEvents: "none",
+          zIndex: 3,
         }}
       />
 
@@ -504,6 +535,7 @@ export default function InteractiveVideoOverlay({
           width: "100%",
           height: "100%",
           pointerEvents: "none",
+          zIndex: 4,
         }}
       />
 
@@ -519,6 +551,7 @@ export default function InteractiveVideoOverlay({
           width: "100%",
           height: "100%",
           pointerEvents: "none",
+          zIndex: 5,
         }}
       />
 
@@ -536,7 +569,8 @@ export default function InteractiveVideoOverlay({
               left: `${(pos.x / width) * 100}%`,
               top: `${(pos.y / height) * 100}%`,
               transform: "translate(-50%, -50%)",
-              pointerEvents: "none",
+              pointerEvents: "auto",
+              zIndex: 6,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -561,7 +595,10 @@ export default function InteractiveVideoOverlay({
                   : `1px solid ${colors.labelBorder}`,
                 transition: "all 0.15s ease",
                 letterSpacing: "0.02em",
+                cursor: onStructureClick ? "pointer" : "default",
+                pointerEvents: "auto",
               }}
+              onClick={() => onStructureClick?.(name)}
             >
               {pos.label}
             </span>
@@ -570,7 +607,7 @@ export default function InteractiveVideoOverlay({
       })}
 
       {/* Modification labels (HTML) */}
-      {modifications.map((mod, i) => {
+      {!hideOverlayAnnotations && modifications.map((mod, i) => {
         if (mod.type !== "label" && mod.type !== "zone") return null;
         if (!mod.label || mod.coordinates.length === 0) return null;
         const progress = animationProgress.get(i) ?? 1;
@@ -585,6 +622,7 @@ export default function InteractiveVideoOverlay({
               top: `${(cy / height) * 100}%`,
               transform: "translate(-50%, -130%)",
               pointerEvents: "none",
+              zIndex: 6,
               opacity: progress,
             }}
           >
@@ -607,7 +645,7 @@ export default function InteractiveVideoOverlay({
       })}
 
       {/* Agent labels */}
-      {agentLabels.map((label, i) => {
+      {!hideOverlayAnnotations && agentLabels.map((label, i) => {
         const pos = getAgentLabelPosition(label);
         if (!pos) return null;
 
@@ -620,6 +658,7 @@ export default function InteractiveVideoOverlay({
               top: `${(pos.y / height) * 100}%`,
               transform: "translate(-50%, -120%)",
               pointerEvents: "none",
+              zIndex: 6,
               maxWidth: 200,
             }}
           >
@@ -673,6 +712,7 @@ export default function InteractiveVideoOverlay({
             borderRadius: 20,
             fontSize: 12,
             fontFamily: "'JetBrains Mono', monospace",
+            zIndex: 6,
           }}
         >
           No person detected
