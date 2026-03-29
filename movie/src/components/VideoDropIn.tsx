@@ -36,6 +36,8 @@ export const VideoDropIn: React.FC<{
    * Values < 1 slow the video; > 1 speed it up.
    */
   playbackRate?: number;
+  /** Preserve native video speed instead of stretching it to match the scene. */
+  useNativePlayback?: boolean;
 }> = ({
   children,
   windowTitle = "praxis — localhost:5173",
@@ -44,6 +46,7 @@ export const VideoDropIn: React.FC<{
   scale = 1,
   videoSrc,
   playbackRate = 1,
+  useNativePlayback = false,
 }) => {
   const W = 1320 * scale;
   const H = 760 * scale;
@@ -65,7 +68,7 @@ export const VideoDropIn: React.FC<{
           {videoSrc ? (
             <OffthreadVideo
               src={staticFile(videoSrc)}
-              playbackRate={playbackRate}
+              playbackRate={useNativePlayback ? 1 : playbackRate}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           ) : (

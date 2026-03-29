@@ -60,7 +60,7 @@ export const ReconstructScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate 
             windowTitle="praxis — reconstruct · case 4471-B"
             stepLabel="STEP 02 · VOLUME RECONSTRUCTION"
             scale={1}
-            videoSrc={VIDEO_SOURCES[3]?.src}
+            videoSrc={VIDEO_SOURCES[5]?.src}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>

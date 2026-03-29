@@ -62,7 +62,7 @@ export const HandTrackingScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate
             windowTitle="praxis — simulate · hand tracking active"
             stepLabel="STEP 03 · GESTURE SIMULATION"
             scale={1}
-            videoSrc={VIDEO_SOURCES[4]?.src}
+            videoSrc={VIDEO_SOURCES[6]?.src}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>

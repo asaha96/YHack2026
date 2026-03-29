@@ -16,11 +16,12 @@ const INTER_CLIP_GAP = Math.round(0.4 * FPS);
 
 // Fallback props used in Remotion Studio before calculateMetadata resolves.
 const DEFAULT_PROPS: IntroProps = {
-  sceneStarts: [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600],
-  sceneDurations: Array(9).fill(200) as number[],
-  clipFromFrames: [18, 98, 214, 314, 414, 492, 614, 710, 814, 906, 1014, 1092, 1214, 1296, 1414, 1500, 1620, 1696],
-  audioDurations: Array(18).fill(150) as number[],
-  videoPlaybackRates: Array(9).fill(null) as (number | null)[],
+  sceneStarts: [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600, 1800],
+  sceneDurations: Array(10).fill(200) as number[],
+  clipFromFrames: [18, 214, 414, 614, 814, 1014, 1214, 1414, 1614, 1814],
+  audioDurations: Array(10).fill(150) as number[],
+  videoPlaybackRates: Array(10).fill(null) as (number | null)[],
+  foundersVideoSrc: null,
 };
 
 /** Probe a video file's native duration using an HTMLVideoElement (runs in Chromium). */
@@ -40,11 +41,26 @@ function getVideoDurationInSeconds(src: string): Promise<number> {
 async function calculateMetadata() {
   const allClips = SCENE_NARRATIONS.flat();
 
-  // ── 1. Measure audio clips ─────────────────────────────────────────────────
-  const clipSeconds = await Promise.all(
-    allClips.map((clip) => getAudioDuration(staticFile(`narration/${clip.audio}`)))
+  // ── 1. Measure clip and video durations ────────────────────────────────────
+  const audioDurations = await Promise.all(
+    allClips.map(async (clip) => {
+      if (!clip.audio) return 0;
+      const seconds = await getAudioDuration(staticFile(`narration/${clip.audio}`));
+      return Math.ceil(seconds * FPS);
+    })
   );
-  const audioDurations = clipSeconds.map((s) => Math.ceil(s * FPS));
+
+  const videoDurations = await Promise.all(
+    VIDEO_SOURCES.map(async (slot) => {
+      if (!slot) return null;
+      try {
+        const seconds = await getVideoDurationInSeconds(staticFile(slot.src));
+        return Math.ceil(seconds * FPS);
+      } catch {
+        return null;
+      }
+    })
+  );
 
   // ── 2. Build scene timeline (audio-driven) ─────────────────────────────────
   const sceneStarts: number[] = [];
@@ -54,11 +70,13 @@ async function calculateMetadata() {
   let clipIdx = 0;
   let prevClipEnd = 0;
 
-  for (const sceneClips of SCENE_NARRATIONS) {
+  for (const [sceneIdx, sceneClips] of SCENE_NARRATIONS.entries()) {
     sceneStarts.push(currentFrame);
 
     let sceneMaxEnd = 0;
     let isFirstInScene = true;
+    const nativeDuration = VIDEO_SOURCES[sceneIdx]?.useNativeDuration ? videoDurations[sceneIdx] ?? 0 : 0;
+
     for (const clip of sceneClips) {
       const naturalFrom = currentFrame + clip.offset;
       const connectedFrom = prevClipEnd + INTER_CLIP_GAP;
@@ -68,31 +86,32 @@ async function calculateMetadata() {
       isFirstInScene = false;
       clipFromFrames.push(from);
 
-      const end = from + audioDurations[clipIdx];
+      const clipDuration = clip.audio
+        ? audioDurations[clipIdx]
+        : Math.max(150, nativeDuration - (from - currentFrame));
+      audioDurations[clipIdx] = clipDuration;
+
+      const end = from + clipDuration;
       prevClipEnd = end;
       if (end - currentFrame > sceneMaxEnd) sceneMaxEnd = end - currentFrame;
       clipIdx++;
     }
 
-    const duration = sceneMaxEnd + TRAIL_FRAMES;
+    const duration = nativeDuration || sceneMaxEnd + TRAIL_FRAMES;
     sceneDurations.push(duration);
     currentFrame += duration;
   }
 
   // ── 3. Probe video files and compute per-scene playback rates ──────────────
-  const videoPlaybackRates: (number | null)[] = await Promise.all(
-    VIDEO_SOURCES.map(async (slot, i) => {
-      if (!slot) return null;
-      try {
-        const videoDuration = await getVideoDurationInSeconds(staticFile(slot.src));
-        const sceneDurationSeconds = sceneDurations[i] / FPS;
-        return videoDuration / sceneDurationSeconds;
-      } catch {
-        // File not found or unreadable — fall back to animated mock
-        return null;
-      }
-    })
-  );
+  const videoPlaybackRates: (number | null)[] = VIDEO_SOURCES.map((slot, i) => {
+    if (!slot) return null;
+    if (slot.useNativeDuration) return 1;
+
+    const videoDuration = videoDurations[i];
+    if (!videoDuration) return null;
+
+    return videoDuration / sceneDurations[i];
+  });
 
   const props: IntroProps = {
     sceneStarts,
@@ -100,6 +119,7 @@ async function calculateMetadata() {
     clipFromFrames,
     audioDurations,
     videoPlaybackRates,
+    foundersVideoSrc: videoDurations[2] ? VIDEO_SOURCES[2]?.src ?? null : null,
   };
   return { durationInFrames: currentFrame, props };
 }

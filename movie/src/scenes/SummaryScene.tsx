@@ -60,7 +60,7 @@ export const SummaryScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =
             windowTitle="praxis — surgical plan · export"
             stepLabel="STEP 05 · PDF EXPORT"
             scale={1}
-            videoSrc={VIDEO_SOURCES[6]?.src}
+            videoSrc={VIDEO_SOURCES[8]?.src}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>

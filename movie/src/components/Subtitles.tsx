@@ -8,7 +8,7 @@ export interface SceneNarration {
   offset: number; // frames from the scene's start frame
   text: string;
   style?: SubtitleStyle;
-  audio: string;  // filename inside public/narration/
+  audio?: string;  // filename inside public/narration/
 }
 
 // ─── NARRATION SCRIPT ─────────────────────────────────────────────────────────
@@ -18,48 +18,43 @@ export interface SceneNarration {
 export const SCENE_NARRATIONS: SceneNarration[][] = [
   // Scene 0: TitleScene
   [
-    { offset: 18,  text: "Meet Praxis.", style: "punchline", audio: "line-01.mp3" },
-    { offset: 98,  text: "The workspace for patient-specific surgical planning and rehearsal.", audio: "line-02.mp3" },
+    { offset: 18, text: "Every year, over 300 million surgeries are performed worldwide where over 10% result in errors traced back to insufficient background with the anatomy or the procedure.", audio: "line-01.mp3" },
   ],
   // Scene 1: ProblemScene
   [
-    { offset: 14,  text: "Today, surgeons plan from flat scans, disconnected tools, and mental reconstruction.", audio: "line-03.mp3" },
-    { offset: 114, text: "That means less certainty before incision and fewer chances to rehearse the exact case.", audio: "line-04.mp3" },
+    { offset: 14, text: "Rehearsal has gotten sparse with cadavers becoming increasingly uncommon and simulators cost hundreds of thousands of dollars.", audio: "line-02.mp3" },
   ],
-  // Scene 2: UploadScene
+  // Scene 2: FoundersScene
   [
-    { offset: 14,  text: "Praxis starts with the scan the team already has.", style: "punchline", audio: "line-05.mp3" },
-    { offset: 92,  text: "Upload CT or MRI data, and Praxis organizes the case in seconds.", audio: "line-06.mp3" },
+    { offset: 14, text: "Hey I'm Sujal, I'm Aritra, I'm Nik, and I'm Vedant and we built Praxis." },
   ],
-  // Scene 3: ReconstructScene
+  // Scene 3: HeroScene
   [
-    { offset: 14,  text: "Praxis converts image slices into an interactive 3D anatomy model.", audio: "line-07.mp3" },
-    { offset: 110, text: "Now the team can inspect organs, vessels, and spatial risk before entering the OR.", audio: "line-08.mp3" },
+    { offset: 14, text: "Praxis lets any medical professional simulate a procedure on a hyper-personalized 3D reconstruction of their patient.", audio: "line-04.mp3" },
   ],
-  // Scene 4: HandTrackingScene
+  // Scene 4: UploadScene
   [
-    { offset: 14,  text: "Then surgeons rehearse the procedure with natural hand tracking.", audio: "line-09.mp3" },
-    { offset: 106, text: "They can trace an approach, explore anatomy, and simulate decisions on real patient geometry.", audio: "line-10.mp3" },
+    { offset: 14, text: "It starts with the patient's CT scan with surface imaging.", audio: "line-05.mp3" },
   ],
-  // Scene 5: AIScene
+  // Scene 5: ReconstructScene
   [
-    { offset: 14,  text: "Need support mid-plan? Ask the built-in surgical copilot.", style: "punchline", audio: "line-11.mp3" },
-    { offset: 92,  text: "It explains structures, answers workflow questions, and keeps the team moving.", audio: "line-12.mp3" },
+    { offset: 14, text: "Our modeling pipeline uses K2 thinking agents to generate a 3D reconstruction built entirely around that individual's anatomy.", audio: "line-06.mp3" },
   ],
-  // Scene 6: SummaryScene
+  // Scene 6: HandTrackingScene
   [
-    { offset: 14,  text: "When planning is done, Praxis exports a clear surgical summary.", audio: "line-13.mp3" },
-    { offset: 96,  text: "Teams can share risks, steps, and findings with attendings and collaborators.", audio: "line-14.mp3" },
+    { offset: 14, text: "From there, the surgeon uses natural hand tracking to move through the model and determine what they want to simulate.", audio: "line-07.mp3" },
   ],
-  // Scene 7: HeroScene
+  // Scene 7: AIScene
   [
-    { offset: 14,  text: "One platform for imaging, simulation, guidance, and communication.", audio: "line-15.mp3" },
-    { offset: 100, text: "So preparation happens before the operating room, not inside it.", audio: "line-16.mp3" },
+    { offset: 14, text: "The orchestration layer generates a live annotated simulation showing exactly how that procedure plays out on this body, where the risk is, and what this person's anatomy changes about the approach.", audio: "line-08.mp3" },
   ],
-  // Scene 8: ClosingScene
+  // Scene 8: SummaryScene
   [
-    { offset: 20,  text: "Praxis.", style: "punchline", audio: "line-17.mp3" },
-    { offset: 96,  text: "See the patient. Rehearse the case. Walk in ready.", audio: "line-18.mp3" },
+    { offset: 14, text: "We've already spoken with two surgeons who said this fundamentally changes how they think about preparation especially for procedures they haven't performed in months.", audio: "line-09.mp3" },
+  ],
+  // Scene 9: ClosingScene
+  [
+    { offset: 14, text: "We are making that familiarity accessible to every medical professional before they operate and in doing so, we believe Praxis will save millions of lives.", audio: "line-10.mp3" },
   ],
 ];
 
@@ -69,15 +64,15 @@ const FADE_FRAMES = 10;
 
 interface ResolvedEntry {
   from: number;          // absolute global frame the audio starts
-  audioDuration: number; // actual clip length in frames
+  audioDuration: number; // actual clip/subtitle length in frames
   text: string;
   style?: SubtitleStyle;
-  audio: string;
+  audio?: string;
 }
 
 interface Props {
-  clipFromFrames: number[]; // absolute start frame per clip (18 total), no-overlap guaranteed
-  audioDurations: number[]; // clip length in frames (18 total)
+  clipFromFrames: number[]; // absolute start frame per clip, no-overlap guaranteed
+  audioDurations: number[]; // clip length in frames
 }
 
 export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) => {
@@ -95,9 +90,11 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
 
   // Audio tracks — no durationInFrames so the clip plays to its natural end
   const audioTracks = entries.map((entry, i) => (
-    <Sequence key={`audio-${i}`} from={entry.from}>
-      <Audio src={staticFile(`narration/${entry.audio}`)} />
-    </Sequence>
+    entry.audio ? (
+      <Sequence key={`audio-${i}`} from={entry.from}>
+        <Audio src={staticFile(`narration/${entry.audio}`)} />
+      </Sequence>
+    ) : null
   ));
 
   // Subtitle display
@@ -129,27 +126,27 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
   const textStyle: React.CSSProperties =
     style === "punchline"
       ? {
-          fontFamily: serif,
-          fontSize: 30,
-          fontWeight: 400,
-          color: "#e8c87a",
-          letterSpacing: "-0.02em",
-          textShadow: "0 0 40px rgba(232,200,122,0.4)",
-        }
+        fontFamily: serif,
+        fontSize: 30,
+        fontWeight: 400,
+        color: "#e8c87a",
+        letterSpacing: "-0.02em",
+        textShadow: "0 0 40px rgba(232,200,122,0.4)",
+      }
       : style === "whisper"
         ? {
-            fontFamily: serif,
-            fontSize: 22,
-            fontStyle: "italic",
-            color: "rgba(245,240,230,0.72)",
-            letterSpacing: "0.01em",
-          }
+          fontFamily: serif,
+          fontSize: 22,
+          fontStyle: "italic",
+          color: "rgba(245,240,230,0.72)",
+          letterSpacing: "0.01em",
+        }
         : {
-            fontFamily: serif,
-            fontSize: 28,
-            color: "#f5f0e6",
-            letterSpacing: "-0.01em",
-          };
+          fontFamily: serif,
+          fontSize: 28,
+          color: "#f5f0e6",
+          letterSpacing: "-0.01em",
+        };
 
   return (
     <>
