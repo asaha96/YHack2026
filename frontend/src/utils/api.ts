@@ -8,7 +8,7 @@ export interface Risk {
 }
 
 export interface Modification {
-  type: "incision" | "highlight" | "label" | "zone" | "heatmap";
+  type: "incision" | "highlight" | "label" | "zone" | "heatmap" | "measurement" | "corridor";
   coordinates: number[][];
   color: string;
   label: string;
@@ -17,6 +17,10 @@ export interface Modification {
   animation?: "draw" | "pulse" | "fade";
   score?: number;
   radius?: number;
+  distance_mm?: number;
+  risk_gradient?: number[];
+  scenario?: string;
+  scenario_label?: string;
 }
 
 export interface AgentResponse {

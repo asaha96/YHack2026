@@ -286,7 +286,15 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
     // Render modifications
     useEffect(() => {
-      while (modGroupRef.current.children.length > 0) modGroupRef.current.remove(modGroupRef.current.children[0]);
+      while (modGroupRef.current.children.length > 0) {
+        const child = modGroupRef.current.children[0];
+        if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+          else (child.material as THREE.Material).dispose();
+        }
+        modGroupRef.current.remove(child);
+      }
       while (labelGroupRef.current.children.length > 0) {
         const c = labelGroupRef.current.children[0];
         if (c instanceof CSS2DObject) c.element.remove();
@@ -321,6 +329,84 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           sphere.position.set(c[0], c[1], c[2]);
           sphere.scale.setScalar(0.5 + 0.5 * progress);
           modGroupRef.current.add(sphere);
+        } else if (mod.type === "measurement" && mod.coordinates.length >= 2) {
+          const start = new THREE.Vector3(...mod.coordinates[0] as [number, number, number]);
+          const end = new THREE.Vector3(...mod.coordinates[1] as [number, number, number]);
+          // Dashed line
+          const geo = new THREE.BufferGeometry().setFromPoints([start, end]);
+          const lineMat = new THREE.LineDashedMaterial({ color: mod.color || "#fbbf24", dashSize: 6, gapSize: 4, transparent: true, opacity: progress });
+          const line = new THREE.Line(geo, lineMat);
+          line.computeLineDistances();
+          modGroupRef.current.add(line);
+          // Endpoint spheres
+          for (const pt of [start, end]) {
+            const dot = new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8), new THREE.MeshBasicMaterial({ color: mod.color || "#fbbf24", transparent: true, opacity: progress }));
+            dot.position.copy(pt);
+            modGroupRef.current.add(dot);
+          }
+          // Midpoint distance label
+          if (mod.distance_mm !== undefined && progress > 0.3) {
+            const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+            const div = document.createElement("div");
+            div.style.cssText = `padding:3px 10px;border-radius:999px;background:rgba(251,191,36,0.18);backdrop-filter:blur(8px);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;font-size:11px;font-family:var(--font-mono),monospace;font-weight:600;letter-spacing:0.04em;white-space:nowrap;opacity:${Math.min(1,(progress-0.3)*1.4)};`;
+            div.textContent = `${mod.distance_mm.toFixed(1)} mm`;
+            const labelObj = new CSS2DObject(div);
+            labelObj.position.copy(mid).add(new THREE.Vector3(0, 15, 0));
+            labelGroupRef.current.add(labelObj);
+          }
+        } else if (mod.type === "corridor" && mod.coordinates.length >= 2) {
+          const pts = mod.coordinates.map(c => new THREE.Vector3(c[0], c[1], c[2]));
+          const curve = new THREE.CatmullRomCurve3(pts);
+          const segments = 64;
+          const radiusStart = 8, radiusEnd = 3;
+          const tubeGeo = new THREE.TubeGeometry(curve, segments, radiusStart, 8, false);
+          // Apply vertex colors from risk_gradient
+          const gradient = mod.risk_gradient || pts.map(() => 0.5);
+          const colors = new Float32Array(tubeGeo.attributes.position.count * 3);
+          const safeColor = new THREE.Color("#34d399");
+          const warnColor = new THREE.Color("#fbbf24");
+          const dangerColor = new THREE.Color("#ef4444");
+          for (let v = 0; v < tubeGeo.attributes.position.count; v++) {
+            const pos = new THREE.Vector3().fromBufferAttribute(tubeGeo.attributes.position, v);
+            // Approximate t along tube by closest point
+            let bestT = 0, bestDist = Infinity;
+            for (let s = 0; s <= 20; s++) {
+              const st = s / 20;
+              const d = curve.getPoint(st).distanceTo(pos);
+              if (d < bestDist) { bestDist = d; bestT = st; }
+            }
+            // Interpolate gradient
+            const gi = bestT * (gradient.length - 1);
+            const lo = Math.floor(gi), hi = Math.min(lo + 1, gradient.length - 1);
+            const frac = gi - lo;
+            const risk = gradient[lo] * (1 - frac) + gradient[hi] * frac;
+            const c = risk < 0.5
+              ? new THREE.Color().lerpColors(safeColor, warnColor, risk * 2)
+              : new THREE.Color().lerpColors(warnColor, dangerColor, (risk - 0.5) * 2);
+            colors[v * 3] = c.r; colors[v * 3 + 1] = c.g; colors[v * 3 + 2] = c.b;
+          }
+          tubeGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+          // Taper radius by scaling vertices
+          for (let v = 0; v < tubeGeo.attributes.position.count; v++) {
+            const pos = new THREE.Vector3().fromBufferAttribute(tubeGeo.attributes.position, v);
+            let bestT = 0, bestDist = Infinity;
+            for (let s = 0; s <= 20; s++) {
+              const st = s / 20;
+              const d = curve.getPoint(st).distanceTo(pos);
+              if (d < bestDist) { bestDist = d; bestT = st; }
+            }
+            const scale = 1 - bestT * (1 - radiusEnd / radiusStart);
+            const center = curve.getPoint(bestT);
+            const offset = pos.clone().sub(center);
+            offset.multiplyScalar(scale);
+            pos.copy(center).add(offset);
+            tubeGeo.attributes.position.setXYZ(v, pos.x, pos.y, pos.z);
+          }
+          tubeGeo.attributes.position.needsUpdate = true;
+          const tubeMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.45 * progress, side: THREE.DoubleSide });
+          const tube = new THREE.Mesh(tubeGeo, tubeMat);
+          tube.scale.setScalar(0.3 + 0.7 * progress);
+          modGroupRef.current.add(tube);
         }
 
         if (mod.label && mod.coordinates.length >= 1 && progress > 0.5) {

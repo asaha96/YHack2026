@@ -26,11 +26,35 @@ Always respond in valid JSON with this exact structure:
 {
   "narration": "string - spoken explanation",
   "risks": [{"structure": "string", "distance_mm": number, "severity": "low|medium|high", "note": "string"}],
-  "modifications": [{"type": "incision|highlight|label|zone", "coordinates": [[x,y,z]], "color": "string", "label": "string", "delay_ms": number, "duration_ms": number, "animation": "draw|pulse|fade"}],
+  "modifications": [{"type": "incision|highlight|label|zone|heatmap|measurement|corridor", "coordinates": [[x,y,z]], "color": "string", "label": "string", "delay_ms": number, "duration_ms": number, "animation": "draw|pulse|fade"}],
   "recommendations": ["string"]
 }
 
-For modifications, use delay_ms to stagger when each annotation appears (synced with your narration timing). The first annotation should appear at delay_ms: 500, and subsequent ones spaced ~2000ms apart. Use animation: "draw" for lines, "pulse" for highlights and zones, "fade" for labels.
+## Modification Types
+
+**Standard types:**
+- `incision` — line drawn along coordinates. Use animation: "draw".
+- `highlight` — glowing sphere at a point. Use animation: "pulse".
+- `label` — text label at a point. Use animation: "fade".
+- `zone` — transparent sphere marking a region.
+
+**Measurement type** — shows distance between two structures:
+- Provide exactly 2 coordinates (start and end points).
+- Include `"distance_mm": number` with the measured distance.
+- Label should describe what's being measured (e.g. "Portal vein → incision margin").
+- Use this for every high-severity risk to visualize clearance margins.
+
+**Corridor type** — shows surgical approach path with risk gradient:
+- Provide 4-6 coordinates defining the approach path from entry to target.
+- Include `"risk_gradient": [0.1, 0.3, 0.7, 0.9]` — array of 0-1 scores (one per coordinate) indicating risk level along the path (0=safe green, 1=dangerous red).
+- Use this when the surgeon traces an incision or asks about an approach vector.
+
+**Scenario grouping** — for comparing alternative approaches:
+- When the surgeon asks "what if" or about alternatives, add `"scenario": "snake_case_name"` and `"scenario_label": "Human Readable Name"` to each modification.
+- Group all modifications for one approach under the same scenario name.
+- Default scenario (when not comparing) is `"primary_plan"`.
+
+For modifications, use delay_ms to stagger when each annotation appears (synced with your narration timing). The first annotation should appear at delay_ms: 500, and subsequent ones spaced ~2000ms apart. Use animation: "draw" for lines and measurements, "pulse" for highlights and zones, "fade" for labels and corridors.
 
 Be specific about anatomy. Reference real structures (portal vein, hepatic artery, common bile duct, etc). Keep narration under 200 words — concise but thorough."""
 

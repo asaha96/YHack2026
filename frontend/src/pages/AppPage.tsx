@@ -56,7 +56,19 @@ function AppPage() {
   const viewerRef = useRef<LayeredViewerHandle>(null);
   const { visibleMods, animationProgress, playAnnotations } = useAnnotationSync();
   const [historicMods, setHistoricMods] = useState<Modification[]>([]);
-  const allVisibleMods = [...historicMods, ...visibleMods];
+  const [activeScenarios, setActiveScenarios] = useState<Set<string>>(new Set(["primary_plan"]));
+
+  // Collect all unique scenarios from modifications and auto-activate new ones
+  const allMods = [...historicMods, ...visibleMods];
+  const scenarioSet = new Set<string>();
+  allMods.forEach(m => { if (m.scenario) scenarioSet.add(m.scenario); });
+  const scenarios = Array.from(scenarioSet);
+  useEffect(() => {
+    scenarios.forEach(s => { if (!activeScenarios.has(s)) setActiveScenarios(prev => new Set(prev).add(s)); });
+  }, [scenarios.join(",")]);
+
+  // Filter mods by active scenarios (mods without scenario always show)
+  const allVisibleMods = allMods.filter(m => !m.scenario || activeScenarios.has(m.scenario));
 
   // Auto-generate AI annotations when simulation loads
   useEffect(() => {
@@ -191,7 +203,7 @@ function AppPage() {
         recommendations: response.recommendations,
       },
     ]);
-    setHistoricMods((prev) => [...prev, ...visibleMods]);
+    setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
     playAnnotations(response.modifications);
     setNarrationText(response.narration);
     setIsLoading(false);
@@ -249,7 +261,7 @@ function AppPage() {
           duration_ms: 600,
           animation: "pulse" as const,
         }));
-        setHistoricMods((prev) => [...prev, ...visibleMods]);
+        setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
         playAnnotations(mods);
         currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
       }
@@ -291,7 +303,7 @@ function AppPage() {
         duration_ms: 300,
         animation: "draw",
       }];
-      setHistoricMods((prev) => [...prev, ...visibleMods]);
+      setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
       playAnnotations(mods);
     },
     [playAnnotations, visibleMods]
@@ -337,7 +349,7 @@ function AppPage() {
             recommendations: response.regions.map((r) => `${r.label}: ${Math.round(r.score * 100)}% relevance`),
           },
         ]);
-        setHistoricMods((prev) => [...prev, ...visibleMods]);
+        setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
         playAnnotations(heatmapMods);
         setIsLoading(false);
       } catch (e: any) {
@@ -541,6 +553,41 @@ function AppPage() {
           selectedOrgan={selectedOrgan}
           cursorPosition={cursorPosition}
         />
+
+        {/* Scenario toggle chips */}
+        {scenarios.length > 1 && (
+          <div style={{
+            position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 6, zIndex: 20,
+            padding: "4px 6px", borderRadius: 999,
+            backgroundColor: "var(--panel-glass)", backdropFilter: "blur(12px)",
+            border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)",
+          }}>
+            {scenarios.map(s => {
+              const isActive = activeScenarios.has(s);
+              const label = allMods.find(m => m.scenario === s)?.scenario_label || s.replace(/_/g, " ");
+              return (
+                <button key={s} onClick={() => {
+                  setActiveScenarios(prev => {
+                    const next = new Set(prev);
+                    if (next.has(s)) next.delete(s); else next.add(s);
+                    return next;
+                  });
+                }} style={{
+                  padding: "4px 12px", borderRadius: 999, border: "1px solid",
+                  borderColor: isActive ? "var(--accent)" : "var(--border)",
+                  backgroundColor: isActive ? "var(--accent-dim)" : "transparent",
+                  color: isActive ? "var(--accent-light)" : "var(--text-muted)",
+                  fontSize: "0.62rem", fontWeight: 600, fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.04em", textTransform: "capitalize",
+                  transition: "all 0.15s ease",
+                }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Voice listening indicator — auto-started on pinch, no tap needed */}
         {isVoiceListening && (
