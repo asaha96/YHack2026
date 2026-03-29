@@ -7,8 +7,15 @@ import { AnatomyDiagram } from "../components/AnatomyUI";
 // Local frame: 0 → 180 (6s)
 export const TitleScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
 
-  const fadeOut = fade(frame, 140, 180, 1, 0);
+  const fadeOut = fade(
+    frame,
+    Math.max(0, durationInFrames - 40),
+    durationInFrames,
+    1,
+    0
+  );
   const diagramOpacity = fade(frame, 52, 96);
 
   return (

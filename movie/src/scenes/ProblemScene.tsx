@@ -8,10 +8,16 @@ import { StatCard } from "../components/Panels";
 // The problem with surgery prep today — presented with statistical gravitas and mild horror.
 export const ProblemScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { durationInFrames, fps } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
-  const fadeOut = fade(frame, 140, 180, 1, 0);
+  const fadeOut = fade(
+    frame,
+    Math.max(0, durationInFrames - 40),
+    durationInFrames,
+    1,
+    0
+  );
   const opacity = fadeIn * fadeOut;
 
   const headlineY = interpolate(
@@ -122,7 +128,7 @@ export const ProblemScene: React.FC = () => {
             fontSize: 32,
             letterSpacing: "-0.04em",
             color: C.ink,
-            opacity: fade(frame, 110, 150),
+            opacity: fade(frame, 170, 210),
             fontStyle: "italic",
           }}
         >

@@ -7,10 +7,16 @@ import { Board } from "../components/AnatomyUI";
 // Local frame: 0 → 180 (6s)
 export const HeroScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { durationInFrames, fps } = useVideoConfig();
 
   const appear = fade(frame, 0, 50);
-  const disappear = fade(frame, 130, 180, 1, 0);
+  const disappear = fade(
+    frame,
+    Math.max(0, durationInFrames - 50),
+    durationInFrames,
+    1,
+    0
+  );
   const opacity = appear * disappear;
 
   const boardLift = interpolate(

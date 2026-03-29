@@ -30,10 +30,29 @@ import { AIScene } from "./scenes/AIScene";
 import { SummaryScene } from "./scenes/SummaryScene";
 import { HeroScene } from "./scenes/HeroScene";
 import { ClosingScene } from "./scenes/ClosingScene";
+import type { SceneId, TimelineData } from "./timeline";
 
-export const Intro: React.FC = () => {
+const SCENE_COMPONENTS: Record<SceneId, React.FC> = {
+  title: TitleScene,
+  problem: ProblemScene,
+  upload: UploadScene,
+  reconstruct: ReconstructScene,
+  handTracking: HandTrackingScene,
+  ai: AIScene,
+  summary: SummaryScene,
+  hero: HeroScene,
+  closing: ClosingScene,
+};
+
+export const Intro: React.FC<{ timeline: TimelineData }> = ({ timeline }) => {
   const frame = useCurrentFrame();
-  const globalOpacity = fade(frame, 1560, 1590, 1, 0);
+  const globalOpacity = fade(
+    frame,
+    Math.max(0, timeline.durationInFrames - 30),
+    timeline.durationInFrames,
+    1,
+    0
+  );
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity }}>
@@ -42,47 +61,24 @@ export const Intro: React.FC = () => {
       <Atmosphere />
 
       {/* ── Scenes ─────────────────────────────────────────────────── */}
-      <Sequence from={0} durationInFrames={210}>
-        <TitleScene />
-      </Sequence>
-
-      <Sequence from={180} durationInFrames={210}>
-        <ProblemScene />
-      </Sequence>
-
-      <Sequence from={360} durationInFrames={210}>
-        <UploadScene />
-      </Sequence>
-
-      <Sequence from={540} durationInFrames={210}>
-        <ReconstructScene />
-      </Sequence>
-
-      <Sequence from={720} durationInFrames={210}>
-        <HandTrackingScene />
-      </Sequence>
-
-      <Sequence from={900} durationInFrames={210}>
-        <AIScene />
-      </Sequence>
-
-      <Sequence from={1080} durationInFrames={210}>
-        <SummaryScene />
-      </Sequence>
-
-      <Sequence from={1260} durationInFrames={210}>
-        <HeroScene />
-      </Sequence>
-
-      <Sequence from={1440} durationInFrames={150}>
-        <ClosingScene />
-      </Sequence>
+      {timeline.scenes.map((scene) => {
+        const SceneComponent = SCENE_COMPONENTS[scene.id];
+        return (
+          <Sequence
+            key={scene.id}
+            from={scene.from}
+            durationInFrames={scene.durationInFrames}
+          >
+            <SceneComponent />
+          </Sequence>
+        );
+      })}
 
       {/* ── Subtitles (global frame, outside any Sequence) ──────── */}
-      <Subtitles />
+      <Subtitles entries={timeline.subtitles} />
 
       {/* ── Background music ────────────────────────────────────── */}
-      <Audio src={staticFile("music.mp3")} volume={0.18} />
+      <Audio src={staticFile("music.mp3")} volume={0.10} />
     </AbsoluteFill>
   );
 };

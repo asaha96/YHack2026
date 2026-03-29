@@ -8,10 +8,16 @@ import { PetBunny, SparkleOverlay } from "../components/PetOverlay";
 // Local frame: 0 → 180 (6s)
 export const HandTrackingScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { durationInFrames, fps } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
-  const fadeOut = fade(frame, 140, 180, 1, 0);
+  const fadeOut = fade(
+    frame,
+    Math.max(0, durationInFrames - 40),
+    durationInFrames,
+    1,
+    0
+  );
   const opacity = fadeIn * fadeOut;
 
   const panelY = interpolate(
