@@ -1,19 +1,9 @@
 /**
  * Intro.tsx — Main composition orchestrator.
  *
- * Scene timeline (all frames at 30fps):
- *   0    – 200  TitleScene        "Meet Praxis"
- *   200  – 400  ProblemScene      "Planning is still fragmented"
- *   400  – 600  UploadScene       App demo: upload CT scan
- *   600  – 800  ReconstructScene  App demo: 3D reconstruction
- *   800  – 1000 HandTrackingScene App demo: hand gesture simulation
- *   1000 – 1200 AIScene           App demo: AI guidance chat
- *   1200 – 1400 SummaryScene      App demo: surgical summary export
- *   1400 – 1600 HeroScene         Full platform board
- *   1600 – 1800 ClosingScene      Praxis wordmark + CTA
- *
- * Each scene fades in/out independently within its Sequence.
- * Subtitles are global — they see the full timeline frame number.
+ * Scene durations are computed dynamically in Root.tsx via calculateMetadata,
+ * which measures each audio file and sizes every scene to match its longest clip.
+ * The scene/clip data lives in Subtitles.tsx (SCENE_NARRATIONS).
  */
 
 import React from "react";
@@ -31,9 +21,30 @@ import { SummaryScene } from "./scenes/SummaryScene";
 import { HeroScene } from "./scenes/HeroScene";
 import { ClosingScene } from "./scenes/ClosingScene";
 
-export const Intro: React.FC = () => {
+export interface IntroProps {
+  sceneStarts: number[];    // absolute start frame for each of the 9 scenes
+  sceneDurations: number[]; // duration in frames for each scene
+  audioDurations: number[]; // actual audio clip lengths in frames (18 clips, flattened)
+}
+
+const SCENE_COMPONENTS = [
+  TitleScene,
+  ProblemScene,
+  UploadScene,
+  ReconstructScene,
+  HandTrackingScene,
+  AIScene,
+  SummaryScene,
+  HeroScene,
+  ClosingScene,
+];
+
+export const Intro: React.FC<IntroProps> = ({ sceneStarts, sceneDurations, audioDurations }) => {
   const frame = useCurrentFrame();
-  const globalOpacity = fade(frame, 1770, 1800, 1, 0);
+
+  const lastSceneIdx = sceneStarts.length - 1;
+  const totalFrames = sceneStarts[lastSceneIdx] + sceneDurations[lastSceneIdx];
+  const globalOpacity = fade(frame, totalFrames - 30, totalFrames, 1, 0);
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity }}>
@@ -41,47 +52,17 @@ export const Intro: React.FC = () => {
       <SoftBackground />
       <Atmosphere />
 
-      {/* ── Scenes ─────────────────────────────────────────────────── */}
-      <Sequence from={0} durationInFrames={200}>
-        <TitleScene />
-      </Sequence>
+      {/* ── Scenes — each sized to match its audio ─────────────────── */}
+      {SCENE_COMPONENTS.map((SceneComponent, i) => (
+        <Sequence key={i} from={sceneStarts[i]} durationInFrames={sceneDurations[i]}>
+          <SceneComponent />
+        </Sequence>
+      ))}
 
-      <Sequence from={200} durationInFrames={200}>
-        <ProblemScene />
-      </Sequence>
+      {/* ── Subtitles (global frame, outside any Sequence) ──────────── */}
+      <Subtitles sceneStarts={sceneStarts} audioDurations={audioDurations} />
 
-      <Sequence from={400} durationInFrames={200}>
-        <UploadScene />
-      </Sequence>
-
-      <Sequence from={600} durationInFrames={200}>
-        <ReconstructScene />
-      </Sequence>
-
-      <Sequence from={800} durationInFrames={200}>
-        <HandTrackingScene />
-      </Sequence>
-
-      <Sequence from={1000} durationInFrames={200}>
-        <AIScene />
-      </Sequence>
-
-      <Sequence from={1200} durationInFrames={200}>
-        <SummaryScene />
-      </Sequence>
-
-      <Sequence from={1400} durationInFrames={200}>
-        <HeroScene />
-      </Sequence>
-
-      <Sequence from={1600} durationInFrames={200}>
-        <ClosingScene />
-      </Sequence>
-
-      {/* ── Subtitles (global frame, outside any Sequence) ──────── */}
-      <Subtitles />
-
-      {/* ── Background music ────────────────────────────────────── */}
+      {/* ── Background music ─────────────────────────────────────────── */}
       <Audio src={staticFile("music.mp3")} volume={0.18} />
     </AbsoluteFill>
   );
