@@ -10,6 +10,10 @@ const FPS = 30;
 // Extra frames after the last audio clip in each scene (1 second of breathing room).
 const TRAIL_FRAMES = 30;
 
+// Gap between consecutive clips within the same scene when connecting them (0.4 s).
+// The first clip in each scene still uses its natural scene-relative offset.
+const INTER_CLIP_GAP = Math.round(0.4 * FPS);
+
 // Fallback props used in Remotion Studio before calculateMetadata resolves.
 const DEFAULT_PROPS: IntroProps = {
   sceneStarts: [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600],
@@ -41,10 +45,16 @@ async function calculateMetadata() {
     sceneStarts.push(currentFrame);
 
     let sceneMaxEnd = 0;
+    let isFirstInScene = true;
     for (const clip of sceneClips) {
-      // Natural start = scene start + relative offset, but never before prev clip ends
+      // First clip in a scene: use its natural scene-relative offset.
+      // Subsequent clips: connect directly after the previous clip ends + a short gap.
       const naturalFrom = currentFrame + clip.offset;
-      const from = Math.max(naturalFrom, prevClipEnd);
+      const connectedFrom = prevClipEnd + INTER_CLIP_GAP;
+      const from = isFirstInScene
+        ? Math.max(naturalFrom, prevClipEnd) // respect scene lead-in; don't overlap
+        : Math.max(naturalFrom, connectedFrom); // connect; still respect natural order
+      isFirstInScene = false;
       clipFromFrames.push(from);
 
       const end = from + audioDurations[clipIdx];
