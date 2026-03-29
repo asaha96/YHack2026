@@ -62,6 +62,13 @@ export interface LayeredViewerHandle {
   gestureInput: GestureInput;
   /** Smoothly move camera to look at an anatomy-local point */
   zoomToAnatomyPoint: (localPoint: [number, number, number], distance?: number, durationMs?: number) => void;
+  /** Smoothly orbit camera to view a point from a specific angle (yaw/pitch in radians) */
+  orbitToPoint: (localPoint: [number, number, number], distance: number, yaw: number, pitch: number, durationMs?: number) => void;
+  /** Hide/restore layers for surgical visibility */
+  hideForSurgery: () => void;
+  restoreFromSurgery: () => void;
+  /** Gradually fade hidden layers back in over durationMs */
+  fadeRestoreLayers: (durationMs?: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -154,6 +161,97 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           if (t < 1) requestAnimationFrame(animate);
         }
         animate();
+      },
+      orbitToPoint: (localPoint: [number, number, number], distance: number, yaw: number, pitch: number, durationMs = 1500) => {
+        const camera = cameraRef.current;
+        const viewer = splatViewerRef.current;
+        if (!camera || !viewer) return;
+
+        const grp = anatomyGroupRef.current;
+        const targetWorld = new THREE.Vector3(...localPoint)
+          .multiplyScalar(grp.scale.x)
+          .add(grp.position);
+
+        // Compute camera end position from spherical coords around target
+        const endPos = new THREE.Vector3(
+          Math.sin(yaw) * Math.cos(pitch) * distance,
+          Math.sin(pitch) * distance,
+          Math.cos(yaw) * Math.cos(pitch) * distance,
+        ).add(targetWorld);
+
+        const startPos = camera.position.clone();
+        const startTarget = viewer.controls?.target?.clone() || targetWorld.clone();
+        const startTime = performance.now();
+
+        function animate() {
+          const t = Math.min((performance.now() - startTime) / durationMs, 1);
+          const ease = t * t * (3 - 2 * t);
+          camera.position.lerpVectors(startPos, endPos, ease);
+          if (viewer.controls?.target) {
+            viewer.controls.target.lerpVectors(startTarget, targetWorld, ease);
+          }
+          if (t < 1) requestAnimationFrame(animate);
+        }
+        animate();
+      },
+      hideForSurgery: () => {
+        const minOpacities: Record<string, number> = { skin: 0.13, muscles: 0.15, nervous: 0.18, organs: 0.18, vascular: 0.16, skeleton: 0.15 };
+        Object.entries(minOpacities).forEach(([name, opacity]) => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) {
+            group.visible = true;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = opacity;
+              }
+            });
+          }
+        });
+        setLayerOpacity(minOpacities);
+      },
+      restoreFromSurgery: () => {
+        const defaults: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15 };
+        Object.entries(defaults).forEach(([name, opacity]) => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) {
+            group.visible = true;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = opacity;
+              }
+            });
+          }
+        });
+        setLayerVisibility({ skin: true, muscles: true, nervous: true, organs: true, vascular: true, skeleton: true });
+        setLayerOpacity(defaults);
+      },
+      fadeRestoreLayers: (durationMs = 2000) => {
+        const minOpacities: Record<string, number> = { skin: 0.13, muscles: 0.15, nervous: 0.18, organs: 0.18, vascular: 0.16, skeleton: 0.15 };
+        const targetOpacities: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15 };
+        const all = Object.keys(targetOpacities);
+
+        setLayerVisibility({ skin: true, muscles: true, nervous: true, organs: true, vascular: true, skeleton: true });
+
+        const t0 = performance.now();
+        function fadeIn() {
+          const p = Math.min((performance.now() - t0) / durationMs, 1);
+          const ease = p * p * (3 - 2 * p);
+          all.forEach(name => {
+            const group = layerGroupsRef.current.get(name);
+            if (!group) return;
+            const from = minOpacities[name] ?? 0;
+            const to = targetOpacities[name] ?? 0.5;
+            const current = from + (to - from) * ease;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = current;
+              }
+            });
+          });
+          if (p < 1) requestAnimationFrame(fadeIn);
+          else setLayerOpacity(targetOpacities);
+        }
+        requestAnimationFrame(fadeIn);
       },
     }));
 
