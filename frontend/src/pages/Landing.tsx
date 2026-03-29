@@ -39,6 +39,25 @@ const labelStyle: React.CSSProperties = {
   display: "block",
 };
 
+function formatDobInput(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+}
+
+function dobToIso(value: string) {
+  const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!match) return null;
+  const [, mm, dd, yyyy] = match;
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function isoToDob(value: string) {
+  const [yyyy, mm, dd] = value.split("-");
+  return `${mm}/${dd}/${yyyy}`;
+}
+
 export default function Landing() {
   const navigate = useNavigate();
   const [stage, setStage] = useState<Stage>("hero");
@@ -50,20 +69,24 @@ export default function Landing() {
   const [dob, setDob] = useState("");
   const [dobOpen, setDobOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
+  /** Inline dropzone: ingest progress after files are added (not on empty state). */
+  const [ingestState, setIngestState] = useState<"idle" | "running" | "done">("idle");
+  const [ingestBarPct, setIngestBarPct] = useState(0);
+  const [ingestNonce, setIngestNonce] = useState(0);
+  const ingestRafRef = useRef<number>(0);
   const processStartRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dobRef = useRef<HTMLDivElement>(null);
-
-  const today = new Date().toISOString().split("T")[0];
-
-  // Calendar state
+  const todayIso = new Date().toISOString().split("T")[0];
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
   const [calYear, setCalYear] = useState(new Date().getFullYear());
 
-  // Close calendar on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (dobRef.current && !dobRef.current.contains(e.target as Node)) setDobOpen(false);
+      if (dobRef.current && !dobRef.current.contains(e.target as Node)) {
+        setDobOpen(false);
+        setYearPickerOpen(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -84,9 +107,56 @@ export default function Landing() {
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    setStage("transitioning");
-    setTimeout(() => navigate("/app", { state: { entered: true } }), 800);
-  }, [navigate]);
+    if (patientFiles.length === 0) return;
+    setStage("processing");
+    processStartRef.current = performance.now();
+  }, [patientFiles.length]);
+
+  const addPatientFiles = useCallback((files: File[]) => {
+    if (files.length === 0) return;
+    setPatientFiles((prev) => [...prev, ...files]);
+    setIngestNonce((prev) => prev + 1);
+  }, []);
+
+  useEffect(() => {
+    if (patientFiles.length === 0) {
+      cancelAnimationFrame(ingestRafRef.current);
+      setIngestState("idle");
+      setIngestBarPct(0);
+      return;
+    }
+    if (ingestNonce === 0) return;
+
+    cancelAnimationFrame(ingestRafRef.current);
+    setIngestState("running");
+    setIngestBarPct(0);
+
+    const start = performance.now();
+    const duration = 2200 + Math.random() * 400;
+    let smooth = 0;
+
+    const tick = (now: number) => {
+      const elapsed = now - start;
+      const t = Math.min(1, elapsed / duration);
+      const eased = 1 - (1 - t) ** 1.85;
+      const wobble = Math.sin(elapsed * 0.009) * 0.018 * (1 - t * 0.7);
+      const jitter = (Math.random() - 0.5) * 0.04 * (1 - t * 0.85);
+      const stall = t > 0.55 && t < 0.62 ? -0.03 : 0;
+      const target = Math.min(1, Math.max(0, eased + wobble + jitter + stall));
+      smooth = smooth * 0.55 + target * 0.45;
+      setIngestBarPct(smooth * 100);
+
+      if (t < 1) {
+        ingestRafRef.current = requestAnimationFrame(tick);
+      } else {
+        setIngestBarPct(100);
+        setIngestState("done");
+      }
+    };
+
+    ingestRafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(ingestRafRef.current);
+  }, [ingestNonce, patientFiles.length]);
 
   // Processing animation
   useEffect(() => {
@@ -235,55 +305,109 @@ export default function Landing() {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
               <div ref={dobRef} style={{ position: "relative" }}>
                 <label style={labelStyle}>Date of Birth</label>
-                <div
-                  onClick={() => setDobOpen(!dobOpen)}
-                  style={{
-                    ...inputStyle, cursor: "pointer",
-                    display: "flex", alignItems: "center", justifyContent: "space-between",
-                    color: dob ? "var(--text-primary)" : "var(--text-muted)",
-                    ...(dobOpen ? { borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-dim)" } : {}),
-                  }}
-                >
-                  <span>{dob ? new Date(dob + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Select date"}</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    placeholder="mm/dd/yyyy"
+                    value={dob}
+                    onChange={(e) => setDob(formatDobInput(e.currentTarget.value))}
+                    style={{ ...inputStyle, paddingRight: 44 }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-dim)"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
+                  />
+                  <button
+                    type="button"
+                    aria-label="Open date picker"
+                    onClick={() => {
+                      const iso = dobToIso(dob);
+                      if (iso) {
+                        const [year, month] = iso.split("-");
+                        setCalYear(Number(year));
+                        setCalMonth(Number(month) - 1);
+                      }
+                      setYearPickerOpen(false);
+                      setDobOpen((open) => !open);
+                    }}
+                    style={{
+                      position: "absolute",
+                      right: 10,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: 26,
+                      height: 26,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 8,
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                  </button>
                 </div>
                 {dobOpen && (() => {
                   const firstDay = new Date(calYear, calMonth, 1).getDay();
                   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-                  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                   const currentYear = new Date().getFullYear();
+                  const selectedIso = dobToIso(dob);
                   return (
                     <div style={{
-                      position: "absolute", bottom: "calc(100% + 6px)", left: 0, width: 280, zIndex: 50,
-                      backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 14,
-                      boxShadow: "0 -8px 32px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.12)", padding: 16,
+                      position: "absolute",
+                      top: "calc(100% + 6px)",
+                      left: 0,
+                      width: 280,
+                      zIndex: 50,
+                      backgroundColor: "var(--bg-surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 14,
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                      padding: 16,
                       animation: "fadeIn 0.15s ease",
                     }}>
                       {yearPickerOpen ? (
                         <div>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                             <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>Select Year</span>
-                            <button type="button" onClick={() => setYearPickerOpen(false)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", padding: "2px 6px" }}>×</button>
+                            <button
+                              type="button"
+                              onClick={() => setYearPickerOpen(false)}
+                              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.85rem", padding: "2px 6px" }}
+                            >
+                              ×
+                            </button>
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, maxHeight: 200, overflowY: "auto" }}>
                             {Array.from({ length: 100 }, (_, i) => {
-                              const y = currentYear - i;
-                              const isSel = y === calYear;
+                              const year = currentYear - i;
+                              const isSelected = year === calYear;
                               return (
-                                <button type="button" key={y} onClick={() => { setCalYear(y); setYearPickerOpen(false); }}
+                                <button
+                                  type="button"
+                                  key={year}
+                                  onClick={() => { setCalYear(year); setYearPickerOpen(false); }}
                                   style={{
-                                    padding: "6px 0", borderRadius: 8, border: "none", cursor: "pointer",
-                                    fontSize: "0.72rem", fontFamily: "var(--font-sans)", fontWeight: isSel ? 600 : 400,
-                                    backgroundColor: isSel ? "var(--accent)" : "transparent",
-                                    color: isSel ? "#fff" : "var(--text-primary)",
-                                    transition: "all 0.15s ease",
+                                    padding: "6px 0",
+                                    borderRadius: 8,
+                                    border: "none",
+                                    fontSize: "0.72rem",
+                                    fontFamily: "var(--font-sans)",
+                                    fontWeight: isSelected ? 600 : 400,
+                                    backgroundColor: isSelected ? "var(--accent)" : "transparent",
+                                    color: isSelected ? "#fff" : "var(--text-primary)",
                                   }}
-                                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.backgroundColor = "var(--accent-dim)"; }}
-                                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.backgroundColor = "transparent"; }}
-                                >{y}</button>
+                                >
+                                  {year}
+                                </button>
                               );
                             })}
                           </div>
@@ -291,42 +415,79 @@ export default function Landing() {
                       ) : (
                         <>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                            <button type="button" onClick={e => { e.stopPropagation(); if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}>‹</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (calMonth === 0) {
+                                  setCalMonth(11);
+                                  setCalYear((y) => y - 1);
+                                } else {
+                                  setCalMonth((m) => m - 1);
+                                }
+                              }}
+                              style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}
+                            >
+                              ‹
+                            </button>
                             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                               <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>{monthNames[calMonth]}</span>
-                              <button type="button" onClick={() => setYearPickerOpen(true)}
-                                style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent)", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", borderRadius: 6 }}
-                                onMouseEnter={e => e.currentTarget.style.backgroundColor = "var(--accent-dim)"}
-                                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-                              >{calYear}</button>
+                              <button
+                                type="button"
+                                onClick={() => setYearPickerOpen(true)}
+                                style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent)", fontFamily: "var(--font-sans)", background: "none", border: "none", padding: "2px 4px", borderRadius: 6 }}
+                              >
+                                {calYear}
+                              </button>
                             </div>
-                            <button type="button" onClick={e => { e.stopPropagation(); if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}>›</button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (calMonth === 11) {
+                                  setCalMonth(0);
+                                  setCalYear((y) => y + 1);
+                                } else {
+                                  setCalMonth((m) => m + 1);
+                                }
+                              }}
+                              style={{ background: "none", border: "none", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}
+                            >
+                              ›
+                            </button>
                           </div>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, textAlign: "center" }}>
-                            {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
-                              <div key={d} style={{ fontSize: "0.58rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", padding: "4px 0", letterSpacing: "0.04em" }}>{d}</div>
+                            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((day) => (
+                              <div key={day} style={{ fontSize: "0.58rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", padding: "4px 0", letterSpacing: "0.04em" }}>{day}</div>
                             ))}
-                            {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
+                            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
                             {Array.from({ length: daysInMonth }, (_, i) => {
                               const day = i + 1;
-                              const val = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-                              const isSelected = val === dob;
-                              const isToday = val === today;
+                              const iso = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                              const isSelected = iso === selectedIso;
+                              const isToday = iso === todayIso;
                               return (
-                                <button type="button" key={day} onClick={() => { setDob(val); setDobOpen(false); }}
+                                <button
+                                  type="button"
+                                  key={day}
+                                  onClick={() => {
+                                    setDob(isoToDob(iso));
+                                    setDobOpen(false);
+                                    setYearPickerOpen(false);
+                                  }}
                                   style={{
-                                    width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
-                                    fontSize: "0.75rem", fontFamily: "var(--font-sans)", fontWeight: isSelected ? 600 : 400,
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: 10,
+                                    border: "none",
+                                    fontSize: "0.75rem",
+                                    fontFamily: "var(--font-sans)",
+                                    fontWeight: isSelected ? 600 : 400,
                                     backgroundColor: isSelected ? "var(--accent)" : "transparent",
                                     color: isSelected ? "#fff" : isToday ? "var(--accent)" : "var(--text-primary)",
-                                    transition: "all 0.15s ease",
                                     margin: "0 auto",
                                   }}
-                                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.backgroundColor = "var(--accent-dim)"; }}
-                                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.backgroundColor = "transparent"; }}
-                                >{day}</button>
+                                >
+                                  {day}
+                                </button>
                               );
                             })}
                           </div>
@@ -364,7 +525,13 @@ export default function Landing() {
               <div
                 onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length) setPatientFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
+                onDrop={e => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  if (e.dataTransfer.files.length) {
+                    addPatientFiles(Array.from(e.dataTransfer.files));
+                  }
+                }}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   padding: patientFiles.length > 0 ? "14px 16px" : "28px 16px",
@@ -382,7 +549,12 @@ export default function Landing() {
                   multiple
                   accept=".dcm,.nii,.nii.gz,.zip,.png,.jpg,.jpeg"
                   style={{ display: "none" }}
-                  onChange={e => { if (e.target.files?.length) { setPatientFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; } }}
+                  onChange={e => {
+                    if (e.target.files?.length) {
+                      addPatientFiles(Array.from(e.target.files));
+                      e.target.value = "";
+                    }
+                  }}
                 />
                 {patientFiles.length > 0 ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -399,6 +571,68 @@ export default function Landing() {
                     <p style={{ fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 4 }}>
                       Click or drop to add more files
                     </p>
+                    {(ingestState === "running" || ingestState === "done") && (
+                      <div style={{ marginTop: 16, textAlign: "left" }}>
+                        <div
+                          style={{
+                            height: 5,
+                            borderRadius: 999,
+                            backgroundColor: "var(--border)",
+                            overflow: "hidden",
+                            position: "relative",
+                          }}
+                        >
+                          <div
+                            style={{
+                              height: "100%",
+                              width: `${ingestBarPct}%`,
+                              borderRadius: 999,
+                              background: "linear-gradient(90deg, var(--accent-muted), var(--accent))",
+                              transition: ingestState === "done" ? "width 0.35s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                              boxShadow: ingestState === "done" ? "0 0 12px rgba(45, 212, 191, 0.35)" : "none",
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, minHeight: 22 }}>
+                          {ingestState === "running" && (
+                            <p style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>
+                              Preparing imaging…
+                            </p>
+                          )}
+                          {ingestState === "done" && (
+                            <>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: 22,
+                                  height: 22,
+                                  borderRadius: "50%",
+                                  backgroundColor: "var(--accent-dim)",
+                                  border: "1px solid var(--accent)",
+                                  animation: "ingestCheckPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards",
+                                }}
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                  <path
+                                    className="landing-checkmark-path"
+                                    d="M5 13l4 4L19 7"
+                                    stroke="var(--accent)"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </div>
+                              <p style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--accent)", letterSpacing: "0.04em" }}>
+                                Ready
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -419,18 +653,24 @@ export default function Landing() {
             </div>
 
             {/* Submit */}
-            <button type="submit" style={{
-              padding: "13px 28px",
-              borderRadius: 999,
-              border: "1px solid var(--accent)",
-              backgroundColor: "var(--accent-dim)",
-              color: "var(--accent-light)",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              fontFamily: "var(--font-sans)",
-              marginTop: 4,
-              transition: "all 0.2s ease",
-            }}>
+            <button
+              type="submit"
+              disabled={patientFiles.length === 0}
+              style={{
+                padding: "13px 28px",
+                borderRadius: 999,
+                border: "1px solid var(--accent)",
+                backgroundColor: patientFiles.length === 0 ? "var(--border)" : "var(--accent-dim)",
+                color: patientFiles.length === 0 ? "var(--text-muted)" : "var(--accent-light)",
+                fontSize: "0.82rem",
+                fontWeight: 600,
+                fontFamily: "var(--font-sans)",
+                marginTop: 4,
+                transition: "all 0.2s ease",
+                cursor: patientFiles.length === 0 ? "not-allowed" : "pointer",
+                opacity: patientFiles.length === 0 ? 0.7 : 1,
+              }}
+            >
               Begin Simulation
             </button>
           </form>
