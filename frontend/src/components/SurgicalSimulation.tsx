@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { TUMOR_POSITION, TUMOR_RADIUS, SURGICAL_STEPS } from "../data/surgicalSequence";
 import type { Modification } from "../utils/api";
@@ -21,6 +21,59 @@ const COLORS = {
   approach: 0x60a5fa,
   instrument: 0xc0c0c0,
 };
+
+// ── Step card data ──────────────────────────────────────────────────
+
+interface StepCard {
+  num: number;
+  title: string;
+  detail: string;
+  color: string;
+  delayMs: number;
+}
+
+const STEP_CARDS: StepCard[] = [
+  {
+    num: 1, title: "Tumor Identification",
+    detail: "CT imaging reveals a 2.3cm renal mass on the upper pole of the right kidney. The mass is well-circumscribed with a clear fat plane — ideal for nephron-sparing partial nephrectomy.",
+    color: "#ef4444", delayMs: 0,
+  },
+  {
+    num: 2, title: "Surgical Approach",
+    detail: "Planning a retroperitoneal laparoscopic approach. The arrow shows the optimal trajectory — lateral to the psoas muscle, avoiding the duodenum and IVC. Port placement at the 12th rib tip.",
+    color: "#60a5fa", delayMs: 3500,
+  },
+  {
+    num: 3, title: "Hilum Dissection",
+    detail: "Identifying the renal hilum — renal artery, renal vein, and ureter must be individually isolated. The artery lies posterior to the vein. Careful dissection avoids injury to accessory vessels.",
+    color: "#a78bfa", delayMs: 7000,
+  },
+  {
+    num: 4, title: "Vascular Clamping",
+    detail: "Bulldog clamp applied to the main renal artery. Warm ischemia time begins — target under 25 minutes. Mannitol administered pre-clamp for renal protection. Kidney should blanch uniformly.",
+    color: "#f59e0b", delayMs: 10500,
+  },
+  {
+    num: 5, title: "Resection Margin",
+    detail: "Scoring the parenchyma with electrocautery at 5mm clear margin around the tumor. The dashed line shows the planned excision boundary. Intraoperative ultrasound confirms tumor depth and margin adequacy.",
+    color: "#ef4444", delayMs: 14000,
+  },
+  {
+    num: 6, title: "Mass Excision",
+    detail: "Tumor excised en bloc with negative margins. Specimen sent for frozen section pathology. The collecting system is inspected — any entry points will require repair with 4-0 Vicryl before renorrhaphy.",
+    color: "#34d399", delayMs: 17500,
+  },
+  {
+    num: 7, title: "Renorrhaphy & Closure",
+    detail: "Running suture closure of the renal defect using 2-0 V-Loc barbed suture over Surgicel bolsters. Inner layer seals the collecting system, outer layer achieves parenchymal hemostasis.",
+    color: "#a78bfa", delayMs: 21000,
+  },
+  {
+    num: 8, title: "Reperfusion Check",
+    detail: "Bulldog clamp released — warm ischemia 18 minutes, within safe limits. Kidney reperfuses with good cortical color return. No active bleeding from the suture line. Estimated blood loss: 150cc.",
+    color: "#34d399", delayMs: 24500,
+  },
+];
 
 // ── Geometry helpers (all use mesh-based geometry, no thin lines) ────
 
@@ -151,6 +204,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   const narrationTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const objectTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animFramesRef = useRef<number[]>([]);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
 
   useEffect(() => {
     const check = setInterval(() => {
@@ -422,25 +476,89 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
 
     createSurgicalObjects();
 
+    // Schedule step card transitions
+    STEP_CARDS.forEach(card => {
+      objectTimersRef.current.push(setTimeout(() => setActiveStep(card.num), card.delayMs));
+    });
+
     const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
 
     // Smooth outro: pull camera back to full body, fade layers in, then cleanup
     objectTimersRef.current.push(setTimeout(() => {
-      // Pull camera back to a wide view of the body center
+      setActiveStep(null);
       const bodyCenter: [number, number, number] = [0, -50, 500];
       viewerRef.current?.orbitToPoint(bodyCenter, 1.2, 0, 0.15, 2500);
     }, lastDelay + 1000));
 
     objectTimersRef.current.push(setTimeout(() => {
-      // Fade hidden layers back in smoothly
       viewerRef.current?.fadeRestoreLayers(2000);
     }, lastDelay + 2500));
 
     objectTimersRef.current.push(setTimeout(() => {
-      // Remove surgical objects after layers are restored
       cleanupAll();
     }, lastDelay + 5000));
   }, [triggered, viewerRef, playAnnotations, onNarrate]);
 
-  return null;
+  // ── Step card overlay ──
+  const card = STEP_CARDS.find(c => c.num === activeStep);
+
+  return card ? (
+    <div
+      key={card.num}
+      style={{
+        position: "absolute",
+        bottom: 24,
+        left: 24,
+        width: 340,
+        background: "rgba(10, 10, 18, 0.88)",
+        backdropFilter: "blur(16px)",
+        border: `1px solid ${card.color}44`,
+        borderLeft: `3px solid ${card.color}`,
+        borderRadius: 12,
+        padding: "16px 18px",
+        color: "rgba(255,255,255,0.92)",
+        fontFamily: "var(--font-sans, system-ui, sans-serif)",
+        animation: "stepCardIn 0.4s ease-out",
+        zIndex: 20,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: "50%",
+          background: card.color, display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
+        }}>
+          {card.num}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 600, letterSpacing: "0.02em" }}>
+          {card.title}
+        </div>
+        <div style={{
+          marginLeft: "auto", fontSize: 10, color: "rgba(255,255,255,0.4)",
+          fontFamily: "var(--font-mono, monospace)", fontWeight: 500,
+        }}>
+          {card.num}/{STEP_CARDS.length}
+        </div>
+      </div>
+      <div style={{
+        fontSize: 12, lineHeight: 1.55, color: "rgba(255,255,255,0.7)",
+        fontWeight: 400,
+      }}>
+        {card.detail}
+      </div>
+      {/* Progress dots */}
+      <div style={{ display: "flex", gap: 5, marginTop: 12 }}>
+        {STEP_CARDS.map(s => (
+          <div
+            key={s.num}
+            style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: s.num === card.num ? card.color : s.num < card.num ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
+              transition: "background 0.3s",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  ) : null;
 }
