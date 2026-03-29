@@ -1,16 +1,16 @@
 /**
  * Intro.tsx — Main composition orchestrator.
  *
- * Scene timeline (all frames at 30fps):
- *   0    – 180  TitleScene        "Meet Praxis"
- *   180  – 360  ProblemScene      "Surgery prep is broken"
- *   360  – 540  UploadScene       App demo: upload CT scan
- *   540  – 720  ReconstructScene  App demo: 3D reconstruction
- *   720  – 900  HandTrackingScene App demo: hand gesture simulation
- *   900  – 1080 AIScene           App demo: AI guidance chat
- *   1080 – 1260 SummaryScene      App demo: PDF export
- *   1260 – 1440 HeroScene         Full platform board
- *   1440 – 1590 ClosingScene      Praxis wordmark + CTA
+ * Scene timeline (all frames at 30fps — revised flow):
+ *   1. title        Problem cold open — hard numbers, no product name
+ *   2. problem      Solution intro — "This is Praxis" + feature list
+ *   3. upload       Demo: drop in DICOM scans
+ *   4. reconstruct  Demo: 3D reconstruction — exact patient replica
+ *   5. handTracking Demo: webcam hand tracking rehearsal
+ *   6. ai           Demo: simulations + AI guidance
+ *   7. summary      Demo: export surgical plan
+ *   8. hero         Traction & credibility — surgeon feedback, roadmap
+ *   9. closing      Praxis wordmark + "built by surgeons, for surgeons"
  *
  * Each scene fades in/out independently within its Sequence.
  * Subtitles are global — they see the full timeline frame number.
