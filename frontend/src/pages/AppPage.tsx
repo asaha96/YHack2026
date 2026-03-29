@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as THREE from "three";
 import LayeredAnatomyViewer from "../components/LayeredAnatomyViewer";
@@ -68,7 +68,24 @@ function AppPage() {
   }, [scenarios.join(",")]);
 
   // Filter mods by active scenarios (mods without scenario always show)
-  const allVisibleMods = allMods.filter(m => !m.scenario || activeScenarios.has(m.scenario));
+  const filteredMods = allMods.filter(m => !m.scenario || activeScenarios.has(m.scenario));
+
+  // Build combined animation progress: historic mods = 1 (fully visible), animating mods = real progress
+  const combinedProgress = useMemo(() => {
+    const map = new Map<number, number>();
+    const historicCount = historicMods.filter(m => !m.scenario || activeScenarios.has(m.scenario)).length;
+    for (let i = 0; i < historicCount; i++) {
+      map.set(i, 1);
+    }
+    if (animationProgress) {
+      animationProgress.forEach((value, key) => {
+        map.set(historicCount + key, value);
+      });
+    }
+    return map;
+  }, [historicMods, activeScenarios, animationProgress]);
+
+  const allVisibleMods = filteredMods;
 
   // No auto-annotation on load — annotations are triggered by user gestures only
 
@@ -562,7 +579,7 @@ function AppPage() {
           onOrganClick={handleOrganClick}
           onIncisionTrace={handleIncisionTrace}
           modifications={allVisibleMods}
-          animationProgress={animationProgress}
+          animationProgress={combinedProgress}
           selectedOrgan={selectedOrgan}
           cursorPosition={cursorPosition}
         />
