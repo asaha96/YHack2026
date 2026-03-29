@@ -7,45 +7,92 @@ interface Props {
 }
 
 /**
- * Voice narration using browser-native Speech Synthesis.
- * No API key needed. Speaks narration text automatically.
+ * Voice narration using ElevenLabs TTS via backend /api/narrate endpoint.
  */
 export default function NarrationPlayer({ text, autoPlay }: Props) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const lastTextRef = useRef<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const speakText = async (t: string) => {
+    // Stop any ongoing playback
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    try {
+      setIsSpeaking(true);
+      const res = await fetch("http://localhost:8000/api/narrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: t }),
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+      };
+
+      await audio.play();
+    } catch (e: any) {
+      if (e.name !== "AbortError") {
+        console.warn("ElevenLabs TTS failed, falling back to browser speech:", e);
+        // Fallback to browser speech synthesis
+        if (window.speechSynthesis) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(t);
+          utterance.rate = 0.95;
+          utterance.pitch = 0.9;
+          utterance.onend = () => setIsSpeaking(false);
+          utterance.onerror = () => setIsSpeaking(false);
+          window.speechSynthesis.speak(utterance);
+        } else {
+          setIsSpeaking(false);
+        }
+      } else {
+        setIsSpeaking(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!text || text === lastTextRef.current || !autoPlay || isMuted) return;
-    if (!window.speechSynthesis) return;
     lastTextRef.current = text;
-
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 0.9;
-    utterance.volume = 1;
-
-    // Try to pick a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find((v) =>
-      v.name.includes("Samantha") || v.name.includes("Daniel") ||
-      v.name.includes("Google") || v.name.includes("English")
-    );
-    if (preferred) utterance.voice = preferred;
-
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
-
-    window.speechSynthesis.speak(utterance);
+    speakText(text);
   }, [text, autoPlay, isMuted]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel(); };
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (abortRef.current) abortRef.current.abort();
+      window.speechSynthesis?.cancel();
+    };
   }, []);
 
   return (
@@ -58,7 +105,10 @@ export default function NarrationPlayer({ text, autoPlay }: Props) {
       <button
         onClick={() => {
           setIsMuted((m) => {
-            if (!m) window.speechSynthesis?.cancel();
+            if (!m) {
+              if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+              if (abortRef.current) abortRef.current.abort();
+            }
             return !m;
           });
         }}
