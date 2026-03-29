@@ -17,6 +17,7 @@ interface LayersMetadata {
 }
 
 interface Props {
+  transparentBackground?: boolean;
   onOrganClick: (organName: string, point: number[], normal: number[]) => void;
   onIncisionTrace: (organName: string, points: number[][]) => void;
   modifications: Modification[];
@@ -49,7 +50,7 @@ const LAYER_OPACITY: Record<string, number> = {
 };
 
 const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
-  ({ onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition }, ref) => {
+  ({ transparentBackground, onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
     const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -98,7 +99,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       const height = container.clientHeight;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf8f4ec);
+      scene.background = transparentBackground ? null : new THREE.Color(0xf8f4ec);
       sceneRef.current = scene;
 
       const camera = new THREE.PerspectiveCamera(40, width / height, 1, 10000);
@@ -106,7 +107,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       camera.lookAt(0, -120, 900);
       cameraRef.current = camera;
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: !!transparentBackground });
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
@@ -419,6 +420,29 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           labelGroupRef.current.add(labelObj);
         }
       });
+
+      // De-overlap labels: nudge any that are too close in 3D space
+      const labels = labelGroupRef.current.children as THREE.Object3D[];
+      const MIN_DIST = 45; // minimum distance between label positions
+      for (let i = 0; i < labels.length; i++) {
+        for (let j = i + 1; j < labels.length; j++) {
+          const a = labels[i].position;
+          const b = labels[j].position;
+          const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist < MIN_DIST) {
+            const push = (MIN_DIST - dist) / 2;
+            // Push apart vertically (Y axis) so they stack neatly
+            if (a.y >= b.y) {
+              a.y += push;
+              b.y -= push;
+            } else {
+              a.y -= push;
+              b.y += push;
+            }
+          }
+        }
+      }
     }, [modifications, animationProgress]);
 
     // Mouse handlers
@@ -473,7 +497,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const toggleLayer = (name: string) => setLayerVisibility((prev) => ({ ...prev, [name]: !prev[name] }));
 
     return (
-      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: transparentBackground ? "transparent" : "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
         {/* Layer controls */}
         <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
