@@ -9,31 +9,35 @@ import {
   useVideoConfig,
 } from "remotion";
 
-// ─── Design Tokens ────────────────────────────────────────────────────────────
 const C = {
-  bg: "#f4f6ff",
-  accent: "#6d28d9",
-  accentSoft: "#a78bfa",
-  accentDim: "rgba(109,40,217,0.08)",
-  teal: "#2dd4bf",
-  red: "#f87171",
-  text: "#07071a",
-  textSub: "#4b5563",
-  textMuted: "#9ca3af",
-  white: "#ffffff",
-  darkBg: "#07070f",
-  darkSurface: "#0f0f1c",
-  darkBorder: "rgba(255,255,255,0.065)",
+  bg: "#f8f4ec",
+  bg2: "#fbf8f2",
+  panel: "rgba(253, 250, 244, 0.9)",
+  panelStrong: "#fcfaf5",
+  line: "rgba(47, 39, 31, 0.09)",
+  ink: "#171311",
+  inkSoft: "#635b54",
+  inkMuted: "#8b8178",
+  accent: "#6d6257",
+  accentSoft: "#c9beb0",
+  ember: "#b26e57",
+  sage: "#82907d",
+  shadow: "rgba(38, 29, 20, 0.1)",
+  shadowDeep: "rgba(38, 29, 20, 0.16)",
 };
 
-// Helper: clamped spring
+const serif =
+  "'Iowan Old Style', 'Baskerville', 'Palatino Linotype', 'Book Antiqua', serif";
+const sans = "'Helvetica Neue', Arial, sans-serif";
+const mono = "'SFMono-Regular', 'Menlo', monospace";
+
 const spr = (
   frame: number,
   fps: number,
   delay = 0,
-  damping = 14,
-  stiffness = 110,
-  mass = 0.8
+  damping = 18,
+  stiffness = 120,
+  mass = 0.92
 ) =>
   spring({
     frame: Math.max(0, frame - delay),
@@ -41,57 +45,56 @@ const spr = (
     config: { damping, stiffness, mass },
   });
 
-// ─── Background ───────────────────────────────────────────────────────────────
-const Background: React.FC = () => {
+const fade = (frame: number, start: number, end: number, from = 0, to = 1) =>
+  interpolate(frame, [start, end], [from, to], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+const SoftBackground: React.FC = () => {
   const frame = useCurrentFrame();
-  const drift = interpolate(frame, [0, 450], [0, 12], {
+  const drift = interpolate(frame, [0, 450], [0, 10], {
     extrapolateRight: "clamp",
   });
 
   return (
     <AbsoluteFill>
-      {/* Main gradient — light, airy, slightly purple-shifted */}
       <AbsoluteFill
         style={{
-          background: `linear-gradient(${148 + drift}deg, #eef1ff 0%, #f4f0ff 35%, #faf5ff 65%, #eef3ff 100%)`,
+          background: `linear-gradient(${146 + drift}deg, #fcfaf4 0%, #f8f4ec 42%, #f6f1ea 70%, #fbf9f5 100%)`,
         }}
       />
-
-      {/* Soft radial bloom — top left */}
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(ellipse 60% 50% at 18% 25%, rgba(139,92,246,0.09) 0%, transparent 100%)",
+            "radial-gradient(circle at 18% 20%, rgba(120, 104, 91, 0.08), transparent 26%), radial-gradient(circle at 82% 76%, rgba(178, 110, 87, 0.06), transparent 24%)",
           pointerEvents: "none",
         }}
       />
-
-      {/* Soft radial bloom — bottom right */}
-      <AbsoluteFill
-        style={{
-          background:
-            "radial-gradient(ellipse 55% 45% at 82% 78%, rgba(45,212,191,0.06) 0%, transparent 100%)",
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Precision grid */}
       <AbsoluteFill
         style={{
           backgroundImage: [
-            "linear-gradient(rgba(109,40,217,0.035) 1px, transparent 1px)",
-            "linear-gradient(90deg, rgba(109,40,217,0.035) 1px, transparent 1px)",
+            "linear-gradient(rgba(54, 46, 38, 0.028) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(54, 46, 38, 0.028) 1px, transparent 1px)",
           ].join(", "),
-          backgroundSize: "96px 96px",
+          backgroundSize: "128px 128px",
+          opacity: 0.36,
           pointerEvents: "none",
         }}
       />
-
-      {/* Soft vignette */}
+      <AbsoluteFill
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(0deg, rgba(255,255,255,0.14) 0px, rgba(255,255,255,0.14) 2px, transparent 2px, transparent 4px)",
+          mixBlendMode: "soft-light",
+          opacity: 0.22,
+          pointerEvents: "none",
+        }}
+      />
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(ellipse at center, transparent 55%, rgba(180,170,220,0.18) 100%)",
+            "radial-gradient(circle at center, transparent 58%, rgba(53, 41, 30, 0.06) 100%)",
           pointerEvents: "none",
         }}
       />
@@ -99,27 +102,28 @@ const Background: React.FC = () => {
   );
 };
 
-// ─── Sonar Rings (ambient atmosphere) ────────────────────────────────────────
-const SonarRings: React.FC = () => {
+const Atmosphere: React.FC = () => {
   const frame = useCurrentFrame();
   return (
     <AbsoluteFill style={{ pointerEvents: "none" }}>
-      {[0, 60, 120].map((offset, i) => {
-        const t = ((frame + offset) % 180) / 180;
-        const scale = 0.15 + t * 1.2;
-        const opacity = interpolate(t, [0, 0.3, 1], [0, 0.12, 0]);
+      {[
+        { top: "12%", left: "10%", width: 440, height: 320, color: "rgba(201,190,176,0.16)", speed: 54 },
+        { top: "54%", left: "68%", width: 380, height: 280, color: "rgba(178,110,87,0.09)", speed: 68 },
+      ].map((shape, i) => {
+        const y = Math.sin((frame + i * 70) / shape.speed) * 12;
         return (
           <div
             key={i}
             style={{
               position: "absolute",
-              top: "50%",
-              left: "50%",
-              width: 800,
-              height: 800,
+              top: shape.top,
+              left: shape.left,
+              width: shape.width,
+              height: shape.height,
               borderRadius: "50%",
-              border: `1.5px solid rgba(109,40,217,${opacity})`,
-              transform: `translate(-50%,-50%) scale(${scale})`,
+              background: shape.color,
+              filter: "blur(18px)",
+              transform: `translateY(${y}px)`,
             }}
           />
         );
@@ -128,31 +132,19 @@ const SonarRings: React.FC = () => {
   );
 };
 
-// ─── Act 1 — Title Reveal (frames 0–110) ─────────────────────────────────────
-const LETTERS = ["P", "r", "a", "x", "i", "s"];
-
-const AnimatedLetter: React.FC<{ char: string; index: number }> = ({
-  char,
-  index,
-}) => {
+const WordLetter: React.FC<{ char: string; index: number }> = ({ char, index }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const delay = 8 + index * 7;
-
-  const progress = spr(frame, fps, delay, 18, 160, 0.65);
-  const y = interpolate(progress, [0, 1], [55, 0]);
-  const opacity = interpolate(frame - delay, [0, 16], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const blur = interpolate(progress, [0, 1], [16, 0]);
-  const floatY = Math.sin((frame + index * 24) / 60) * 2.5;
+  const progress = spr(frame, fps, 14 + index * 6, 22, 150, 0.74);
+  const y = interpolate(progress, [0, 1], [42, 0]);
+  const opacity = fade(frame, 4 + index * 6, 30 + index * 6);
+  const blur = interpolate(progress, [0, 1], [12, 0]);
 
   return (
     <span
       style={{
         display: "inline-block",
-        transform: `translateY(${y + floatY}px)`,
+        transform: `translateY(${y}px)`,
         opacity,
         filter: `blur(${blur}px)`,
       }}
@@ -162,1367 +154,1248 @@ const AnimatedLetter: React.FC<{ char: string; index: number }> = ({
   );
 };
 
-const TitleSection: React.FC = () => {
+const CharacterI: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const scale = compact ? 0.48 : 1;
+  const sway = Math.sin(frame / 18) * 3.5;
+  const beam = 0.08 + (Math.sin(frame / 12) * 0.5 + 0.5) * 0.08;
 
-  // Icon entrance
-  const iconProgress = spr(frame, fps, 0, 20, 140, 0.7);
-  const iconScale = interpolate(iconProgress, [0, 1], [0.2, 1]);
-  const iconOpacity = interpolate(frame, [0, 14], [0, 1], {
-    extrapolateLeft: "clamp",
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        position: "relative",
+        width: 74 * scale,
+        height: 148 * scale,
+        marginLeft: compact ? 0 : -6,
+        marginRight: compact ? 4 : 6,
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          left: 26 * scale,
+          bottom: 12 * scale,
+          width: 22 * scale,
+          height: 90 * scale,
+          borderRadius: 18 * scale,
+          background: "linear-gradient(180deg, #2b241f 0%, #171311 100%)",
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.15), 0 14px 24px rgba(31, 24, 19, 0.12)",
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          left: 15 * scale,
+          bottom: 106 * scale,
+          width: 44 * scale,
+          height: 44 * scale,
+          borderRadius: "50%",
+          background:
+            "radial-gradient(circle at 38% 34%, #fff7ef 0%, #e7d4c6 35%, #c18b73 68%, #8c5f4d 100%)",
+          transform: `translateX(${sway * scale}px)`,
+          boxShadow:
+            "0 16px 30px rgba(93, 62, 49, 0.14), inset 0 1px 0 rgba(255,255,255,0.32)",
+        }}
+      />
+      <span
+        style={{
+          position: "absolute",
+          left: 35 * scale,
+          top: 48 * scale,
+          width: 2 * scale,
+          height: 76 * scale,
+          background: `linear-gradient(180deg, rgba(193,139,115,0), rgba(193,139,115,${beam}), rgba(193,139,115,0))`,
+          transform: `translateX(${sway * 0.5 * scale}px) rotate(8deg)`,
+          transformOrigin: "top center",
+        }}
+      />
+    </span>
+  );
+};
+
+const PraxisWordmark: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
+  const frame = useCurrentFrame();
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-end",
+        fontFamily: serif,
+        fontSize: compact ? 64 : 170,
+        lineHeight: 0.9,
+        letterSpacing: compact ? "0.1em" : "0.08em",
+        color: C.ink,
+        opacity: compact ? 1 : fade(frame, 0, 40),
+      }}
+    >
+      <WordLetter char="P" index={0} />
+      <WordLetter char="r" index={1} />
+      <WordLetter char="a" index={2} />
+      <WordLetter char="x" index={3} />
+      <CharacterI compact={compact} />
+      <WordLetter char="s" index={5} />
+    </div>
+  );
+};
+
+const Eyebrow: React.FC<{ text: string; delay?: number }> = ({ text, delay = 0 }) => {
+  const frame = useCurrentFrame();
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 12,
+        opacity: fade(frame, 12 + delay, 34 + delay),
+        transform: `translateY(${interpolate(fade(frame, 12 + delay, 34 + delay), [0, 1], [14, 0])}px)`,
+      }}
+    >
+      <div
+        style={{
+          width: 46,
+          height: 1,
+          background: "rgba(23,19,17,0.22)",
+        }}
+      />
+      <span
+        style={{
+          fontFamily: mono,
+          fontSize: 11,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: C.inkMuted,
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+};
+
+const PanelShell: React.FC<{
+  children: React.ReactNode;
+  width: number | string;
+  height: number | string;
+  style?: React.CSSProperties;
+}> = ({ children, width, height, style }) => (
+  <div
+    style={{
+      width,
+      height,
+      borderRadius: 34,
+      overflow: "hidden",
+      background: C.panel,
+      border: `1px solid ${C.line}`,
+      boxShadow: `0 36px 90px ${C.shadowDeep}, 0 12px 30px ${C.shadow}`,
+      ...style,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const HeaderBar: React.FC<{ title: string; detail: string }> = ({ title, detail }) => (
+  <div
+    style={{
+      height: 58,
+      padding: "0 20px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottom: `1px solid ${C.line}`,
+      background: "rgba(255,255,255,0.34)",
+    }}
+  >
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: C.ember,
+          boxShadow: "0 0 14px rgba(178,110,87,0.18)",
+        }}
+      />
+      <span
+        style={{
+          fontFamily: mono,
+          fontSize: 11,
+          letterSpacing: "0.14em",
+          textTransform: "uppercase",
+          color: C.inkMuted,
+        }}
+      >
+        {title}
+      </span>
+    </div>
+    <span
+      style={{
+        fontFamily: mono,
+        fontSize: 10,
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        color: C.inkMuted,
+      }}
+    >
+      {detail}
+    </span>
+  </div>
+);
+
+const WorkflowColumn: React.FC = () => {
+  const steps = [
+    ["Upload", "DICOM stack received", true],
+    ["Reconstruct", "Patient volume resolved", true],
+    ["Annotate", "Critical structures mapped", true],
+    ["Simulate", "Live rehearsal ready", false],
+  ] as const;
+
+  return (
+    <div style={{ height: "100%", background: "rgba(255,255,255,0.26)" }}>
+      <HeaderBar title="Workflow" detail="Case 4471-B" />
+      <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 12 }}>
+        <p
+          style={{
+            margin: 0,
+            fontFamily: serif,
+            fontSize: 28,
+            lineHeight: 1.05,
+            letterSpacing: "-0.04em",
+            color: C.ink,
+          }}
+        >
+          Surgical rehearsal
+          <br />
+          in sequence.
+        </p>
+        <div style={{ height: 10 }} />
+        {steps.map(([title, detail, done], i) => (
+          <div
+            key={title}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "40px 1fr",
+              gap: 14,
+              padding: "14px 0",
+              borderTop: i === 0 ? "1px solid rgba(47,39,31,0.08)" : undefined,
+              borderBottom: "1px solid rgba(47,39,31,0.08)",
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                border: `1px solid ${done ? "rgba(130,144,125,0.26)" : "rgba(47,39,31,0.12)"}`,
+                background: done ? "rgba(130,144,125,0.08)" : "rgba(255,255,255,0.36)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: mono,
+                fontSize: 11,
+                color: done ? C.sage : C.inkMuted,
+              }}
+            >
+              {done ? "OK" : `0${i + 1}`}
+            </div>
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  fontFamily: serif,
+                  fontSize: 20,
+                  letterSpacing: "-0.03em",
+                  color: C.ink,
+                }}
+              >
+                {title}
+              </p>
+              <p
+                style={{
+                  margin: "5px 0 0",
+                  fontFamily: sans,
+                  fontSize: 12,
+                  letterSpacing: "0.01em",
+                  color: C.inkSoft,
+                  lineHeight: 1.5,
+                }}
+              >
+                {detail}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const AnatomyStage: React.FC<{ large?: boolean }> = ({ large = false }) => {
+  const frame = useCurrentFrame();
+  const scan = interpolate(frame % 210, [0, 210], [0, 100], {
+    extrapolateRight: "clamp",
+  });
+  const shift = Math.sin(frame / 34) * 10;
+
+  return (
+    <div
+      style={{
+        position: "relative",
+        height: "100%",
+        background: "linear-gradient(180deg, rgba(247,244,239,0.9), rgba(252,249,244,0.96))",
+      }}
+    >
+      <HeaderBar title="Anatomy" detail={large ? "Live patient model" : "Volume study"} />
+      <div
+        style={{
+          position: "absolute",
+          inset: "58px 0 0 0",
+          backgroundImage: [
+            "linear-gradient(rgba(47,39,31,0.035) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(47,39,31,0.035) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: large ? "44px 44px" : "36px 36px",
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          top: 58,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <svg
+          width={large ? "470" : "320"}
+          height={large ? "560" : "390"}
+          viewBox="0 0 470 560"
+          fill="none"
+          style={{ transform: `translateX(${shift}px)` }}
+        >
+          <path
+            d="M235 54 C168 54 112 108 102 176 L78 386 C70 450 118 506 176 506 L294 506 C352 506 400 450 392 386 L368 176 C358 108 302 54 235 54 Z"
+            fill="rgba(255,255,255,0.42)"
+            stroke="rgba(47,39,31,0.18)"
+            strokeWidth="2.3"
+          />
+          <path
+            d="M168 182 C140 194 120 238 126 294 C132 342 162 368 202 354 L236 334 L236 182 Z"
+            fill="rgba(109,98,87,0.08)"
+            stroke="rgba(109,98,87,0.28)"
+            strokeWidth="2"
+          />
+          <path
+            d="M302 182 C330 194 350 238 344 294 C338 342 308 368 268 354 L236 334 L236 182 Z"
+            fill="rgba(109,98,87,0.08)"
+            stroke="rgba(109,98,87,0.28)"
+            strokeWidth="2"
+          />
+          <path
+            d="M236 238 C208 204 164 216 170 258 C176 300 236 348 236 348 C236 348 296 300 302 258 C308 216 264 204 236 238 Z"
+            fill="rgba(178,110,87,0.11)"
+            stroke="rgba(178,110,87,0.4)"
+            strokeWidth="2.3"
+          />
+          <path
+            d="M154 376 C126 384 112 420 122 456 C136 504 194 520 246 516 C314 510 360 486 370 436 C380 394 342 364 280 362 Z"
+            fill="rgba(130,144,125,0.11)"
+            stroke="rgba(130,144,125,0.4)"
+            strokeWidth="2.3"
+          />
+          {[1, 2, 3].map((ring) => (
+            <ellipse
+              key={ring}
+              cx="236"
+              cy="278"
+              rx={74 + ring * 54}
+              ry={110 + ring * 70}
+              stroke={`rgba(47,39,31,${0.1 - ring * 0.02})`}
+              strokeWidth="1"
+            />
+          ))}
+        </svg>
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: 32,
+          right: 32,
+          top: `${76 + scan * (large ? 6.2 : 4.2)}px`,
+          height: 2,
+          background:
+            "linear-gradient(90deg, transparent, rgba(178,110,87,0.26), rgba(130,144,125,0.34), transparent)",
+          boxShadow: "0 0 12px rgba(178,110,87,0.14)",
+        }}
+      />
+      {[
+        { label: "portal vein", top: large ? "41%" : "44%", left: large ? "70%" : "68%", color: C.ember },
+        { label: "left lung", top: large ? "32%" : "32%", left: large ? "17%" : "18%", color: C.accent },
+        { label: "safe plane", top: large ? "74%" : "70%", left: large ? "58%" : "56%", color: C.sage },
+      ].map((tag) => (
+        <div
+          key={tag.label}
+          style={{
+            position: "absolute",
+            top: tag.top,
+            left: tag.left,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              background: tag.color,
+            }}
+          />
+          <span
+            style={{
+              fontFamily: mono,
+              fontSize: 10,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: C.inkMuted,
+            }}
+          >
+            {tag.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const GuidanceColumn: React.FC = () => {
+  return (
+    <div style={{ height: "100%", background: "rgba(255,255,255,0.26)" }}>
+      <HeaderBar title="Guidance" detail="Risk-aware" />
+      <div style={{ padding: 22, display: "flex", flexDirection: "column", gap: 18 }}>
+        <p
+          style={{
+            margin: 0,
+            fontFamily: serif,
+            fontSize: 28,
+            lineHeight: 1.06,
+            letterSpacing: "-0.04em",
+            color: C.ink,
+          }}
+        >
+          The assistant speaks
+          <br />
+          like a second reader.
+        </p>
+        {[
+          ["assistant", "Reconstruction complete. Critical structures aligned to this patient."],
+          ["surgeon", "What is the safest incision corridor?"],
+          ["assistant", "Favor a left subcostal path. Hold 12 mm of clearance from the hepatic artery."],
+        ].map(([role, body], i) => (
+          <div
+            key={`${role}-${i}`}
+            style={{
+              padding: "16px 18px",
+              borderRadius: 22,
+              background: role === "surgeon" ? "rgba(233,227,218,0.56)" : "rgba(255,255,255,0.5)",
+              border: `1px solid ${role === "surgeon" ? "rgba(47,39,31,0.1)" : "rgba(47,39,31,0.07)"}`,
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontFamily: mono,
+                fontSize: 10,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: C.inkMuted,
+              }}
+            >
+              {role}
+            </p>
+            <p
+              style={{
+                margin: "10px 0 0",
+                fontFamily: sans,
+                fontSize: 14,
+                lineHeight: 1.6,
+                color: C.ink,
+              }}
+            >
+              {body}
+            </p>
+          </div>
+        ))}
+        <div
+          style={{
+            padding: 18,
+            borderRadius: 24,
+            border: "1px solid rgba(47,39,31,0.08)",
+            background: "rgba(255,255,255,0.42)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 10,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: serif,
+                fontSize: 18,
+                letterSpacing: "-0.03em",
+                color: C.ink,
+              }}
+            >
+              Hepatic artery
+            </span>
+            <span
+              style={{
+                fontFamily: mono,
+                fontSize: 11,
+                color: C.inkMuted,
+              }}
+            >
+              82%
+            </span>
+          </div>
+          <div
+            style={{
+              height: 5,
+              borderRadius: 999,
+              background: "rgba(47,39,31,0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: "82%",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(178,110,87,0.76), rgba(178,110,87,0.22))",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Board: React.FC<{ scale?: number }> = ({ scale = 1 }) => {
+  const frame = useCurrentFrame();
+  const sweep = interpolate(frame % 240, [0, 240], [-20, 100], {
     extrapolateRight: "clamp",
   });
 
-  // Tagline (appears after letters settle)
-  const tagProgress = spr(frame, fps, 60, 16, 100, 0.9);
-  const tagY = interpolate(tagProgress, [0, 1], [24, 0]);
-  const tagOpacity = interpolate(frame - 60, [0, 20], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  return (
+    <PanelShell
+      width={1480 * scale}
+      height={820 * scale}
+      style={{ position: "relative" }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `${340 * scale}px ${1}fr ${330 * scale}px`,
+          height: "100%",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,0.36), rgba(245,239,232,0.42))",
+        }}
+      >
+        <WorkflowColumn />
+        <AnatomyStage large />
+        <GuidanceColumn />
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          bottom: 0,
+          left: `${sweep}%`,
+          width: "18%",
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.18), rgba(255,255,255,0))",
+          transform: "skewX(-16deg)",
+          pointerEvents: "none",
+        }}
+      />
+    </PanelShell>
+  );
+};
 
-  // Divider line grows in
-  const lineWidth = interpolate(frame - 68, [0, 30], [0, 48], {
-    extrapolateLeft: "clamp",
+const TitleScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const fadeOut = fade(frame, 132, 176, 1, 0);
+  const headlineY = interpolate(spr(frame, 30, 26, 22, 135, 0.76), [0, 1], [42, 0]);
+  const subY = interpolate(spr(frame, 30, 48, 22, 120, 0.86), [0, 1], [24, 0]);
+  const diagramOpacity = fade(frame, 52, 96);
+
+  return (
+    <AbsoluteFill style={{ padding: "90px 102px 80px", opacity: fadeOut }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.05fr 0.95fr",
+          alignItems: "center",
+          height: "100%",
+          gap: 44,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          <Eyebrow text="Patient-specific surgical rehearsal" />
+          <PraxisWordmark />
+          <p
+            style={{
+              margin: 0,
+              fontFamily: serif,
+              fontSize: 66,
+              lineHeight: 0.98,
+              letterSpacing: "-0.065em",
+              color: C.ink,
+              transform: `translateY(${headlineY}px)`,
+              opacity: fade(frame, 20, 64),
+            }}
+          >
+            Rehearse the operation
+            <br />
+            before the room goes live.
+          </p>
+          <p
+            style={{
+              margin: 0,
+              maxWidth: 720,
+              fontFamily: sans,
+              fontSize: 22,
+              lineHeight: 1.6,
+              letterSpacing: "-0.01em",
+              color: C.inkSoft,
+              transform: `translateY(${subY}px)`,
+              opacity: fade(frame, 42, 88),
+            }}
+          >
+            The first act now opens with restraint: lighter space, slower
+            timing, and a cleaner editorial surface that introduces the product
+            before any human footage appears.
+          </p>
+        </div>
+
+        <div style={{ position: "relative", height: 700, opacity: diagramOpacity }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 34,
+              borderRadius: "50%",
+              border: "1px solid rgba(47,39,31,0.08)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 128,
+              borderRadius: "50%",
+              border: "1px dashed rgba(47,39,31,0.08)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: 380,
+              height: 470,
+              transform: "translate(-50%, -50%)",
+              borderRadius: 240,
+              background:
+                "radial-gradient(circle at 50% 28%, rgba(255,255,255,0.68), rgba(247,240,232,0.64))",
+              border: `1px solid ${C.line}`,
+              boxShadow: "0 26px 60px rgba(38,29,20,0.08)",
+            }}
+          />
+          <AnatomyDiagram />
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const AnatomyDiagram: React.FC = () => {
+  const frame = useCurrentFrame();
+  const orbit = Math.sin(frame / 28) * 12;
+  return (
+    <>
+      <svg
+        width="440"
+        height="520"
+        viewBox="0 0 440 520"
+        fill="none"
+        style={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+        }}
+      >
+        <path
+          d="M220 46 C160 46 110 98 100 162 L76 356 C68 418 114 474 168 474 L272 474 C326 474 372 418 364 356 L340 162 C330 98 280 46 220 46 Z"
+          fill="rgba(255,255,255,0.34)"
+          stroke="rgba(47,39,31,0.16)"
+          strokeWidth="2.2"
+        />
+        <path
+          d="M162 168 C138 178 122 216 126 260 C130 302 154 324 190 314 L220 296 L220 168 Z"
+          fill="rgba(109,98,87,0.09)"
+          stroke="rgba(109,98,87,0.28)"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M278 168 C302 178 318 216 314 260 C310 302 286 324 250 314 L220 296 L220 168 Z"
+          fill="rgba(109,98,87,0.09)"
+          stroke="rgba(109,98,87,0.28)"
+          strokeWidth="1.8"
+        />
+        <path
+          d="M220 222 C196 194 158 204 164 240 C170 278 220 318 220 318 C220 318 270 278 276 240 C282 204 244 194 220 222 Z"
+          fill="rgba(178,110,87,0.12)"
+          stroke="rgba(178,110,87,0.42)"
+          strokeWidth="2"
+        />
+        <path
+          d="M144 352 C118 358 108 390 116 422 C128 464 180 478 228 474 C292 468 334 446 342 404 C350 366 316 340 258 338 Z"
+          fill="rgba(130,144,125,0.11)"
+          stroke="rgba(130,144,125,0.42)"
+          strokeWidth="2"
+        />
+      </svg>
+      {[
+        { top: 154 + orbit, left: 116, label: "arterial risk" },
+        { top: 278, left: 470, label: "volume mesh" },
+        { top: 486 - orbit, left: 156, label: "safe plane" },
+      ].map((tag) => (
+        <div
+          key={tag.label}
+          style={{
+            position: "absolute",
+            top: tag.top,
+            left: tag.left,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <span
+            style={{
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
+              background: "rgba(47,39,31,0.4)",
+            }}
+          />
+          <span
+            style={{
+              fontFamily: mono,
+              fontSize: 10,
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
+              color: C.inkMuted,
+            }}
+          >
+            {tag.label}
+          </span>
+        </div>
+      ))}
+    </>
+  );
+};
+
+const HeroScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const appear = fade(frame, 146, 198);
+  const disappear = fade(frame, 300, 344, 1, 0);
+  const heroLift = interpolate(spr(frame, 30, 154, 18, 120, 0.92), [0, 1], [48, 0]);
+  const cameraScale = interpolate(frame, [160, 300], [0.94, 1], {
     extrapolateRight: "clamp",
   });
 
   return (
     <AbsoluteFill
       style={{
-        display: "flex",
-        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        opacity: appear * disappear,
       }}
     >
-      {/* Medical precision icon */}
       <div
         style={{
-          marginBottom: 36,
-          opacity: iconOpacity,
-          transform: `scale(${iconScale})`,
+          position: "absolute",
+          top: 84,
+          left: 100,
+          zIndex: 3,
+          opacity: fade(frame, 172, 220),
         }}
       >
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <circle
-            cx="24"
-            cy="24"
-            r="21"
-            stroke={C.accent}
-            strokeWidth="1.5"
-            opacity="0.3"
-          />
-          <circle
-            cx="24"
-            cy="24"
-            r="13"
-            stroke={C.accentSoft}
-            strokeWidth="0.8"
-            opacity="0.4"
-          />
-          <circle cx="24" cy="24" r="4" fill={C.accent} opacity="0.7" />
-          <line
-            x1="24"
-            y1="5"
-            x2="24"
-            y2="14"
-            stroke={C.accent}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <line
-            x1="24"
-            y1="34"
-            x2="24"
-            y2="43"
-            stroke={C.accent}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <line
-            x1="5"
-            y1="24"
-            x2="14"
-            y2="24"
-            stroke={C.accent}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-          <line
-            x1="34"
-            y1="24"
-            x2="43"
-            y2="24"
-            stroke={C.accent}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          />
-        </svg>
+        <Eyebrow text="Product first, not slideshow first" delay={154} />
       </div>
 
-      {/* Wordmark */}
       <div
         style={{
-          fontFamily: "'Georgia', 'Times New Roman', serif",
-          fontSize: 152,
-          fontWeight: 300,
-          letterSpacing: "0.2em",
-          color: C.text,
-          display: "flex",
-          lineHeight: 1,
+          transform: `translateY(${heroLift}px) scale(${cameraScale})`,
         }}
       >
-        {LETTERS.map((char, i) => (
-          <AnimatedLetter key={i} char={char} index={i} />
-        ))}
+        <Board />
       </div>
+    </AbsoluteFill>
+  );
+};
 
-      {/* Tagline group */}
+const DetailScene: React.FC = () => {
+  const frame = useCurrentFrame();
+  const appear = fade(frame, 316, 360);
+  const disappear = fade(frame, 380, 420, 1, 0);
+  const leftX = interpolate(spr(frame, 30, 320, 18, 118, 0.9), [0, 1], [-36, 0]);
+  const rightX = interpolate(spr(frame, 30, 334, 18, 118, 0.9), [0, 1], [36, 0]);
+  const boardY = interpolate(frame, [316, 430], [14, -8], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        padding: "88px 96px 74px",
+        opacity: appear * disappear,
+      }}
+    >
       <div
         style={{
-          marginTop: 28,
-          display: "flex",
-          flexDirection: "column",
+          display: "grid",
+          gridTemplateColumns: "0.72fr 1.28fr",
+          gap: 34,
           alignItems: "center",
-          gap: 14,
-          opacity: tagOpacity,
-          transform: `translateY(${tagY}px)`,
+          height: "100%",
+          transform: `translateY(${boardY}px)`,
         }}
       >
         <div
           style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 24,
+            transform: `translateX(${leftX}px)`,
+          }}
+        >
+          <Eyebrow text="Longer transitions, calmer surfaces" delay={320} />
+          <p
+            style={{
+              margin: 0,
+              fontFamily: serif,
+              fontSize: 64,
+              lineHeight: 0.98,
+              letterSpacing: "-0.06em",
+              color: C.ink,
+            }}
+          >
+            One surface at a time.
+          </p>
+          <p
+            style={{
+              margin: 0,
+              fontFamily: sans,
+              fontSize: 20,
+              lineHeight: 1.65,
+              color: C.inkSoft,
+              maxWidth: 430,
+            }}
+          >
+            The handoff now breathes. Instead of stacked cards colliding into
+            frame, the composition glides into a focused board and ends on a
+            quieter close-up.
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {[
+              "Serif-led UI typography",
+              "Wide-panel hero shot",
+              "Slower dissolves and camera drift",
+            ].map((item) => (
+              <div
+                key={item}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  paddingBottom: 12,
+                  borderBottom: "1px solid rgba(47,39,31,0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: "50%",
+                    background: C.ink,
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: serif,
+                    fontSize: 24,
+                    letterSpacing: "-0.03em",
+                    color: C.ink,
+                  }}
+                >
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 0.88fr",
+            gap: 18,
+            transform: `translateX(${rightX}px)`,
+          }}
+        >
+          <PanelShell width="100%" height={730}>
+            <AnatomyStage large />
+          </PanelShell>
+          <PanelShell width="100%" height={730}>
+            <GuidanceColumn />
+          </PanelShell>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const WatchScene: React.FC = () => {
+  const frame = useCurrentFrame();
+
+  const appear = fade(frame, 420, 460);
+  const disappear = fade(frame, 570, 610, 1, 0);
+  const opacity = appear * disappear;
+
+  const modalProgress = spr(frame, 30, 424, 22, 135, 0.88);
+  const modalScale = interpolate(modalProgress, [0, 1], [0.9, 1]);
+  const modalY = interpolate(modalProgress, [0, 1], [50, 0]);
+
+  const eyebrowOpacity = fade(frame, 428, 460);
+  const eyebrowY = interpolate(modalProgress, [0, 1], [16, 0]);
+
+  const videoProgress = interpolate(frame, [460, 570], [0, 76], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ opacity }}>
+      {/* Backdrop */}
+      <AbsoluteFill
+        style={{
+          background: "rgba(23,19,17,0.46)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+        }}
+      />
+
+      {/* Modal */}
+      <AbsoluteFill
+        style={{ alignItems: "center", justifyContent: "center" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 20,
+          }}
+        >
+          {/* Floating eyebrow above modal */}
+          <div
+            style={{
+              opacity: eyebrowOpacity,
+              transform: `translateY(${eyebrowY}px)`,
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div
+              style={{ width: 46, height: 1, background: "rgba(255,255,255,0.28)" }}
+            />
+            <span
+              style={{
+                fontFamily: mono,
+                fontSize: 11,
+                letterSpacing: "0.18em",
+                textTransform: "uppercase",
+                color: "rgba(255,255,255,0.52)",
+              }}
+            >
+              Watch it in action
+            </span>
+            <div
+              style={{ width: 46, height: 1, background: "rgba(255,255,255,0.28)" }}
+            />
+          </div>
+
+          {/* Modal panel */}
+          <div
+            style={{
+              width: 1080,
+              borderRadius: 36,
+              overflow: "hidden",
+              background: C.panelStrong,
+              border: "1px solid rgba(255,255,255,0.72)",
+              borderBottom: "1px solid rgba(255,255,255,0.28)",
+              boxShadow: [
+                "0 56px 140px rgba(38,29,20,0.28)",
+                "0 18px 48px rgba(38,29,20,0.14)",
+                "inset 0 1.5px 0 rgba(255,255,255,0.85)",
+              ].join(", "),
+              transform: `scale(${modalScale}) translateY(${modalY}px)`,
+            }}
+          >
+            {/* Header bar */}
+            <div
+              style={{
+                height: 62,
+                padding: "0 26px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                borderBottom: `1px solid ${C.line}`,
+                background: "rgba(255,255,255,0.52)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: "50%",
+                    background: C.ember,
+                    boxShadow: "0 0 14px rgba(178,110,87,0.32)",
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: mono,
+                    fontSize: 11,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: C.inkMuted,
+                  }}
+                >
+                  Live session
+                </span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                <span
+                  style={{
+                    fontFamily: mono,
+                    fontSize: 10,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                    color: C.inkMuted,
+                  }}
+                >
+                  Case 4471-B · Praxis
+                </span>
+                {/* Close button */}
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    background: "rgba(47,39,31,0.06)",
+                    border: `1px solid ${C.line}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: mono,
+                      fontSize: 15,
+                      lineHeight: 1,
+                      color: C.inkMuted,
+                    }}
+                  >
+                    ×
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Video viewport */}
+            <div
+              style={{
+                position: "relative",
+                height: 544,
+                overflow: "hidden",
+                background:
+                  "linear-gradient(160deg, #fcfaf4 0%, #f8f4ec 60%, #f6f1ea 100%)",
+              }}
+            >
+              {/* Scaled-down Board */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <Board scale={0.65} />
+              </div>
+
+              {/* Scanline overlay for "screen recording" texture */}
+              <AbsoluteFill
+                style={{
+                  backgroundImage:
+                    "repeating-linear-gradient(0deg, rgba(0,0,0,0.016) 0px, rgba(0,0,0,0.016) 1px, transparent 1px, transparent 4px)",
+                  pointerEvents: "none",
+                  mixBlendMode: "multiply",
+                }}
+              />
+
+              {/* Bottom gradient + controls */}
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 56,
+                  background:
+                    "linear-gradient(transparent, rgba(23,19,17,0.10))",
+                  borderTop: `1px solid ${C.line}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "0 26px",
+                }}
+              >
+                {/* Play triangle */}
+                <div
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderTop: "7px solid transparent",
+                    borderBottom: "7px solid transparent",
+                    borderLeft: `12px solid ${C.inkSoft}`,
+                    flexShrink: 0,
+                  }}
+                />
+                {/* Progress track */}
+                <div
+                  style={{
+                    flex: 1,
+                    height: 3,
+                    borderRadius: 999,
+                    background: "rgba(47,39,31,0.12)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${videoProgress}%`,
+                      height: "100%",
+                      borderRadius: 999,
+                      background: `linear-gradient(90deg, ${C.ember}, rgba(178,110,87,0.55))`,
+                    }}
+                  />
+                </div>
+                <span
+                  style={{
+                    fontFamily: mono,
+                    fontSize: 10,
+                    letterSpacing: "0.08em",
+                    color: C.inkMuted,
+                    flexShrink: 0,
+                  }}
+                >
+                  0:04
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
+const ClosingMark: React.FC = () => {
+  const frame = useCurrentFrame();
+  const appear = fade(frame, 620, 660);
+  const y = interpolate(spr(frame, 30, 624, 18, 120, 0.88), [0, 1], [24, 0]);
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: appear,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 18,
+          transform: `translateY(${y}px)`,
+        }}
+      >
+        <PraxisWordmark compact />
+        <div
+          style={{
+            width: 120,
             height: 1,
-            width: lineWidth,
-            background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)`,
+            background: "rgba(23,19,17,0.18)",
           }}
         />
         <p
           style={{
-            fontFamily: "'Helvetica Neue', Arial, sans-serif",
-            fontSize: 20,
-            fontWeight: 400,
-            letterSpacing: "0.26em",
+            margin: 0,
+            fontFamily: mono,
+            fontSize: 11,
+            letterSpacing: "0.18em",
             textTransform: "uppercase",
-            color: C.textSub,
-            margin: 0,
+            color: C.inkMuted,
           }}
         >
-          AI-Guided Surgical Simulation
-        </p>
-        <p
-          style={{
-            fontFamily: "monospace",
-            fontSize: 12,
-            color: C.textMuted,
-            letterSpacing: "0.1em",
-            margin: 0,
-          }}
-        >
-          Three.js · Gaussian Splatting · Groq / Llama 4 · MediaPipe
+          AI-guided surgical simulation
         </p>
       </div>
     </AbsoluteFill>
   );
 };
 
-// ─── Act 2 — Feature Badges (frames 90–200) ──────────────────────────────────
-const FEATURES = [
-  {
-    label: "3D Reconstruction",
-    sub: "CT / MRI → Gaussian Splat",
-    color: C.accentSoft,
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <polygon
-          points="10,2 18,6 18,14 10,18 2,14 2,6"
-          stroke={C.accent}
-          strokeWidth="1.2"
-          fill="none"
-          opacity="0.8"
-        />
-        <circle cx="10" cy="10" r="2.5" fill={C.accent} opacity="0.6" />
-      </svg>
-    ),
-  },
-  {
-    label: "Hand Tracking",
-    sub: "5 gesture types · zero hardware",
-    color: C.teal,
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path
-          d="M10 16 L6 8 L6 5 Q6 4 7 4 Q8 4 8 5 L8 10 L9 10 L9 4 Q9 3 10 3 Q11 3 11 4 L11 10 L12 10 L12 5 Q12 4 13 4 Q14 4 14 5 L14 10 L15 10 L15 8 Q15 7 16 7 Q17 7 17 8 L17 12 Q17 15 14 16 Z"
-          stroke="#2dd4bf"
-          strokeWidth="1"
-          fill="rgba(45,212,191,0.15)"
-        />
-      </svg>
-    ),
-  },
-  {
-    label: "AI Analysis",
-    sub: "Real-time risk · Llama 4 Scout",
-    color: C.red,
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle
-          cx="10"
-          cy="10"
-          r="7"
-          stroke="#f87171"
-          strokeWidth="1.2"
-          fill="none"
-          opacity="0.6"
-        />
-        <path
-          d="M10 6 L10 10 L13 13"
-          stroke="#f87171"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-        <circle cx="10" cy="6" r="1" fill="#f87171" opacity="0.8" />
-      </svg>
-    ),
-  },
-];
-
-const FeatureBadge: React.FC<{
-  feature: (typeof FEATURES)[0];
-  index: number;
-  startFrame: number;
-}> = ({ feature, index, startFrame }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const delay = startFrame + index * 16;
-
-  const progress = spr(frame, fps, delay, 16, 120, 0.85);
-  const y = interpolate(progress, [0, 1], [32, 0]);
-  const opacity = interpolate(frame - delay, [0, 18], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 16,
-        padding: "20px 28px",
-        background: "rgba(255,255,255,0.76)",
-        border: "1px solid rgba(109,40,217,0.11)",
-        borderRadius: 18,
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        boxShadow:
-          "0 6px 32px rgba(109,40,217,0.07), 0 1px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.9)",
-        opacity,
-        transform: `translateY(${y}px)`,
-        minWidth: 288,
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 10,
-          background: C.accentDim,
-          border: "1px solid rgba(109,40,217,0.13)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {feature.icon}
-      </div>
-      <div>
-        <p
-          style={{
-            fontFamily: "'Helvetica Neue', Arial, sans-serif",
-            fontSize: 14,
-            fontWeight: 600,
-            color: C.text,
-            marginBottom: 4,
-            letterSpacing: "-0.01em",
-          }}
-        >
-          {feature.label}
-        </p>
-        <p
-          style={{
-            fontFamily: "monospace",
-            fontSize: 10,
-            color: C.textMuted,
-            letterSpacing: "0.04em",
-          }}
-        >
-          {feature.sub}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-// ─── Anatomy Viewer Mockup ────────────────────────────────────────────────────
-const AnatomyViewerMock: React.FC<{ startFrame: number }> = ({
-  startFrame,
-}) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const progress = spr(frame, fps, startFrame, 18, 130, 0.88);
-  const opacity = interpolate(frame - startFrame, [0, 22], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const y = interpolate(progress, [0, 1], [44, 0]);
-  const scale = interpolate(progress, [0, 1], [0.93, 1]);
-
-  const elapsed = frame - startFrame;
-  const scanY = interpolate(elapsed, [0, 150], [0, 100], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const pulse = (Math.sin(elapsed / 11) * 0.5 + 0.5);
-
-  const annotations = [
-    { label: "Liver", lx: 56, ly: 66, color: C.teal },
-    { label: "L. Ventricle", lx: 30, ly: 43, color: C.red },
-    { label: "Aorta", lx: 64, ly: 52, color: C.red },
-    { label: "L. Lung", lx: 18, ly: 34, color: C.accentSoft },
-  ];
-
-  return (
-    <div
-      style={{
-        width: 560,
-        background: C.darkBg,
-        borderRadius: 20,
-        border: `1px solid ${C.darkBorder}`,
-        boxShadow:
-          "0 28px 72px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)",
-        overflow: "hidden",
-        opacity,
-        transform: `translateY(${y}px) scale(${scale})`,
-        flexShrink: 0,
-      }}
-    >
-      {/* Header bar */}
-      <div
-        style={{
-          padding: "12px 20px",
-          borderBottom: `1px solid ${C.darkBorder}`,
-          background: C.darkSurface,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: C.accent,
-              boxShadow: `0 0 8px ${C.accent}`,
-            }}
-          />
-          <span
-            style={{
-              fontFamily: "monospace",
-              fontSize: 12,
-              color: "rgba(255,255,255,0.75)",
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-            }}
-          >
-            Praxis
-          </span>
-          <span
-            style={{
-              fontFamily: "monospace",
-              fontSize: 10,
-              color: "rgba(255,255,255,0.22)",
-              letterSpacing: "0.04em",
-            }}
-          >
-            / Simulation
-          </span>
-        </div>
-        <div style={{ display: "flex", gap: 6 }}>
-          {[
-            ["Mesh", true],
-            ["Splat", false],
-          ].map(([label, active]) => (
-            <div
-              key={label as string}
-              style={{
-                padding: "4px 12px",
-                borderRadius: 5,
-                fontSize: 10,
-                fontFamily: "monospace",
-                letterSpacing: "0.05em",
-                textTransform: "uppercase",
-                background: active
-                  ? "rgba(109,40,217,0.2)"
-                  : "transparent",
-                color: active ? C.accentSoft : "rgba(255,255,255,0.28)",
-                border: `1px solid ${active ? "rgba(109,40,217,0.35)" : C.darkBorder}`,
-              }}
-            >
-              {label as string}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* 3D Viewport */}
-      <div style={{ position: "relative", height: 280, overflow: "hidden" }}>
-        {/* Viewport background */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(180deg, #090912 0%, #06060e 100%)",
-            backgroundImage: [
-              "linear-gradient(rgba(109,40,217,0.045) 1px, transparent 1px)",
-              "linear-gradient(90deg, rgba(109,40,217,0.045) 1px, transparent 1px)",
-            ].join(", "),
-            backgroundSize: "36px 36px",
-          }}
-        />
-
-        {/* Center glow */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%,-50%)",
-            width: 200,
-            height: 260,
-            background:
-              "radial-gradient(ellipse, rgba(109,40,217,0.14) 0%, transparent 70%)",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Anatomy SVG */}
-        <svg
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%,-50%)",
-          }}
-          width="180"
-          height="230"
-          viewBox="0 0 180 230"
-        >
-          {/* Torso outline */}
-          <path
-            d="M90 10 C68 10 40 36 36 74 L28 168 C26 190 36 206 54 208 L126 208 C144 206 154 190 152 168 L144 74 C140 36 112 10 90 10 Z"
-            fill="none"
-            stroke="rgba(109,40,217,0.38)"
-            strokeWidth="1.4"
-          />
-
-          {/* Left lung */}
-          <path
-            d="M58 65 C44 70 38 92 40 116 C42 134 54 142 70 137 L86 126 L90 65 Z"
-            fill="rgba(109,40,217,0.07)"
-            stroke="rgba(167,139,250,0.45)"
-            strokeWidth="0.9"
-          />
-
-          {/* Right lung */}
-          <path
-            d="M122 65 C136 70 142 92 140 116 C138 134 126 142 110 137 L94 126 L90 65 Z"
-            fill="rgba(109,40,217,0.07)"
-            stroke="rgba(167,139,250,0.45)"
-            strokeWidth="0.9"
-          />
-
-          {/* Heart */}
-          <path
-            d="M90 84 C76 70 55 74 58 95 C60 110 90 128 90 128 C90 128 120 110 122 95 C125 74 104 70 90 84 Z"
-            fill="rgba(248,113,113,0.1)"
-            stroke="rgba(248,113,113,0.55)"
-            strokeWidth="1"
-          />
-
-          {/* Liver */}
-          <path
-            d="M58 142 C44 142 36 154 40 172 C44 184 64 192 90 190 C112 188 128 180 132 164 C136 148 120 140 92 140 Z"
-            fill="rgba(45,212,191,0.07)"
-            stroke="rgba(45,212,191,0.35)"
-            strokeWidth="0.9"
-          />
-
-          {/* Spine */}
-          {[98, 122, 146, 170, 194].map((cy, i) => (
-            <circle
-              key={i}
-              cx="90"
-              cy={cy}
-              r="3.5"
-              fill="none"
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth="0.7"
-            />
-          ))}
-
-          {/* Ribs — left */}
-          {[80, 96, 112].map((y, i) => (
-            <path
-              key={`rl${i}`}
-              d={`M90 ${y} C72 ${y + 4}, 54 ${y + 10}, 46 ${y + 20}`}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth="0.6"
-            />
-          ))}
-
-          {/* Ribs — right */}
-          {[80, 96, 112].map((y, i) => (
-            <path
-              key={`rr${i}`}
-              d={`M90 ${y} C108 ${y + 4}, 126 ${y + 10}, 134 ${y + 20}`}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth="0.6"
-            />
-          ))}
-        </svg>
-
-        {/* CT scan line */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            top: `${scanY}%`,
-            height: 1.5,
-            background:
-              "linear-gradient(90deg, transparent 5%, rgba(109,40,217,0.55) 30%, rgba(45,212,191,0.4) 60%, rgba(109,40,217,0.3) 80%, transparent 95%)",
-            boxShadow: "0 0 8px rgba(109,40,217,0.3)",
-            pointerEvents: "none",
-          }}
-        />
-
-        {/* Annotation dots + labels */}
-        {annotations.map((ann, i) => {
-          const annOpacity = interpolate(
-            elapsed - i * 10,
-            [0, 20],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          );
-          const glow = 1 + Math.sin((elapsed + i * 18) / 10) * 0.4;
-          return (
-            <div
-              key={i}
-              style={{
-                position: "absolute",
-                left: `${ann.lx}%`,
-                top: `${ann.ly}%`,
-                opacity: annOpacity,
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                pointerEvents: "none",
-              }}
-            >
-              <div
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: ann.color,
-                  boxShadow: `0 0 ${8 * glow}px ${ann.color}`,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: 10,
-                  color: ann.color,
-                  letterSpacing: "0.04em",
-                  whiteSpace: "nowrap",
-                  textShadow: `0 0 10px ${ann.color}60`,
-                }}
-              >
-                {ann.label}
-              </span>
-            </div>
-          );
-        })}
-
-        {/* Corner coordinates */}
-        <div
-          style={{
-            position: "absolute",
-            top: 10,
-            left: 14,
-            fontFamily: "monospace",
-            fontSize: 9,
-            color: "rgba(255,255,255,0.18)",
-            letterSpacing: "0.04em",
-          }}
-        >
-          X: +0.42 Y: −1.08 Z: +0.77
-        </div>
-      </div>
-
-      {/* Status bar */}
-      <div
-        style={{
-          padding: "10px 18px",
-          borderTop: `1px solid ${C.darkBorder}`,
-          background: C.darkSurface,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: C.red,
-            boxShadow: `0 0 ${7 * pulse}px ${C.red}`,
-          }}
-        />
-        <span
-          style={{
-            fontFamily: "monospace",
-            fontSize: 10,
-            color: C.red,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-          }}
-        >
-          2 Risk Zones Identified
-        </span>
-        <div style={{ flex: 1 }} />
-        <span
-          style={{
-            fontFamily: "monospace",
-            fontSize: 10,
-            color: "rgba(255,255,255,0.2)",
-          }}
-        >
-          session-47f2a
-        </span>
-      </div>
-    </div>
-  );
-};
-
-// ─── AI Panel Mockup ──────────────────────────────────────────────────────────
-const AIPanelMock: React.FC<{ startFrame: number }> = ({ startFrame }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const progress = spr(frame, fps, startFrame, 18, 130, 0.88);
-  const opacity = interpolate(frame - startFrame, [0, 22], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const y = interpolate(progress, [0, 1], [36, 0]);
-  const scale = interpolate(progress, [0, 1], [0.94, 1]);
-
-  const elapsed = frame - startFrame;
-
-  const messages = [
-    {
-      role: "assistant",
-      text: "Reconstruction complete. Scanning for key structures...",
-    },
-    { role: "user", text: "Safest incision approach?" },
-    {
-      role: "assistant",
-      text: "Left subcostal recommended. Hepatic artery 8mm proximal — maintain 12mm clearance. Portal vein at L2.",
-    },
-  ];
-
-  const risks = [
-    { label: "Hepatic Artery", level: 0.82 },
-    { label: "Portal Vein", level: 0.61 },
-    { label: "Bile Duct", level: 0.38 },
-  ];
-
-  return (
-    <div
-      style={{
-        width: 420,
-        background: "rgba(252,252,255,0.88)",
-        borderRadius: 20,
-        border: "1px solid rgba(109,40,217,0.1)",
-        boxShadow:
-          "0 20px 56px rgba(109,40,217,0.09), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
-        backdropFilter: "blur(28px)",
-        WebkitBackdropFilter: "blur(28px)",
-        overflow: "hidden",
-        opacity,
-        transform: `translateY(${y}px) scale(${scale})`,
-        flexShrink: 0,
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "14px 20px",
-          borderBottom: "1px solid rgba(0,0,0,0.055)",
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          background: "rgba(255,255,255,0.6)",
-        }}
-      >
-        <div
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: C.accent,
-            boxShadow: `0 0 8px ${C.accent}60`,
-          }}
-        />
-        <span
-          style={{
-            fontFamily: "monospace",
-            fontSize: 11,
-            color: C.text,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            fontWeight: 700,
-          }}
-        >
-          AI Guide
-        </span>
-        <div style={{ flex: 1 }} />
-        <div
-          style={{
-            padding: "3px 10px",
-            borderRadius: 5,
-            background: "rgba(248,113,113,0.1)",
-            border: "1px solid rgba(248,113,113,0.22)",
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "monospace",
-              fontSize: 9,
-              color: "#ef4444",
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-            }}
-          >
-            High Risk
-          </span>
-        </div>
-      </div>
-
-      {/* Chat messages */}
-      <div
-        style={{
-          padding: "14px 16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}
-      >
-        {messages.map((msg, i) => {
-          const msgOpacity = interpolate(
-            elapsed - i * 14,
-            [0, 20],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          );
-          const isUser = msg.role === "user";
-          return (
-            <div
-              key={i}
-              style={{
-                alignSelf: isUser ? "flex-end" : "flex-start",
-                maxWidth: "88%",
-                opacity: msgOpacity,
-              }}
-            >
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: isUser
-                    ? "14px 14px 3px 14px"
-                    : "14px 14px 14px 3px",
-                  background: isUser
-                    ? "rgba(109,40,217,0.09)"
-                    : "rgba(245,246,252,0.9)",
-                  border: isUser
-                    ? "1px solid rgba(109,40,217,0.16)"
-                    : "1px solid rgba(0,0,0,0.06)",
-                }}
-              >
-                <p
-                  style={{
-                    fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                    fontSize: 12,
-                    lineHeight: 1.65,
-                    color: isUser ? C.accent : C.text,
-                    margin: 0,
-                  }}
-                >
-                  {msg.text}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Risk breakdown */}
-      <div
-        style={{
-          margin: "0 16px 16px",
-          padding: "12px 14px",
-          borderRadius: 10,
-          background: "rgba(248,113,113,0.06)",
-          border: "1px solid rgba(248,113,113,0.14)",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "monospace",
-            fontSize: 9,
-            color: "#ef4444",
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-            marginBottom: 10,
-          }}
-        >
-          Risk Assessment
-        </p>
-        {risks.map((r, i) => {
-          const rOpacity = interpolate(
-            elapsed - 36 - i * 8,
-            [0, 18],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          );
-          const barW = interpolate(
-            elapsed - 42 - i * 8,
-            [0, 28],
-            [0, r.level * 100],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          );
-          return (
-            <div
-              key={i}
-              style={{ marginBottom: i < 2 ? 8 : 0, opacity: rOpacity }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: 4,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 10,
-                    color: C.textSub,
-                  }}
-                >
-                  {r.label}
-                </span>
-                <span
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 10,
-                    color: C.textMuted,
-                  }}
-                >
-                  {Math.round(r.level * 100)}%
-                </span>
-              </div>
-              <div
-                style={{
-                  height: 4,
-                  background: "rgba(0,0,0,0.06)",
-                  borderRadius: 2,
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    borderRadius: 2,
-                    width: `${barW}%`,
-                    background: `linear-gradient(90deg, #f87171, #fca5a5)`,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-// ─── Workflow Panel Mockup ────────────────────────────────────────────────────
-const WorkflowMock: React.FC<{ startFrame: number }> = ({ startFrame }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const progress = spr(frame, fps, startFrame, 18, 120, 0.9);
-  const opacity = interpolate(frame - startFrame, [0, 22], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const y = interpolate(progress, [0, 1], [36, 0]);
-  const scale = interpolate(progress, [0, 1], [0.94, 1]);
-
-  const elapsed = frame - startFrame;
-
-  const steps = [
-    { num: "01", label: "Upload", detail: "CT / MRI scan", done: true },
-    {
-      num: "02",
-      label: "Reconstruct",
-      detail: "3D Gaussian splat",
-      done: true,
-    },
-    {
-      num: "03",
-      label: "Annotate",
-      detail: "AI-labeled anatomy",
-      active: true,
-    },
-    {
-      num: "04",
-      label: "Simulate",
-      detail: "Hand-tracked surgery",
-      done: false,
-    },
-    { num: "05", label: "Report", detail: "Surgical plan PDF", done: false },
-  ];
-
-  return (
-    <div
-      style={{
-        width: 340,
-        background: "rgba(252,252,255,0.88)",
-        borderRadius: 20,
-        border: "1px solid rgba(0,0,0,0.07)",
-        boxShadow:
-          "0 14px 44px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.95)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
-        overflow: "hidden",
-        opacity,
-        transform: `translateY(${y}px) scale(${scale})`,
-        flexShrink: 0,
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          padding: "14px 20px",
-          borderBottom: "1px solid rgba(0,0,0,0.055)",
-          background: "rgba(255,255,255,0.6)",
-        }}
-      >
-        <p
-          style={{
-            fontFamily: "monospace",
-            fontSize: 9,
-            color: C.accent,
-            letterSpacing: "0.09em",
-            textTransform: "uppercase",
-            marginBottom: 4,
-          }}
-        >
-          Pipeline
-        </p>
-        <p
-          style={{
-            fontFamily: "'Helvetica Neue', Arial, sans-serif",
-            fontSize: 15,
-            fontWeight: 500,
-            color: C.text,
-            letterSpacing: "-0.02em",
-          }}
-        >
-          Patient #4471-B
-        </p>
-      </div>
-
-      {/* Steps */}
-      <div style={{ padding: "8px 0" }}>
-        {steps.map((step, i) => {
-          const stepOpacity = interpolate(
-            elapsed - i * 9,
-            [0, 18],
-            [0, 1],
-            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-          );
-          const isActive = (step as any).active;
-          const isDone = (step as any).done;
-
-          return (
-            <div
-              key={i}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                padding: "10px 20px",
-                background: isActive ? "rgba(109,40,217,0.05)" : "transparent",
-                opacity: stepOpacity,
-              }}
-            >
-              {/* Step marker */}
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 7,
-                  flexShrink: 0,
-                  background: isDone
-                    ? "rgba(45,212,191,0.1)"
-                    : isActive
-                    ? "rgba(109,40,217,0.1)"
-                    : "rgba(0,0,0,0.04)",
-                  border: `1px solid ${
-                    isDone
-                      ? "rgba(45,212,191,0.28)"
-                      : isActive
-                      ? "rgba(109,40,217,0.22)"
-                      : "rgba(0,0,0,0.08)"
-                  }`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {isDone ? (
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <polyline
-                      points="2,6 5,9 10,3"
-                      stroke="#2dd4bf"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  <span
-                    style={{
-                      fontFamily: "monospace",
-                      fontSize: 9,
-                      color: isActive ? C.accent : C.textMuted,
-                    }}
-                  >
-                    {step.num}
-                  </span>
-                )}
-              </div>
-
-              <div style={{ flex: 1 }}>
-                <p
-                  style={{
-                    fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                    fontSize: 13,
-                    fontWeight: isActive ? 600 : 400,
-                    color: isActive
-                      ? C.text
-                      : isDone
-                      ? C.textSub
-                      : C.textMuted,
-                    marginBottom: 2,
-                  }}
-                >
-                  {step.label}
-                </p>
-                <p
-                  style={{
-                    fontFamily: "monospace",
-                    fontSize: 10,
-                    color: C.textMuted,
-                    letterSpacing: "0.03em",
-                  }}
-                >
-                  {step.detail}
-                </p>
-              </div>
-
-              {isActive && (
-                <div
-                  style={{
-                    width: 7,
-                    height: 7,
-                    borderRadius: "50%",
-                    background: C.accent,
-                    boxShadow: `0 0 ${
-                      6 + Math.sin(elapsed / 9) * 3
-                    }px ${C.accent}`,
-                    flexShrink: 0,
-                  }}
-                />
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Progress bar */}
-      <div
-        style={{
-          margin: "4px 20px 16px",
-          height: 3,
-          background: "rgba(0,0,0,0.06)",
-          borderRadius: 2,
-        }}
-      >
-        <div
-          style={{
-            height: "100%",
-            borderRadius: 2,
-            width: `${interpolate(elapsed, [0, 60], [0, 42], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            })}%`,
-            background: `linear-gradient(90deg, ${C.accent}, ${C.accentSoft})`,
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// ─── Small top logo for panel phase ──────────────────────────────────────────
-const SmallLogo: React.FC<{ startFrame: number }> = ({ startFrame }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const progress = spr(frame, fps, startFrame, 16, 120, 0.9);
-  const opacity = interpolate(frame - startFrame, [0, 20], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const y = interpolate(progress, [0, 1], [16, 0]);
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 64,
-        left: "50%",
-        transform: `translateX(-50%) translateY(${y}px)`,
-        opacity,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 8,
-      }}
-    >
-      <p
-        style={{
-          fontFamily: "'Georgia', serif",
-          fontSize: 32,
-          fontWeight: 300,
-          letterSpacing: "0.24em",
-          color: C.text,
-          margin: 0,
-        }}
-      >
-        PRAXIS
-      </p>
-      <div
-        style={{
-          width: 32,
-          height: 1,
-          background: `linear-gradient(90deg, transparent, ${C.accent}, transparent)`,
-        }}
-      />
-      <p
-        style={{
-          fontFamily: "monospace",
-          fontSize: 10,
-          color: C.textMuted,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          margin: 0,
-        }}
-      >
-        AI-Guided Surgical Simulation
-      </p>
-    </div>
-  );
-};
-
-// ─── Stack line at bottom ─────────────────────────────────────────────────────
-const StackLine: React.FC<{ startFrame: number }> = ({ startFrame }) => {
-  const frame = useCurrentFrame();
-  const opacity = interpolate(frame - startFrame, [0, 30], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: 56,
-        left: "50%",
-        transform: "translateX(-50%)",
-        opacity,
-        display: "flex",
-        alignItems: "center",
-        gap: 20,
-      }}
-    >
-      {["Three.js", "Gaussian Splatting", "Groq / Llama 4", "MediaPipe"].map(
-        (tech, i) => (
-          <React.Fragment key={tech}>
-            <span
-              style={{
-                fontFamily: "monospace",
-                fontSize: 11,
-                color: C.textMuted,
-                letterSpacing: "0.07em",
-              }}
-            >
-              {tech}
-            </span>
-            {i < 3 && (
-              <span
-                style={{
-                  fontFamily: "monospace",
-                  fontSize: 10,
-                  color: "rgba(109,40,217,0.3)",
-                }}
-              >
-                ·
-              </span>
-            )}
-          </React.Fragment>
-        )
-      )}
-    </div>
-  );
-};
-
-// ─── Main Intro Component ─────────────────────────────────────────────────────
-//
-//  Timeline (30 fps):
-//   0 – 110   Act 1: Title + icon reveal
-//  60 – 200   Act 2: Tagline + feature badges
-// 155 – 190   Crossfade: title fades out, panels phase begins
-// 190 – 450   Act 3: UI panel showcase
-// 400 – 450   Fade out
-//
 export const Intro: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  // Global fade-out
-  const globalOpacity = interpolate(frame, [410, 450], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Title phase fades out
-  const titleOpacity = interpolate(frame, [150, 182], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const titleMoveUp = interpolate(
-    spr(frame, fps, 150, 14, 90, 1),
-    [0, 1],
-    [0, -28]
-  );
-
-  // Badges fade out with title
-  const badgesOpacity = interpolate(frame, [158, 186], [1, 0], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  // Panel phase appears
-  const panelPhaseOpacity = interpolate(frame, [175, 210], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const showPanels = frame >= 170;
+  const globalOpacity = fade(frame, 670, 700, 1, 0);
 
   return (
     <AbsoluteFill style={{ opacity: globalOpacity }}>
-      <Background />
-      <SonarRings />
-
-      {/* ── Act 1+2: Title, tagline, badges ── */}
-      <AbsoluteFill
-        style={{
-          opacity: titleOpacity,
-          transform: `translateY(${titleMoveUp}px)`,
-          pointerEvents: "none",
-        }}
-      >
-        <TitleSection />
-
-        {/* Feature badges pinned below center */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "18%",
-            left: "50%",
-            transform: "translateX(-50%)",
-            display: "flex",
-            gap: 20,
-            opacity: badgesOpacity,
-          }}
-        >
-          {FEATURES.map((f, i) => (
-            <FeatureBadge key={i} feature={f} index={i} startFrame={95} />
-          ))}
-        </div>
-      </AbsoluteFill>
-
-      {/* ── Act 3: UI Panel showcase ── */}
-      {showPanels && (
-        <AbsoluteFill style={{ opacity: panelPhaseOpacity }}>
-          <SmallLogo startFrame={175} />
-
-          {/* Three panels, horizontally centered */}
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -44%)",
-              display: "flex",
-              alignItems: "center",
-              gap: 32,
-            }}
-          >
-            <WorkflowMock startFrame={185} />
-            <AnatomyViewerMock startFrame={198} />
-            <AIPanelMock startFrame={212} />
-          </div>
-
-          <StackLine startFrame={280} />
-        </AbsoluteFill>
-      )}
-
+      <SoftBackground />
+      <Atmosphere />
+      <TitleScene />
+      <HeroScene />
+      <DetailScene />
+      <WatchScene />
+      <ClosingMark />
       <Audio src={staticFile("music.mp3")} />
     </AbsoluteFill>
   );
