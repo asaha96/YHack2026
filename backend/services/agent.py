@@ -133,17 +133,28 @@ Respond with your surgical planning assessment in the required JSON format."""
 
 
 async def generate_summary(session: list[dict[str, Any]]) -> dict:
-    actions_text = ""
+    transcript = ""
     for i, entry in enumerate(session, 1):
         if "action" in entry:
             a = entry["action"]
-            actions_text += f"\n{i}. {a['action_type']} on {a['surface']}"
-            if "response" in entry:
-                actions_text += f" → {entry['response'].get('narration', '')[:100]}..."
+            narration = entry.get("response", {}).get("narration", "")
+            transcript += f"\n{i}. [ACTION] {a['action_type']} on {a['surface']}"
+            if narration:
+                transcript += f"\n   Agent: {narration}"
+        elif "chat" in entry:
+            transcript += f"\n{i}. [CHAT] User: {entry['chat']}"
+            narration = entry.get("response", {}).get("narration", "")
+            if narration:
+                transcript += f"\n   Agent: {narration}"
+        elif entry.get("type") == "guide":
+            data = entry.get("data", {})
+            narration = data.get("narration", "")
+            if narration:
+                transcript += f"\n{i}. [GUIDE] Agent: {narration}"
 
     message = f"""Generate a comprehensive surgical planning summary for this session.
 
-Session contained {len(session)} interactions:{actions_text}
+Session contained {len(session)} interactions:{transcript}
 
 Provide the summary as JSON:
 {{
