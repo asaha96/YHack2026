@@ -315,7 +315,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(approachArrow, 3500);
     addBeacon(tp, COLORS.approach, 3500, 6800);
-    orbitTo(approachMid, 3300, 0.18, -0.6, 0.3);  // front-left, slightly above
+    orbitTo(approachMid, 3300, 0.45, -0.6, 0.3);  // front-left, slightly above
 
     // ── Step 3 (7000ms): Hilum arrow — purple arrow to hilum ──
     const hilumTarget: [number, number, number] = [80, -110, 890];
@@ -326,14 +326,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     );
     addObj(hilumArrow, 7000);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.suture, 7000, 10300);
-    orbitTo(hilumTarget, 6800, 0.12, 0.8, -0.2);  // right side, slightly below
+    orbitTo(hilumTarget, 6800, 0.35, 0.8, -0.2);  // right side, slightly below
 
     // ── Step 4 (10500ms): Vascular clamp — yellow X-mark ──
     const clampTarget: [number, number, number] = [50, -100, 880];
     const clampMark = makeXMark(new THREE.Vector3(...clampTarget), 10, COLORS.clamp);
     addObj(clampMark, 10500);
     addBeacon(new THREE.Vector3(...clampTarget), COLORS.clamp, 10500, 13800);
-    orbitTo(clampTarget, 10300, 0.10, 1.2, 0.1);  // further right, level
+    orbitTo(clampTarget, 10300, 0.30, 1.2, 0.1);  // further right, level
 
     // ── Step 5 (14000ms): Resection margin — red dashed loop ──
     const marginPts = [
@@ -352,14 +352,14 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     });
     addObj(margin, 14000);
     addBeacon(tp, COLORS.danger, 14000, 17300);
-    orbitTo(TUMOR_POSITION, 13800, 0.20, -0.3, 0.5);  // front, looking down to see margin loop
+    orbitTo(TUMOR_POSITION, 13800, 0.50, -0.3, 0.5);  // front, looking down to see margin loop
 
     // ── Step 6 (17500ms): Checkmark — mass excised ──
     const checkTarget: [number, number, number] = [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18];
     const check = makeCheckmark(new THREE.Vector3(...checkTarget), 14, COLORS.safe);
     addObj(check, 17500);
     addBeacon(new THREE.Vector3(...checkTarget), COLORS.safe, 17500, 20800);
-    orbitTo(checkTarget, 17300, 0.10, 0.0, 0.4);  // straight on, above
+    orbitTo(checkTarget, 17300, 0.30, 0.0, 0.4);  // straight on, above
 
     // ── Step 7 (21000ms): Suture dots — closure ──
     const closureTarget: [number, number, number] = [115, -85, 875];
@@ -393,13 +393,13 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     }
     addObj(sutureGroup, 21000);
     addBeacon(closurePt, COLORS.suture, 21000, 24300);
-    orbitTo(closureTarget, 20800, 0.10, -0.5, 0.15);  // front-left, level
+    orbitTo(closureTarget, 20800, 0.30, -0.5, 0.15);  // front-left, level
 
     // ── Step 8 (24500ms): Reperfusion — green ring at hilum ──
     const finalRing = makeRing(new THREE.Vector3(...hilumTarget), 12, 2, COLORS.safe);
     addObj(finalRing, 24500);
     addBeacon(new THREE.Vector3(...hilumTarget), COLORS.safe, 24500, 28000);
-    orbitTo(hilumTarget, 24300, 0.14, 0.5, 0.2);  // right, slightly above
+    orbitTo(hilumTarget, 24300, 0.35, 0.5, 0.2);  // right, slightly above
   };
 
   useEffect(() => {
@@ -409,7 +409,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     // Hide skin so internal structures are visible
     viewerRef.current?.hideForSurgery();
 
-    viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.15, 1500);
+    viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.35, 1500);
 
     const mods = SURGICAL_STEPS.map(step => step.modification);
     playAnnotations(mods);
@@ -423,7 +423,23 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     createSurgicalObjects();
 
     const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
-    objectTimersRef.current.push(setTimeout(() => cleanupAll(), lastDelay + 3000));
+
+    // Smooth outro: pull camera back to full body, fade layers in, then cleanup
+    objectTimersRef.current.push(setTimeout(() => {
+      // Pull camera back to a wide view of the body center
+      const bodyCenter: [number, number, number] = [0, -50, 500];
+      viewerRef.current?.orbitToPoint(bodyCenter, 1.2, 0, 0.15, 2500);
+    }, lastDelay + 1000));
+
+    objectTimersRef.current.push(setTimeout(() => {
+      // Fade hidden layers back in smoothly
+      viewerRef.current?.fadeRestoreLayers(2000);
+    }, lastDelay + 2500));
+
+    objectTimersRef.current.push(setTimeout(() => {
+      // Remove surgical objects after layers are restored
+      cleanupAll();
+    }, lastDelay + 5000));
   }, [triggered, viewerRef, playAnnotations, onNarrate]);
 
   return null;

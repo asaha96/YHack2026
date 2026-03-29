@@ -67,6 +67,8 @@ export interface LayeredViewerHandle {
   /** Hide/restore layers for surgical visibility */
   hideForSurgery: () => void;
   restoreFromSurgery: () => void;
+  /** Gradually fade hidden layers back in over durationMs */
+  fadeRestoreLayers: (durationMs?: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -205,6 +207,41 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           if (group) group.visible = true;
         });
         setLayerVisibility(prev => ({ ...prev, skin: true, skeleton: true }));
+      },
+      fadeRestoreLayers: (durationMs = 2000) => {
+        // Make hidden layers visible but at 0 opacity, then fade in
+        const hiddenLayers = ["skin", "skeleton"];
+        hiddenLayers.forEach(name => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) {
+            group.visible = true;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = 0;
+              }
+            });
+          }
+        });
+        setLayerVisibility(prev => ({ ...prev, skin: true, skeleton: true }));
+
+        const t0 = performance.now();
+        const targetOpacities: Record<string, number> = { skin: 0.08, skeleton: 0.15 };
+        function fadeIn() {
+          const p = Math.min((performance.now() - t0) / durationMs, 1);
+          const ease = p * p * (3 - 2 * p);
+          hiddenLayers.forEach(name => {
+            const group = layerGroupsRef.current.get(name);
+            if (!group) return;
+            const target = targetOpacities[name] ?? 0.5;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = target * ease;
+              }
+            });
+          });
+          if (p < 1) requestAnimationFrame(fadeIn);
+        }
+        requestAnimationFrame(fadeIn);
       },
     }));
 
