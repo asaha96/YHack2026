@@ -563,21 +563,7 @@ function AppPage() {
           </div>
         )}
 
-        {/* Agent narration — minimal bottom bar */}
-        {narrationText && !isVoiceListening && (
-          <div style={{
-            position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
-            maxWidth: 560, width: "80%", padding: "8px 14px",
-            borderRadius: "999px", border: "1px solid var(--border)",
-            backgroundColor: "var(--panel-glass)",
-            zIndex: 15, pointerEvents: "none",
-            backdropFilter: "blur(12px)",
-          }}>
-            <p style={{ fontSize: "0.72rem", lineHeight: 1.5, color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
-              {narrationText}
-            </p>
-          </div>
-        )}
+        {/* Agent narration hidden — logged to session for report */}
 
         {/* Hand tracker — bottom left */}
         {handTrackingEnabled && (
