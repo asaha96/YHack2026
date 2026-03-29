@@ -130,7 +130,7 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
     style === "punchline"
       ? {
           fontFamily: serif,
-          fontSize: 36,
+          fontSize: 30,
           fontWeight: 400,
           color: "#e8c87a",
           letterSpacing: "-0.02em",
@@ -139,14 +139,14 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
       : style === "whisper"
         ? {
             fontFamily: serif,
-            fontSize: 26,
+            fontSize: 22,
             fontStyle: "italic",
             color: "rgba(245,240,230,0.72)",
             letterSpacing: "0.01em",
           }
         : {
             fontFamily: serif,
-            fontSize: 32,
+            fontSize: 28,
             color: "#f5f0e6",
             letterSpacing: "-0.01em",
           };
@@ -170,7 +170,7 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
           style={{
             opacity,
             transform: `translateY(${slideY}px)`,
-            padding: "18px 52px",
+            padding: "16px 44px",
             borderRadius: 999,
             background: "rgba(18,14,11,0.72)",
             backdropFilter: "blur(12px)",
@@ -184,10 +184,10 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
           {style === "punchline" && (
             <div
               style={{
-                width: 40,
+                width: 34,
                 height: 1,
                 background: "rgba(232,200,122,0.4)",
-                margin: "0 auto 10px",
+                margin: "0 auto 8px",
               }}
             />
           )}

@@ -70,7 +70,7 @@ export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =>
           <VideoDropIn
             windowTitle="praxis — upload · case 4471-B"
             stepLabel="STEP 01 · DICOM UPLOAD"
-            scale={0.86}
+            scale={1}
             videoSrc={VIDEO_SOURCES[2]?.src}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={

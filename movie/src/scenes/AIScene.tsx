@@ -66,7 +66,7 @@ export const AIScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
           <VideoDropIn
             windowTitle="praxis — AI surgical guidance · case 4471-B"
             stepLabel="STEP 04 · AI GUIDANCE"
-            scale={0.86}
+            scale={1}
             videoSrc={VIDEO_SOURCES[5]?.src}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
