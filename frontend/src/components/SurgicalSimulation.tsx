@@ -11,16 +11,120 @@ interface Props {
   onNarrate: (text: string) => void;
 }
 
-// Colors for surgical visualization
 const COLORS = {
   tumor: 0x1a1a2e,
   tumorEmissive: 0x660022,
-  clamp: 0xf59e0b,
-  safe: 0x34d399,
   danger: 0xef4444,
-  instrument: 0xc0c0c0,
+  safe: 0x34d399,
+  clamp: 0xf59e0b,
   suture: 0xa78bfa,
+  approach: 0x60a5fa,
+  instrument: 0xc0c0c0,
 };
+
+// ── Geometry helpers (all use mesh-based geometry, no thin lines) ────
+
+/** Arrow: cylinder shaft + cone head. Self-lit via emissive. */
+function makeArrow(from: THREE.Vector3, to: THREE.Vector3, color: number, radius = 2): THREE.Group {
+  const g = new THREE.Group();
+  const dir = to.clone().sub(from);
+  const len = dir.length();
+  dir.normalize();
+
+  const shaftLen = len * 0.7;
+  const headLen = len * 0.3;
+
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, shaftLen, 8),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.5, transparent: true, opacity: 0.9 }),
+  );
+  shaft.position.set(0, shaftLen / 2, 0);
+  g.add(shaft);
+
+  const head = new THREE.Mesh(
+    new THREE.ConeGeometry(radius * 2.5, headLen, 10),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.6 }),
+  );
+  head.position.set(0, shaftLen + headLen / 2, 0);
+  g.add(head);
+
+  g.position.copy(from);
+  g.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir));
+  return g;
+}
+
+/** Glowing torus ring */
+function makeRing(position: THREE.Vector3, radius: number, tubeRadius: number, color: number): THREE.Mesh {
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, tubeRadius, 12, 48),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.5, transparent: true, opacity: 0.85 }),
+  );
+  ring.position.copy(position);
+  ring.rotation.x = Math.PI / 2;
+  return ring;
+}
+
+/** Thick dashed path using cylinder segments with gaps */
+function makeDashedPath(points: THREE.Vector3[], color: number, radius = 1.5): THREE.Group {
+  const g = new THREE.Group();
+  for (let i = 0; i < points.length - 1; i++) {
+    if (i % 2 === 1) continue; // skip every other = gap
+    const a = points[i], b = points[i + 1];
+    const dir = b.clone().sub(a);
+    const len = dir.length();
+    dir.normalize();
+    const seg = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, len, 6),
+      new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.4, transparent: true, opacity: 0.85 }),
+    );
+    seg.position.copy(a.clone().lerp(b, 0.5));
+    seg.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir));
+    g.add(seg);
+  }
+  return g;
+}
+
+/** X-mark with enclosing circle */
+function makeXMark(position: THREE.Vector3, size: number, color: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.4 });
+  [Math.PI / 4, -Math.PI / 4].forEach(angle => {
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, size * 2, 6), mat);
+    bar.rotation.z = angle;
+    g.add(bar);
+  });
+  g.add(new THREE.Mesh(
+    new THREE.TorusGeometry(size, 1, 8, 32),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.3, transparent: true, opacity: 0.6 }),
+  ));
+  g.position.copy(position);
+  return g;
+}
+
+/** Checkmark from two cylinders + enclosing circle */
+function makeCheckmark(position: THREE.Vector3, size: number, color: number): THREE.Group {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.5 });
+
+  const short = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, size * 0.5, 6), mat);
+  short.position.set(-size * 0.15, -size * 0.1, 0);
+  short.rotation.z = Math.PI / 4;
+  g.add(short);
+
+  const long = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, size * 0.9, 6), mat);
+  long.position.set(size * 0.2, size * 0.15, 0);
+  long.rotation.z = -Math.PI / 6;
+  g.add(long);
+
+  g.add(new THREE.Mesh(
+    new THREE.TorusGeometry(size * 0.75, 0.8, 8, 32),
+    new THREE.MeshPhongMaterial({ color, emissive: color, emissiveIntensity: 0.3, transparent: true, opacity: 0.5 }),
+  ));
+  g.position.copy(position);
+  return g;
+}
+
+// ── Component ────────────────────────────────────────────────────────
 
 export default function SurgicalSimulation({ triggered, viewerRef, playAnnotations, onNarrate }: Props) {
   const hasPlayedRef = useRef(false);
@@ -28,64 +132,52 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   const surgicalObjectsRef = useRef<THREE.Object3D[]>([]);
   const narrationTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const objectTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const animFramesRef = useRef<number[]>([]);
 
-  // ── Add tumor mesh to the scene on mount ──────────────────────────
   useEffect(() => {
     const check = setInterval(() => {
       const scene = viewerRef.current?.getScene();
       if (!scene || tumorMeshRef.current) return;
       clearInterval(check);
+      const ag = scene.getObjectByName("anatomy");
+      if (!ag) return;
 
-      const anatomyGroup = scene.getObjectByName("anatomy");
-      if (!anatomyGroup) return;
-
-      // Create tumor — irregular dark mass with pulsing glow
       const geo = new THREE.SphereGeometry(TUMOR_RADIUS, 16, 16);
-      // Distort vertices slightly for organic look
       const posAttr = geo.attributes.position;
       for (let i = 0; i < posAttr.count; i++) {
-        const x = posAttr.getX(i);
-        const y = posAttr.getY(i);
-        const z = posAttr.getZ(i);
+        const x = posAttr.getX(i), y = posAttr.getY(i), z = posAttr.getZ(i);
         const noise = 1 + (Math.sin(x * 3 + y * 5) * Math.cos(z * 4 + x * 2)) * 0.15;
         posAttr.setXYZ(i, x * noise, y * noise, z * noise);
       }
       geo.computeVertexNormals();
 
-      const mat = new THREE.MeshPhongMaterial({
-        color: COLORS.tumor,
-        emissive: COLORS.tumorEmissive,
-        emissiveIntensity: 0.5,
-        transparent: true,
-        opacity: 0.9,
-        shininess: 30,
-      });
-      const tumor = new THREE.Mesh(geo, mat);
+      const tumor = new THREE.Mesh(geo, new THREE.MeshPhongMaterial({
+        color: COLORS.tumor, emissive: COLORS.tumorEmissive,
+        emissiveIntensity: 0.5, transparent: true, opacity: 0.9, shininess: 30,
+      }));
       tumor.position.set(...TUMOR_POSITION);
       tumor.name = "tumor_mass";
       tumor.frustumCulled = false;
-      anatomyGroup.add(tumor);
+      ag.add(tumor);
       tumorMeshRef.current = tumor;
     }, 500);
-
-    return () => {
-      clearInterval(check);
-      cleanupAll();
-    };
+    return () => { clearInterval(check); cleanupAll(); };
   }, [viewerRef]);
 
   const cleanupAll = () => {
+    animFramesRef.current.forEach(id => cancelAnimationFrame(id));
+    animFramesRef.current = [];
     if (tumorMeshRef.current) {
       tumorMeshRef.current.geometry.dispose();
       (tumorMeshRef.current.material as THREE.Material).dispose();
       tumorMeshRef.current.removeFromParent();
       tumorMeshRef.current = null;
     }
-    surgicalObjectsRef.current.forEach((obj) => {
-      obj.traverse((child) => {
+    surgicalObjectsRef.current.forEach(obj => {
+      obj.traverse(child => {
         if (child instanceof THREE.Mesh) {
           child.geometry.dispose();
-          if (Array.isArray(child.material)) child.material.forEach((m) => m.dispose());
+          if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
           else (child.material as THREE.Material).dispose();
         }
       });
@@ -96,165 +188,175 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     objectTimersRef.current.forEach(clearTimeout);
   };
 
-  // ── Helper: add a 3D object to the anatomy group with delay ───────
-  const addSurgicalObject = (obj: THREE.Object3D, delayMs: number) => {
-    const scene = viewerRef.current?.getScene();
-    const anatomyGroup = scene?.getObjectByName("anatomy");
-    if (!anatomyGroup) return;
-
+  const addObj = (obj: THREE.Object3D, delayMs: number) => {
+    const ag = viewerRef.current?.getScene()?.getObjectByName("anatomy");
+    if (!ag) return;
     obj.frustumCulled = false;
     obj.visible = false;
-    obj.traverse((child) => { child.frustumCulled = false; });
-    anatomyGroup.add(obj);
+    obj.traverse(c => { c.frustumCulled = false; });
+    ag.add(obj);
     surgicalObjectsRef.current.push(obj);
 
-    // Fade in after delay
     const timer = setTimeout(() => {
       obj.visible = true;
-      // Scale-in animation
       obj.scale.setScalar(0.01);
-      const startTime = performance.now();
-      function scaleIn() {
-        const t = Math.min((performance.now() - startTime) / 600, 1);
-        const ease = t * t * (3 - 2 * t);
-        obj.scale.setScalar(ease);
-        if (t < 1) requestAnimationFrame(scaleIn);
+      const t0 = performance.now();
+      function pop() {
+        const p = Math.min((performance.now() - t0) / 500, 1);
+        obj.scale.setScalar(p * p * (3 - 2 * p)); // smoothstep
+        if (p < 1) requestAnimationFrame(pop);
       }
-      scaleIn();
+      pop();
     }, delayMs);
     objectTimersRef.current.push(timer);
   };
 
-  // ── Create surgical visualization objects ─────────────────────────
-  const createSurgicalObjects = () => {
-    // 1. Tumor highlight ring (pulsing red ring around the tumor)
-    const ringGeo = new THREE.TorusGeometry(TUMOR_RADIUS + 4, 1.5, 8, 32);
-    const ringMat = new THREE.MeshBasicMaterial({ color: COLORS.danger, transparent: true, opacity: 0.7 });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.position.set(...TUMOR_POSITION);
-    ring.rotation.x = Math.PI / 2;
-    addSurgicalObject(ring, 0);
-
-    // 2. Kidney isolation boundary — translucent dome over the kidney area
-    const domeGeo = new THREE.SphereGeometry(50, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
-    const domeMat = new THREE.MeshBasicMaterial({
-      color: 0x2dd4bf, transparent: true, opacity: 0.08, side: THREE.DoubleSide,
-    });
-    const dome = new THREE.Mesh(domeGeo, domeMat);
-    dome.position.set(110, -100, 900);
-    dome.rotation.x = Math.PI;
-    addSurgicalObject(dome, 3500);
-
-    // 3. Hilum marker — small crossed rods indicating the vascular pedicle
-    const hilumGroup = new THREE.Group();
-    const rodGeo = new THREE.CylinderGeometry(1, 1, 20, 6);
-    const rodMat = new THREE.MeshPhongMaterial({ color: 0x818cf8, emissive: 0x4433aa, emissiveIntensity: 0.3 });
-    const rod1 = new THREE.Mesh(rodGeo, rodMat);
-    rod1.rotation.z = Math.PI / 4;
-    const rod2 = new THREE.Mesh(rodGeo, rodMat.clone());
-    rod2.rotation.z = -Math.PI / 4;
-    hilumGroup.add(rod1, rod2);
-    hilumGroup.position.set(80, -110, 890);
-    addSurgicalObject(hilumGroup, 7000);
-
-    // 4. Arterial clamp — small yellow clamp shape
-    const clampGroup = new THREE.Group();
-    const jawGeo = new THREE.BoxGeometry(4, 12, 2);
-    const jawMat = new THREE.MeshPhongMaterial({ color: COLORS.clamp, emissive: COLORS.clamp, emissiveIntensity: 0.2 });
-    const jaw1 = new THREE.Mesh(jawGeo, jawMat);
-    jaw1.position.x = -3;
-    const jaw2 = new THREE.Mesh(jawGeo, jawMat.clone());
-    jaw2.position.x = 3;
-    const handleGeo = new THREE.CylinderGeometry(1, 1, 16, 6);
-    const handleMat = new THREE.MeshPhongMaterial({ color: COLORS.instrument });
-    const handle = new THREE.Mesh(handleGeo, handleMat);
-    handle.rotation.z = Math.PI / 2;
-    handle.position.y = -8;
-    clampGroup.add(jaw1, jaw2, handle);
-    clampGroup.position.set(50, -100, 880);
-    addSurgicalObject(clampGroup, 10500);
-
-    // 5. Resection margin glow — ring of small glowing dots around the tumor
-    const dotCount = 16;
-    const marginGroup = new THREE.Group();
-    const marginRadius = TUMOR_RADIUS + 8;
-    for (let i = 0; i < dotCount; i++) {
-      const angle = (i / dotCount) * Math.PI * 2;
-      const dotGeo = new THREE.SphereGeometry(1.5, 8, 8);
-      const dotMat = new THREE.MeshBasicMaterial({ color: COLORS.danger, transparent: true, opacity: 0.8 });
-      const dot = new THREE.Mesh(dotGeo, dotMat);
-      dot.position.set(
-        Math.cos(angle) * marginRadius,
-        Math.sin(angle) * marginRadius * 0.6,
-        0,
-      );
-      marginGroup.add(dot);
-    }
-    marginGroup.position.set(...TUMOR_POSITION);
-    addSurgicalObject(marginGroup, 14000);
-
-    // 6. Excision indicator — green checkmark-like shape replacing tumor
-    const checkGroup = new THREE.Group();
-    const checkPts = [
-      new THREE.Vector3(-8, 0, 0),
-      new THREE.Vector3(-2, -8, 0),
-      new THREE.Vector3(10, 8, 0),
-    ];
-    const checkGeo = new THREE.BufferGeometry().setFromPoints(checkPts);
-    const checkMat = new THREE.LineBasicMaterial({ color: COLORS.safe, linewidth: 3 });
-    const checkLine = new THREE.Line(checkGeo, checkMat);
-    checkGroup.add(checkLine);
-    checkGroup.position.set(TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 15);
-    addSurgicalObject(checkGroup, 17500);
-
-    // 7. Suture line — curved line across the defect
-    const suturePts = [];
-    for (let i = 0; i <= 12; i++) {
-      const t = i / 12;
-      const x = TUMOR_POSITION[0] + Math.sin(t * Math.PI) * 14 - 7;
-      const y = TUMOR_POSITION[1] + (t - 0.5) * 20;
-      const z = TUMOR_POSITION[2] + Math.cos(t * Math.PI * 3) * 2; // zigzag for suture look
-      suturePts.push(new THREE.Vector3(x, y, z));
-    }
-    const sutureGeo = new THREE.BufferGeometry().setFromPoints(suturePts);
-    const sutureMat = new THREE.LineBasicMaterial({ color: COLORS.suture });
-    const sutureLine = new THREE.Line(sutureGeo, sutureMat);
-    addSurgicalObject(sutureLine, 21000);
-
-    // 8. Reperfusion glow — green pulsing light at the hilum
-    const perfLight = new THREE.PointLight(COLORS.safe, 2, 80);
-    perfLight.position.set(80, -110, 890);
-    addSurgicalObject(perfLight, 24500);
+  /** Pan camera to a point at a scheduled time */
+  const panTo = (point: [number, number, number], delayMs: number, zoom = 0.12, duration = 1200) => {
+    const timer = setTimeout(() => {
+      viewerRef.current?.zoomToAnatomyPoint(point, zoom, duration);
+    }, delayMs);
+    objectTimersRef.current.push(timer);
   };
 
-  // ── Trigger simulation on first pinch release ─────────────────────
+  const createSurgicalObjects = () => {
+    const tp = new THREE.Vector3(...TUMOR_POSITION);
+
+    // ── Step 1 (0ms): Danger ring — thick red torus around tumor ──
+    const dangerRing = makeRing(tp, TUMOR_RADIUS + 5, 2, COLORS.danger);
+    addObj(dangerRing, 0);
+    // Camera already zoomed to tumor in trigger effect
+
+    // Pulse animation on danger ring
+    const pulseStart = performance.now() + 600;
+    function pulse() {
+      if (!dangerRing.parent) return;
+      const t = performance.now() - pulseStart;
+      const s = 1 + Math.sin(t * 0.004) * 0.12;
+      dangerRing.scale.setScalar(s);
+      (dangerRing.material as THREE.MeshPhongMaterial).opacity = 0.7 + Math.sin(t * 0.004) * 0.15;
+      if (t < 28000) {
+        const id = requestAnimationFrame(pulse);
+        animFramesRef.current.push(id);
+      }
+    }
+    objectTimersRef.current.push(setTimeout(() => {
+      const id = requestAnimationFrame(pulse);
+      animFramesRef.current.push(id);
+    }, 600));
+
+    // ── Step 2 (3500ms): Approach arrow — blue arrow pointing at tumor ──
+    const approachFrom: [number, number, number] = [TUMOR_POSITION[0] - 45, TUMOR_POSITION[1] + 35, TUMOR_POSITION[2] - 20];
+    const approachMid: [number, number, number] = [
+      (approachFrom[0] + TUMOR_POSITION[0]) / 2,
+      (approachFrom[1] + TUMOR_POSITION[1]) / 2,
+      (approachFrom[2] + TUMOR_POSITION[2]) / 2,
+    ];
+    const approachArrow = makeArrow(
+      new THREE.Vector3(...approachFrom), tp,
+      COLORS.approach, 2.5,
+    );
+    addObj(approachArrow, 3500);
+    panTo(approachMid, 3300, 0.18, 1400); // pull back a bit to see the full arrow
+
+    // ── Step 3 (7000ms): Hilum arrow — purple arrow to hilum ──
+    const hilumTarget: [number, number, number] = [80, -110, 890];
+    const hilumArrow = makeArrow(
+      new THREE.Vector3(hilumTarget[0] - 25, hilumTarget[1] - 20, hilumTarget[2] - 15),
+      new THREE.Vector3(...hilumTarget),
+      COLORS.suture, 2,
+    );
+    addObj(hilumArrow, 7000);
+    panTo(hilumTarget, 6800, 0.12, 1400);
+
+    // ── Step 4 (10500ms): Vascular clamp — yellow X-mark ──
+    const clampTarget: [number, number, number] = [50, -100, 880];
+    const clampMark = makeXMark(new THREE.Vector3(...clampTarget), 10, COLORS.clamp);
+    addObj(clampMark, 10500);
+    panTo(clampTarget, 10300, 0.10, 1200);
+
+    // ── Step 5 (14000ms): Resection margin — red dashed loop ──
+    const marginPts = [
+      [135, -68, 860], [140, -75, 870], [135, -85, 880],
+      [120, -92, 885], [105, -88, 882], [100, -78, 872],
+      [105, -68, 862], [120, -65, 858], [135, -68, 860],
+    ].map(p => new THREE.Vector3(p[0], p[1], p[2]));
+    const margin = makeDashedPath(marginPts, COLORS.danger, 1.5);
+
+    // Add dots at each margin vertex for visibility
+    const dotMat = new THREE.MeshPhongMaterial({ color: COLORS.danger, emissive: COLORS.danger, emissiveIntensity: 0.4 });
+    marginPts.forEach(p => {
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), dotMat);
+      dot.position.copy(p);
+      margin.add(dot);
+    });
+    addObj(margin, 14000);
+    panTo(TUMOR_POSITION, 13800, 0.20, 1400); // pull back to see the full margin loop
+
+    // ── Step 6 (17500ms): Checkmark — mass excised ──
+    const checkTarget: [number, number, number] = [TUMOR_POSITION[0], TUMOR_POSITION[1], TUMOR_POSITION[2] + 18];
+    const check = makeCheckmark(new THREE.Vector3(...checkTarget), 14, COLORS.safe);
+    addObj(check, 17500);
+    panTo(checkTarget, 17300, 0.10, 1200);
+
+    // ── Step 7 (21000ms): Suture dots — closure ──
+    const closureTarget: [number, number, number] = [115, -85, 875];
+    const closurePt = new THREE.Vector3(...closureTarget);
+    const sutureGroup = new THREE.Group();
+    const sutureMat = new THREE.MeshPhongMaterial({ color: COLORS.suture, emissive: COLORS.suture, emissiveIntensity: 0.4 });
+    for (let i = 0; i < 8; i++) {
+      const t = i / 7 - 0.5;
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(2, 8, 8), sutureMat);
+      dot.position.set(
+        closurePt.x + Math.sin(t * Math.PI) * 12,
+        closurePt.y + t * 22,
+        closurePt.z + Math.cos(t * Math.PI * 2) * 3,
+      );
+      sutureGroup.add(dot);
+    }
+    // Connect suture dots with thin cylinders (zigzag stitch look)
+    for (let i = 0; i < 7; i++) {
+      const a = sutureGroup.children[i].position;
+      const b = sutureGroup.children[i + 1].position;
+      const dir = b.clone().sub(a);
+      const len = dir.length();
+      dir.normalize();
+      const stitch = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.6, 0.6, len, 4),
+        new THREE.MeshPhongMaterial({ color: COLORS.suture, emissive: COLORS.suture, emissiveIntensity: 0.3, transparent: true, opacity: 0.7 }),
+      );
+      stitch.position.copy(a.clone().lerp(b, 0.5));
+      stitch.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir));
+      sutureGroup.add(stitch);
+    }
+    addObj(sutureGroup, 21000);
+    panTo(closureTarget, 20800, 0.10, 1200);
+
+    // ── Step 8 (24500ms): Reperfusion — green ring at hilum ──
+    const finalRing = makeRing(new THREE.Vector3(...hilumTarget), 12, 2, COLORS.safe);
+    addObj(finalRing, 24500);
+    panTo(hilumTarget, 24300, 0.14, 1400);
+  };
+
   useEffect(() => {
     if (!triggered || hasPlayedRef.current) return;
     hasPlayedRef.current = true;
 
-    // 1. Zoom camera to the kidney/tumor area
     viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.15, 1500);
 
-    // 2. Fire annotations through existing system
-    const mods = SURGICAL_STEPS.map((step) => step.modification);
+    const mods = SURGICAL_STEPS.map(step => step.modification);
     playAnnotations(mods);
 
-    // 3. Schedule narration for each step
     narrationTimersRef.current.forEach(clearTimeout);
-    narrationTimersRef.current = SURGICAL_STEPS.map((step) => {
+    narrationTimersRef.current = SURGICAL_STEPS.map(step => {
       const delay = step.modification.delay_ms ?? 0;
       return setTimeout(() => onNarrate(step.narration), delay);
     });
 
-    // 4. Create 3D surgical objects that animate in with each step
     createSurgicalObjects();
 
-    // 5. Clean up surgical objects after the last step finishes
     const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
-    const cleanupTimer = setTimeout(() => {
-      cleanupAll();
-    }, lastDelay + 3000);
-    objectTimersRef.current.push(cleanupTimer);
+    objectTimersRef.current.push(setTimeout(() => cleanupAll(), lastDelay + 3000));
   }, [triggered, viewerRef, playAnnotations, onNarrate]);
 
   return null;
