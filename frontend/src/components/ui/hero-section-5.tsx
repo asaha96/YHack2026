@@ -314,12 +314,17 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
     return () => clearTimeout(t);
   }, []);
 
-  const entranceStyle = (delayMs: number): React.CSSProperties => ({
-    opacity: entered && !fading ? 1 : 0,
-    filter: entered && !fading ? "none" : "blur(8px)",
-    transform: entered && !fading ? "none" : fading ? "translateY(-16px) scale(0.98)" : "translateY(22px) scale(0.97)",
-    transition: `opacity 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) ${delayMs}ms, filter 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) ${delayMs}ms, transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) ${delayMs}ms`,
-  });
+  const entranceStyle = (delayMs: number): React.CSSProperties => {
+    const isFadeOut = fading;
+    const dur = isFadeOut ? "1.3s" : "0.8s";
+    const delay = isFadeOut ? "0ms" : `${delayMs}ms`;
+    return {
+      opacity: entered && !fading ? 1 : 0,
+      filter: entered && !fading ? "none" : fading ? "blur(6px)" : "blur(8px)",
+      transform: entered && !fading ? "none" : fading ? "translateY(-16px) scale(0.98)" : "translateY(22px) scale(0.97)",
+      transition: `opacity ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, filter ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, transform ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}`,
+    };
+  };
 
   const contentFadeStyle: React.CSSProperties = {
     transition: "opacity 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), filter 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.3s cubic-bezier(0.22, 0.61, 0.36, 1)",
