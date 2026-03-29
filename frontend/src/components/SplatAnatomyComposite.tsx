@@ -195,22 +195,22 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         animate();
       },
       hideForSurgery: () => {
-        ["skin", "skeleton"].forEach(name => {
+        ["skin", "muscles", "nervous"].forEach(name => {
           const group = layerGroupsRef.current.get(name);
           if (group) group.visible = false;
         });
-        setLayerVisibility(prev => ({ ...prev, skin: false, skeleton: false }));
+        setLayerVisibility(prev => ({ ...prev, skin: false, muscles: false, nervous: false }));
       },
       restoreFromSurgery: () => {
-        ["skin", "skeleton"].forEach(name => {
+        ["skin", "muscles", "nervous"].forEach(name => {
           const group = layerGroupsRef.current.get(name);
           if (group) group.visible = true;
         });
-        setLayerVisibility(prev => ({ ...prev, skin: true, skeleton: true }));
+        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, nervous: true }));
       },
       fadeRestoreLayers: (durationMs = 2000) => {
         // Make hidden layers visible but at 0 opacity, then fade in
-        const hiddenLayers = ["skin", "skeleton"];
+        const hiddenLayers = ["skin", "muscles", "nervous"];
         hiddenLayers.forEach(name => {
           const group = layerGroupsRef.current.get(name);
           if (group) {
@@ -222,10 +222,10 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
             });
           }
         });
-        setLayerVisibility(prev => ({ ...prev, skin: true, skeleton: true }));
+        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, nervous: true }));
 
         const t0 = performance.now();
-        const targetOpacities: Record<string, number> = { skin: 0.08, skeleton: 0.15 };
+        const targetOpacities: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9 };
         function fadeIn() {
           const p = Math.min((performance.now() - t0) / durationMs, 1);
           const ease = p * p * (3 - 2 * p);

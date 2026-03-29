@@ -465,9 +465,6 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
 
     viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.35, 1500);
 
-    const mods = SURGICAL_STEPS.map(step => step.modification);
-    playAnnotations(mods);
-
     narrationTimersRef.current.forEach(clearTimeout);
     narrationTimersRef.current = SURGICAL_STEPS.map(step => {
       const delay = step.modification.delay_ms ?? 0;
@@ -507,9 +504,9 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
       key={card.num}
       style={{
         position: "absolute",
-        bottom: 24,
-        left: 24,
-        width: 340,
+        top: 80,
+        right: 16,
+        width: 300,
         background: "rgba(10, 10, 18, 0.88)",
         backdropFilter: "blur(16px)",
         border: `1px solid ${card.color}44`,
