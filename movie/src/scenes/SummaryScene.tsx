@@ -4,11 +4,10 @@ import { C, fade, serif, spr } from "../constants";
 import { StepBadge } from "../components/Typography";
 import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn, SummaryMock } from "../components/VideoDropIn";
-import { VIDEO_SOURCES } from "../videoSources";
 import { PetCorgi, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
-export const SummaryScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
+export const SummaryScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
@@ -60,7 +59,7 @@ export const SummaryScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =
             windowTitle="praxis — surgical plan · export"
             stepLabel="STEP 05 · PDF EXPORT"
             scale={1}
-            videoSrc={VIDEO_SOURCES[8]?.src}
+            videoSrc={videoSrc ?? undefined}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>

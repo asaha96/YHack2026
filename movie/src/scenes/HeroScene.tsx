@@ -5,10 +5,9 @@ import { Eyebrow } from "../components/Typography";
 import { Board } from "../components/AnatomyUI";
 import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn } from "../components/VideoDropIn";
-import { VIDEO_SOURCES } from "../videoSources";
 
 // Local frame: 0 → 180 (6s)
-export const HeroScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
+export const HeroScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -79,7 +78,7 @@ export const HeroScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
           windowTitle="praxis — main workspace"
           stepLabel="MAIN WORKSPACE"
           scale={1}
-          videoSrc={VIDEO_SOURCES[3]?.src}
+          videoSrc={videoSrc ?? undefined}
           playbackRate={videoPlaybackRate ?? undefined}
         >
           <Board />

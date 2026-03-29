@@ -4,12 +4,11 @@ import { C, fade, serif, spr } from "../constants";
 import { StepBadge } from "../components/Typography";
 import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn } from "../components/VideoDropIn";
-import { VIDEO_SOURCES } from "../videoSources";
 import { CTScanAccordion } from "../components/CTScanAccordion";
 import { PetCat, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
-export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
+export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
@@ -63,7 +62,7 @@ export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =>
             windowTitle="praxis — upload · case 4471-B"
             stepLabel="STEP 01 · DICOM UPLOAD"
             scale={1}
-            videoSrc={VIDEO_SOURCES[4]?.src}
+            videoSrc={videoSrc ?? undefined}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>

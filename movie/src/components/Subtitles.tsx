@@ -34,7 +34,7 @@ export const SCENE_NARRATIONS: SceneNarration[][] = [
   ],
   // Scene 4: UploadScene
   [
-    { offset: 14, text: "It starts with the patient's CT scan with surface imaging.", audio: "line-05.mp3" },
+    { offset: 14, text: "It starts with the patient's CT scan with surface imaging." },
   ],
   // Scene 5: ReconstructScene
   [
@@ -44,15 +44,17 @@ export const SCENE_NARRATIONS: SceneNarration[][] = [
   [
     { offset: 14, text: "From there, the surgeon uses natural hand tracking to move through the model and determine what they want to simulate.", audio: "line-07.mp3" },
   ],
-  // Scene 7: AIScene
+  // Scene 7: DemoAgentScene
+  [],
+  // Scene 8: AIScene
   [
     { offset: 14, text: "The orchestration layer generates a live annotated simulation showing exactly how that procedure plays out on this body, where the risk is, and what this person's anatomy changes about the approach.", audio: "line-08.mp3" },
   ],
-  // Scene 8: SummaryScene
+  // Scene 9: SummaryScene
   [
     { offset: 14, text: "We've already spoken with two surgeons who said this fundamentally changes how they think about preparation especially for procedures they haven't performed in months.", audio: "line-09.mp3" },
   ],
-  // Scene 9: ClosingScene
+  // Scene 10: ClosingScene
   [
     { offset: 14, text: "We are making that familiarity accessible to every medical professional before they operate and in doing so, we believe Praxis will save millions of lives.", audio: "line-10.mp3" },
   ],
@@ -67,15 +69,16 @@ interface ResolvedEntry {
   audioDuration: number; // actual clip/subtitle length in frames
   text: string;
   style?: SubtitleStyle;
-  audio?: string;
+  audio?: string | null;
 }
 
 interface Props {
   clipFromFrames: number[]; // absolute start frame per clip, no-overlap guaranteed
   audioDurations: number[]; // clip length in frames
+  audioFiles: (string | null)[]; // resolved audio file per clip, if any
 }
 
-export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) => {
+export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations, audioFiles }) => {
   const frame = useCurrentFrame();
 
   // Build resolved entries directly from pre-computed, no-overlap frame positions
@@ -85,7 +88,7 @@ export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) =
     audioDuration: audioDurations[i] ?? 150,
     text: clip.text,
     style: clip.style,
-    audio: clip.audio,
+    audio: audioFiles[i] ?? null,
   }));
 
   // Audio tracks — no durationInFrames so the clip plays to its natural end

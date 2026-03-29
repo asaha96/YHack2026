@@ -4,11 +4,10 @@ import { C, fade, serif, spr } from "../constants";
 import { StepBadge } from "../components/Typography";
 import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn, ReconstructMock } from "../components/VideoDropIn";
-import { VIDEO_SOURCES } from "../videoSources";
 import { PetDog, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
-export const ReconstructScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
+export const ReconstructScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate, videoSrc }) => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 
@@ -60,7 +59,7 @@ export const ReconstructScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate 
             windowTitle="praxis — reconstruct · case 4471-B"
             stepLabel="STEP 02 · VOLUME RECONSTRUCTION"
             scale={1}
-            videoSrc={VIDEO_SOURCES[5]?.src}
+            videoSrc={videoSrc ?? undefined}
             playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>
