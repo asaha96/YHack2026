@@ -1,99 +1,78 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { C, fade, spr } from "../constants";
+import { C, fade, mono, sans, serif, spr } from "../constants";
+import { AnimatedBody, AnimatedHeadline, Eyebrow, PraxisWordmark } from "../components/Typography";
+import { AnatomyDiagram } from "../components/AnatomyUI";
 
+// Local frame: 0 → 180 (6s)
 export const TitleScene: React.FC = () => {
   const frame = useCurrentFrame();
-  const { durationInFrames, fps } = useVideoConfig();
 
-  const fadeIn = fade(frame, 0, 30);
-  const fadeOut = fade(
-    frame,
-    Math.max(0, durationInFrames - 30),
-    durationInFrames,
-    1,
-    0
-  );
-  const opacity = fadeIn * fadeOut;
-
-  const cards = [
-    { width: 420, height: 220, color: C.ember, delay: 6 },
-    { width: 360, height: 180, color: C.sage, delay: 20 },
-    { width: 360, height: 180, color: C.accent, delay: 34 },
-    { width: 420, height: 220, color: "#d64545", delay: 90 },
-  ];
+  const fadeOut = fade(frame, 140, 180, 1, 0);
+  const diagramOpacity = fade(frame, 52, 96);
 
   return (
-    <AbsoluteFill style={{ padding: "80px 100px", opacity }}>
+    <AbsoluteFill style={{ padding: "90px 102px 80px", opacity: fadeOut }}>
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 28,
+          gridTemplateColumns: "1.05fr 0.95fr",
+          alignItems: "center",
           height: "100%",
-          alignContent: "center",
+          gap: 44,
         }}
       >
-        {cards.map((card, index) => {
-          const progress = spr(frame, fps, card.delay, 16, 140, 0.82);
-          const cardY = interpolate(progress, [0, 1], [50, 0]);
-          const cardOpacity = fade(frame, card.delay, card.delay + 25);
-          const scale = interpolate(progress, [0, 1], [0.9, 1]);
+        {/* Left: text */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+          <Eyebrow text="Patient-specific surgical rehearsal" />
+          <PraxisWordmark />
+          <AnimatedHeadline
+            lines={["Rehearse the operation", "before the room goes live."]}
+            delay={26}
+            size={66}
+          />
+          <AnimatedBody
+            text="From CT scan to full 3D simulation in minutes — with AI guidance, hand tracking, and a surgical plan you can actually use."
+            delay={48}
+            maxWidth={720}
+          />
+        </div>
 
-          return (
-            <div
-              key={index}
-              style={{
-                padding: "36px 40px",
-                borderRadius: 24,
-                background: "rgba(255,255,255,0.65)",
-                border: `2px solid ${card.color}22`,
-                boxShadow: `0 16px 48px ${C.shadow}, 0 0 0 1px ${card.color}11`,
-                opacity: cardOpacity,
-                transform: `translateY(${cardY}px) scale(${scale})`,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-              }}
-            >
-              <div
-                style={{
-                  width: "42%",
-                  height: 12,
-                  borderRadius: 999,
-                  background: `${card.color}33`,
-                }}
-              />
-              <div
-                style={{
-                  width: "60%",
-                  height: 70,
-                  borderRadius: 28,
-                  background: `${card.color}22`,
-                  alignSelf: "center",
-                }}
-              />
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <div
-                  style={{
-                    width: `${card.width / 5}px`,
-                    height: 12,
-                    borderRadius: 999,
-                    background: "rgba(47,39,31,0.08)",
-                  }}
-                />
-                <div
-                  style={{
-                    width: `${card.width / 6}px`,
-                    height: 10,
-                    borderRadius: 999,
-                    background: "rgba(47,39,31,0.05)",
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
+        {/* Right: anatomy diagram */}
+        <div style={{ position: "relative", height: 700, opacity: diagramOpacity }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 34,
+              borderRadius: "50%",
+              border: "1px solid rgba(47,39,31,0.08)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              inset: 128,
+              borderRadius: "50%",
+              border: "1px dashed rgba(47,39,31,0.08)",
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              width: 380,
+              height: 470,
+              transform: "translate(-50%, -50%)",
+              borderRadius: 240,
+              background:
+                "radial-gradient(circle at 50% 28%, rgba(255,255,255,0.68), rgba(247,240,232,0.64))",
+              border: `1px solid ${C.line}`,
+              boxShadow: "0 26px 60px rgba(38,29,20,0.08)",
+            }}
+          />
+          <AnatomyDiagram />
+        </div>
       </div>
     </AbsoluteFill>
   );
