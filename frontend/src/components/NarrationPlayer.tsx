@@ -8,26 +8,20 @@ interface Props {
 
 /**
  * Voice narration using ElevenLabs TTS via backend /api/narrate endpoint.
+ * Queues narrations so each one finishes before the next starts.
  */
 export default function NarrationPlayer({ text, autoPlay }: Props) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const lastTextRef = useRef<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const queueRef = useRef<string[]>([]);
+  const isPlayingRef = useRef(false);
 
-  const speakText = async (t: string) => {
-    // Stop any ongoing playback
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-
-    const controller = new AbortController();
-    abortRef.current = controller;
+  const playNext = async () => {
+    if (isPlayingRef.current || queueRef.current.length === 0) return;
+    isPlayingRef.current = true;
+    const t = queueRef.current.shift()!;
 
     try {
       setIsSpeaking(true);
@@ -35,7 +29,6 @@ export default function NarrationPlayer({ text, autoPlay }: Props) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: t }),
-        signal: controller.signal,
       });
       if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
 
@@ -44,54 +37,36 @@ export default function NarrationPlayer({ text, autoPlay }: Props) {
       const audio = new Audio(url);
       audioRef.current = audio;
 
-      audio.onended = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-      };
-      audio.onerror = () => {
-        setIsSpeaking(false);
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-      };
-
-      await audio.play();
-    } catch (e: any) {
-      if (e.name !== "AbortError") {
-        console.warn("ElevenLabs TTS failed, falling back to browser speech:", e);
-        // Fallback to browser speech synthesis
-        if (window.speechSynthesis) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(t);
-          utterance.rate = 0.95;
-          utterance.pitch = 0.9;
-          utterance.onend = () => setIsSpeaking(false);
-          utterance.onerror = () => setIsSpeaking(false);
-          window.speechSynthesis.speak(utterance);
-        } else {
-          setIsSpeaking(false);
-        }
-      } else {
-        setIsSpeaking(false);
-      }
+      await new Promise<void>((resolve) => {
+        audio.onended = () => { URL.revokeObjectURL(url); resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); resolve(); };
+        audio.play().catch(() => resolve());
+      });
+    } catch {
+      // TTS failed — skip and continue queue
     }
+
+    audioRef.current = null;
+    isPlayingRef.current = false;
+    setIsSpeaking(queueRef.current.length > 0);
+    playNext();
   };
 
   useEffect(() => {
     if (!text || text === lastTextRef.current || !autoPlay || isMuted) return;
     lastTextRef.current = text;
-    speakText(text);
+    queueRef.current.push(text);
+    playNext();
   }, [text, autoPlay, isMuted]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      queueRef.current = [];
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
       }
-      if (abortRef.current) abortRef.current.abort();
-      window.speechSynthesis?.cancel();
     };
   }, []);
 
@@ -106,8 +81,10 @@ export default function NarrationPlayer({ text, autoPlay }: Props) {
         onClick={() => {
           setIsMuted((m) => {
             if (!m) {
+              queueRef.current = [];
               if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-              if (abortRef.current) abortRef.current.abort();
+              isPlayingRef.current = false;
+              setIsSpeaking(false);
             }
             return !m;
           });

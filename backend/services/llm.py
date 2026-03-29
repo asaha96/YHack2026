@@ -29,7 +29,7 @@ class KimiAPIError(Exception):
 
 
 def _base_url() -> str:
-    return os.getenv("KIMI_BASE_URL", "https://api.k2think.ai/v1").rstrip("/")
+    return (os.getenv("KIMI_BASE_URL") or "https://api.k2think.ai/v1").rstrip("/")
 
 
 def _api_key() -> str:

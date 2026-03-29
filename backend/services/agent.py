@@ -176,6 +176,9 @@ Respond with your surgical planning assessment in the required JSON format."""
     return await _call_agent(user_message, session)
 
 
+SUMMARY_PROMPT = """You are a senior surgical attending writing a concise pre-operative planning report. Write like a real surgeon — direct, clinical, no filler. Respond ONLY with valid JSON, no thinking, no preamble."""
+
+
 async def generate_summary(session: list[dict[str, Any]]) -> dict:
     transcript = ""
     for i, entry in enumerate(session, 1):
@@ -196,25 +199,29 @@ async def generate_summary(session: list[dict[str, Any]]) -> dict:
             if narration:
                 transcript += f"\n{i}. [GUIDE] Agent: {narration}"
 
-    message = f"""Generate a comprehensive surgical planning summary for this session.
+    context = f"Session had {len(session)} interactions."
+    if transcript:
+        context += f" Transcript:{transcript}"
+    else:
+        context += " The surgeon reviewed the 3D patient model (laparoscopic partial nephrectomy for a 2.3cm right renal mass, upper pole)."
 
-Session contained {len(session)} interactions:{transcript}
+    message = f"""{context}
 
-Provide the summary as JSON:
+Write a surgical planning report as JSON. Be concise — 1-2 sentences per field. Use clinical language.
 {{
-  "approach": "string - recommended surgical approach",
-  "risk_inventory": [{{"structure": "string", "severity": "string", "mitigation": "string"}}],
-  "scenarios_explored": [{{"description": "string", "outcome": "string"}}],
-  "contingencies": ["string"],
-  "full_text": "string - complete narrative summary suitable for a pre-op briefing document"
+  "approach": "1-2 sentence recommended approach",
+  "risk_inventory": [{{"structure": "name", "severity": "low|medium|high", "mitigation": "1 sentence"}}],
+  "scenarios_explored": [{{"description": "approach name", "outcome": "1 sentence tradeoff"}}],
+  "contingencies": ["1 sentence each"],
+  "full_text": "3-4 sentence narrative suitable for a pre-op briefing"
 }}"""
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": SUMMARY_PROMPT},
         {"role": "user", "content": message},
     ]
 
-    text = await chat_completions(messages, max_completion_tokens=2000)
+    text = await chat_completions(messages, max_completion_tokens=1500)
     result = _parse_json_response(text)
 
     return {

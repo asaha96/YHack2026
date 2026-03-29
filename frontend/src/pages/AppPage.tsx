@@ -528,18 +528,26 @@ function AppPage() {
   );
 
   const navBar = (label?: string) => (
-    <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
-      {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
+    <header style={{
+      position: "absolute", top: 0, left: 0, right: 0,
+      padding: "20px 32px",
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      zIndex: 20,
+      pointerEvents: "none",
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, pointerEvents: "auto" }}>
+        <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 44, filter: "var(--logo-filter)", cursor: "pointer" }} />
+        {label && <span style={{ fontSize: "0.62rem", fontFamily: "var(--font-mono)", color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{label}</span>}
+      </div>
     </header>
   );
 
   // ──── UPLOAD STAGE ────
   if (stage === "upload") {
     return (
-      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)" }}>
+      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", position: "relative" }}>
         {navBar()}
-        <div style={{ height: "calc(100vh - 45px)" }}>
+        <div style={{ height: "100vh" }}>
           <UploadPanel onUploadComplete={handleUploadComplete} onUseSample={handleUseSample} />
         </div>
       </div>
@@ -570,7 +578,7 @@ function AppPage() {
   return (
     <div style={{
       width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)",
-      display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden",
+      display: "grid", gridTemplateRows: "1fr", overflow: "hidden",
       position: "relative",
     }}>
       {/* Loading overlay — matches Landing processing UI */}
@@ -644,19 +652,30 @@ function AppPage() {
           </p>
         </div>
       )}
-      {/* Header — minimal */}
-      <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      {/* Floating header — overlays the 3D scene */}
+      <header style={{
+        position: "absolute", top: 0, left: 0, right: 0,
+        padding: "20px 32px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        zIndex: 20,
+        pointerEvents: "none",
+      }}>
+        <div />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
           <button onClick={() => setShowSummary(true)} style={{
-            padding: "5px 14px", borderRadius: "999px",
-            border: "1px solid var(--accent)",
-            backgroundColor: "var(--accent-dim)",
-            color: "var(--accent-light)", fontSize: "0.65rem", fontWeight: 600,
-          }}>
+            padding: "0 24px", height: 44, borderRadius: 999,
+            border: "none",
+            backgroundColor: "#fff",
+            color: "#1a1a1a",
+            fontSize: "0.78rem", fontWeight: 600, fontFamily: "var(--font-sans)",
+            cursor: "pointer",
+            letterSpacing: "0.01em",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04)",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04)"; }}
+          >
             Generate Report
           </button>
         </div>
@@ -719,26 +738,6 @@ function AppPage() {
           </div>
         )}
 
-        {/* Voice listening indicator — auto-started on pinch, no tap needed */}
-        {isVoiceListening && (
-          <div
-            style={{
-              position: "absolute", top: 16, right: 16,
-              padding: "12px 20px", borderRadius: "999px",
-              border: "1px solid var(--accent)", backgroundColor: "var(--panel-glass)",
-              zIndex: 20, display: "flex", alignItems: "center", gap: 10,
-              animation: "glowPulse 2s ease-in-out infinite",
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            </svg>
-            <span style={{ fontSize: "0.72rem", color: "var(--accent-light)", fontFamily: "var(--font-mono)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Listening...
-            </span>
-          </div>
-        )}
 
         {/* Agent narration */}
         <div style={{ position: "absolute", bottom: 16, right: 16, zIndex: 15 }}>
