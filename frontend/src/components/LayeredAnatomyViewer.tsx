@@ -507,8 +507,10 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
     return (
       <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: transparentBackground ? "transparent" : "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
-        {/* Layer controls */}
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Layer controls — hidden by default, kept for dev tuning
+          Optimal defaults: skin 0.08, muscles 0.18, nervous 0.9, organs 0.85, vascular 0.7, skeleton 0.15
+        */}
+        {false && <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
             <div
               key={name}
@@ -548,7 +550,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {isLoading && (
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 10 }}>

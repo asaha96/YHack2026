@@ -654,8 +654,10 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        {/* Layer controls */}
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Layer controls — hidden by default, kept for dev tuning
+          Optimal defaults: skin 0.08, muscles 0.18, nervous 0.9, organs 0.85, vascular 0.7, skeleton 0.15
+        */}
+        {false && <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
             <div
               key={name}
@@ -684,7 +686,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* Anatomy placement controls (dev tuning) */}
         {SHOW_PLACEMENT_UI && <div style={{
