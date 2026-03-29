@@ -23,7 +23,7 @@ export interface SubtitleEntry {
 // If a file is missing, Remotion will warn but won't crash.
 //
 export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
-  // ── Title Scene (0–180) ────────────────────────────────────────────────────
+  // ── Title Scene (0–180) ──────────────────────────────────────────────────── Nik
   {
     from: 15, to: 85,
     text: "Meet Praxis.",
@@ -36,7 +36,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-02.mp3",   // "It knows your patient before you do."
   },
 
-  // ── Problem Scene (180–360) ────────────────────────────────────────────────
+  // ── Problem Scene (180–360) ──────────────────────────────────────────────── Sujal
   {
     from: 195, to: 330,
     text: "Most surgeons see their patient's anatomy for the first time. In the OR.",
@@ -48,7 +48,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-04.mp3",   // "Surgeons practice on real patients. Which is… fine. (It's not fine.)"
   },
 
-  // ── Upload Scene (360–540) ─────────────────────────────────────────────────
+  // ── Upload Scene (360–540) ───────────────────────────────────────────────── Aritra
   {
     from: 370, to: 430,
     text: "But we thought we could build something better.",
@@ -61,7 +61,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-06.mp3",   // "Upload a CT or MRI scan. Any scan. Yes, even that one."
   },
 
-  // ── Reconstruct Scene (540–720) ────────────────────────────────────────────
+  // ── Reconstruct Scene (540–720) ──────────────────────────────────────────── Vedant
   {
     from: 550, to: 638,
     text: "Praxis reconstructs the full 3D anatomy in seconds.",
@@ -73,7 +73,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-08.mp3",   // "Your patient's actual liver. Their actual heart."
   },
 
-  // ── Hand Tracking Scene (720–900) ──────────────────────────────────────────
+  // ── Hand Tracking Scene (720–900) ────────────────────────────────────────── Sujal
   {
     from: 730, to: 810,
     text: "Rehearse the operation with your real hands.",
@@ -85,7 +85,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-10.mp3",   // "No $50k haptic gloves. Just a webcam and courage."
   },
 
-  // ── AI Scene (900–1080) ────────────────────────────────────────────────────
+  // ── AI Scene (900–1080) ──────────────────────────────────────────────────── Aritra 
   {
     from: 908, to: 978,
     text: "Stuck? Ask the AI anything.",
@@ -98,7 +98,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-12.mp3",   // "Like a brilliant colleague who never says 'just Google it.'"
   },
 
-  // ── Summary Scene (1080–1260) ──────────────────────────────────────────────
+  // ── Summary Scene (1080–1260) ────────────────────────────────────────────── Nik
   {
     from: 1088, to: 1168,
     text: "Export the full surgical plan to PDF.",
@@ -110,7 +110,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-14.mp3",   // "Print it. Frame it. Impress your attendings."
   },
 
-  // ── Hero Scene (1260–1440) ─────────────────────────────────────────────────
+  // ── Hero Scene (1260–1440) ───────────────────────────────────────────────── Vedant
   {
     from: 1268, to: 1348,
     text: "Workflow. Anatomy. Guidance. All in one platform.",
@@ -122,7 +122,7 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
     audio: "line-16.mp3",   // "Because the OR is not the place to wing it."
   },
 
-  // ── Closing Scene (1440–1590) ──────────────────────────────────────────────
+  // ── Closing Scene (1440–1590) ────────────────────────────────────────────── Nik
   {
     from: 1455, to: 1520,
     text: "Praxis.",
