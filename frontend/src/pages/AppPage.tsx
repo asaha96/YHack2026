@@ -660,22 +660,7 @@ function AppPage() {
         zIndex: 20,
         pointerEvents: "none",
       }}>
-        <div
-          onClick={() => nav("/")}
-          style={{
-            pointerEvents: "auto", cursor: "pointer",
-            padding: "0 22px", height: 44, borderRadius: 999,
-            backgroundColor: "#fff",
-            boxShadow: "0 2px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.06)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.04)"; }}
-        >
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, display: "block" }} />
-        </div>
-
+        <div />
         <div style={{ display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
           <button onClick={() => setShowSummary(true)} style={{
             padding: "0 24px", height: 44, borderRadius: 999,

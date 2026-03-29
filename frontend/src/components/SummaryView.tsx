@@ -415,6 +415,25 @@ export default function SummaryView({ sessionId, visible, onClose }: Props) {
                   Export PDF
                 </button>
                 <button
+                  onClick={() => { setSummary(null); loadSummary(); }}
+                  style={{
+                    padding: "12px 26px", borderRadius: 999,
+                    border: "1px solid var(--border)",
+                    backgroundColor: "transparent",
+                    color: "var(--text-secondary)",
+                    fontSize: "0.82rem", fontFamily: "var(--font-sans)",
+                    cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 8,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1,4 1,10 7,10" />
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                  </svg>
+                  Regenerate
+                </button>
+                <button
                   onClick={onClose}
                   style={{
                     padding: "12px 26px", borderRadius: 999,
