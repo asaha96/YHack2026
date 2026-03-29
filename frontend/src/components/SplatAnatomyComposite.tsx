@@ -77,7 +77,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
     const labelRendererRef = useRef<CSS2DRenderer | null>(null);
 
     const [isLoading, setIsLoading] = useState(true);
-    const [loadProgress, setLoadProgress] = useState("Initializing world...");
+    const [loadProgress, setLoadProgress] = useState("Loading...");
     const [cameraDebug, setCameraDebug] = useState({ x: 0, y: 0, z: 0, zoom: 0 });
     const cameraDebugFrameRef = useRef(0);
 
@@ -260,13 +260,11 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       async function initSplat() {
         if (!worldId) throw new Error("No worldId");
 
-        setLoadProgress("Fetching world model...");
+        setLoadProgress("Loading...");
         const world = await getWorld(worldId);
         const spzUrl = selectSpzUrl(world);
         if (!spzUrl) throw new Error("No SPZ URL available");
         if (disposed) return;
-
-        setLoadProgress("Loading world environment...");
         const viewer = new GaussianSplats3D.Viewer({
           cameraUp: [0, -1, 0],
           initialCameraPosition: [0.1345, -0.0296, -0.1243],
@@ -432,7 +430,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         if (disposed) return;
 
         // Load anatomy layers (works in both modes)
-        setLoadProgress("Loading anatomy model...");
+        setLoadProgress("Loading...");
         await loadLayers();
         if (disposed) return;
 
@@ -476,15 +474,34 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       const data: LayersMetadata = await res.json();
       const loader = new OBJLoader();
 
-      for (const [layerName, layerData] of Object.entries(data.layers)) {
+      // Hide anatomy until all parts are loaded for a seamless reveal
+      anatomyGroupRef.current.visible = false;
+
+      // Fetch all OBJ files in parallel first
+      const layerEntries = Object.entries(data.layers);
+      const allFetches: { layerName: string; part: typeof data.layers[string]["parts"][number]; promise: Promise<string> }[] = [];
+      for (const [layerName, layerData] of layerEntries) {
+        for (const part of layerData.parts) {
+          allFetches.push({
+            layerName, part,
+            promise: fetch(`/models/${part.file}`).then(r => r.text()).catch(() => ""),
+          });
+        }
+      }
+
+      const results = await Promise.all(allFetches.map(f => f.promise));
+
+      // Build all layer groups from fetched data
+      let idx = 0;
+      for (const [layerName, layerData] of layerEntries) {
         const group = new THREE.Group();
         group.name = layerName;
         group.visible = true;
 
         for (const part of layerData.parts) {
+          const objText = results[idx++];
+          if (!objText) continue;
           try {
-            setLoadProgress(`${layerData.label}: ${part.label}`);
-            const objText = await (await fetch(`/models/${part.file}`)).text();
             const obj = loader.parse(objText);
 
             obj.traverse((child) => {
@@ -498,7 +515,6 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
                   side: layerName === "skin" ? THREE.DoubleSide : THREE.FrontSide,
                   depthWrite: layerName !== "skin",
                 });
-                // Give nerves a subtle glow so they stand out against other layers
                 if (layerName === "nervous") {
                   mat.emissive = new THREE.Color(0x504010);
                   mat.emissiveIntensity = 0.3;
@@ -522,6 +538,9 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         anatomyGroupRef.current.add(group);
         layerGroupsRef.current.set(layerName, group);
       }
+
+      // Reveal anatomy all at once
+      anatomyGroupRef.current.visible = true;
     };
 
     // ── Reactively update anatomy placement when scale/offset change ───
