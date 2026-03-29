@@ -82,7 +82,7 @@ export const Intro: React.FC = () => {
       <Subtitles />
 
       {/* ── Background music ────────────────────────────────────── */}
-      <Audio src={staticFile("music.mp3")} volume={0.6} />
+      <Audio src={staticFile("music.mp3")} volume={0.18} />
     </AbsoluteFill>
   );
 };
