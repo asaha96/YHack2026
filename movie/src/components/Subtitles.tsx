@@ -38,12 +38,12 @@ export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
 
   // ── Problem Scene (180–360) ────────────────────────────────────────────────
   {
-    from: 195, to: 275,
+    from: 195, to: 330,
     text: "Most surgeons see their patient's anatomy for the first time. In the OR.",
     audio: "line-03.mp3",   // "Most surgeons see their patient's anatomy for the first time. In the OR."
   },
   {
-    from: 280, to: 358,
+    from: 340, to: 420,
     text: "Surgeons practice on real patients. Which is… fine. (It's not fine.)",
     audio: "line-04.mp3",   // "Surgeons practice on real patients. Which is… fine. (It's not fine.)"
   },
