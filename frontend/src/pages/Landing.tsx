@@ -47,10 +47,27 @@ export default function Landing() {
   const [statusIndex, setStatusIndex] = useState(0);
   const [patientFiles, setPatientFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [dob, setDob] = useState("");
+  const [dobOpen, setDobOpen] = useState(false);
+  const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const processStartRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dobRef = useRef<HTMLDivElement>(null);
 
   const today = new Date().toISOString().split("T")[0];
+
+  // Calendar state
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+
+  // Close calendar on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dobRef.current && !dobRef.current.contains(e.target as Node)) setDobOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleBegin = useCallback(() => {
     setStage("dissolving");
@@ -216,12 +233,108 @@ export default function Landing() {
 
             {/* Row: DOB + Gender */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div>
+              <div ref={dobRef} style={{ position: "relative" }}>
                 <label style={labelStyle}>Date of Birth</label>
-                <input type="date" required style={inputStyle}
-                  onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-dim)"; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = ""; e.currentTarget.style.boxShadow = ""; }}
-                />
+                <div
+                  onClick={() => setDobOpen(!dobOpen)}
+                  style={{
+                    ...inputStyle, cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "space-between",
+                    color: dob ? "var(--text-primary)" : "var(--text-muted)",
+                    ...(dobOpen ? { borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-dim)" } : {}),
+                  }}
+                >
+                  <span>{dob ? new Date(dob + "T00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Select date"}</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.4 }}>
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                {dobOpen && (() => {
+                  const firstDay = new Date(calYear, calMonth, 1).getDay();
+                  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+                  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+                  const currentYear = new Date().getFullYear();
+                  return (
+                    <div style={{
+                      position: "absolute", bottom: "calc(100% + 6px)", left: 0, width: 280, zIndex: 50,
+                      backgroundColor: "var(--bg-surface)", border: "1px solid var(--border)", borderRadius: 14,
+                      boxShadow: "0 -8px 32px rgba(0,0,0,0.12), 0 8px 32px rgba(0,0,0,0.12)", padding: 16,
+                      animation: "fadeIn 0.15s ease",
+                    }}>
+                      {yearPickerOpen ? (
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                            <span style={{ fontSize: "0.72rem", fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>Select Year</span>
+                            <button type="button" onClick={() => setYearPickerOpen(false)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "0.85rem", padding: "2px 6px" }}>×</button>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 4, maxHeight: 200, overflowY: "auto" }}>
+                            {Array.from({ length: 100 }, (_, i) => {
+                              const y = currentYear - i;
+                              const isSel = y === calYear;
+                              return (
+                                <button type="button" key={y} onClick={() => { setCalYear(y); setYearPickerOpen(false); }}
+                                  style={{
+                                    padding: "6px 0", borderRadius: 8, border: "none", cursor: "pointer",
+                                    fontSize: "0.72rem", fontFamily: "var(--font-sans)", fontWeight: isSel ? 600 : 400,
+                                    backgroundColor: isSel ? "var(--accent)" : "transparent",
+                                    color: isSel ? "#fff" : "var(--text-primary)",
+                                    transition: "all 0.15s ease",
+                                  }}
+                                  onMouseEnter={e => { if (!isSel) e.currentTarget.style.backgroundColor = "var(--accent-dim)"; }}
+                                  onMouseLeave={e => { if (!isSel) e.currentTarget.style.backgroundColor = "transparent"; }}
+                                >{y}</button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                            <button type="button" onClick={e => { e.stopPropagation(); if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); } else setCalMonth(m => m - 1); }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}>‹</button>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)", fontFamily: "var(--font-sans)" }}>{monthNames[calMonth]}</span>
+                              <button type="button" onClick={() => setYearPickerOpen(true)}
+                                style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--accent)", fontFamily: "var(--font-sans)", background: "none", border: "none", cursor: "pointer", padding: "2px 4px", borderRadius: 6 }}
+                                onMouseEnter={e => e.currentTarget.style.backgroundColor = "var(--accent-dim)"}
+                                onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+                              >{calYear}</button>
+                            </div>
+                            <button type="button" onClick={e => { e.stopPropagation(); if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); } else setCalMonth(m => m + 1); }}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", fontSize: "1.2rem", padding: "4px 10px", borderRadius: 8, lineHeight: 1 }}>›</button>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, textAlign: "center" }}>
+                            {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => (
+                              <div key={d} style={{ fontSize: "0.58rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", padding: "4px 0", letterSpacing: "0.04em" }}>{d}</div>
+                            ))}
+                            {Array.from({ length: firstDay }).map((_, i) => <div key={`e${i}`} />)}
+                            {Array.from({ length: daysInMonth }, (_, i) => {
+                              const day = i + 1;
+                              const val = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+                              const isSelected = val === dob;
+                              const isToday = val === today;
+                              return (
+                                <button type="button" key={day} onClick={() => { setDob(val); setDobOpen(false); }}
+                                  style={{
+                                    width: 32, height: 32, borderRadius: 10, border: "none", cursor: "pointer",
+                                    fontSize: "0.75rem", fontFamily: "var(--font-sans)", fontWeight: isSelected ? 600 : 400,
+                                    backgroundColor: isSelected ? "var(--accent)" : "transparent",
+                                    color: isSelected ? "#fff" : isToday ? "var(--accent)" : "var(--text-primary)",
+                                    transition: "all 0.15s ease",
+                                    margin: "0 auto",
+                                  }}
+                                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.backgroundColor = "var(--accent-dim)"; }}
+                                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.backgroundColor = "transparent"; }}
+                                >{day}</button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div>
                 <label style={labelStyle}>Gender</label>
@@ -240,7 +353,9 @@ export default function Landing() {
             {/* Date (auto) */}
             <div>
               <label style={labelStyle}>Date</label>
-              <input type="date" readOnly value={today} style={{ ...inputStyle, color: "var(--text-muted)", cursor: "default" }} />
+              <div style={{ ...inputStyle, color: "var(--text-muted)", cursor: "default" }}>
+                {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+              </div>
             </div>
 
             {/* Image Upload */}
