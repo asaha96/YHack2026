@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import * as THREE from "three";
 import LayeredAnatomyViewer from "../components/LayeredAnatomyViewer";
 import type { LayeredViewerHandle } from "../components/LayeredAnatomyViewer";
@@ -24,6 +25,18 @@ interface ChatMessage {
 type AppStage = "upload" | "reconstructing" | "simulation";
 
 function AppPage() {
+  const location = useLocation();
+  const nav = useNavigate();
+  const enteredFromLanding = !!(location.state as any)?.entered;
+  const [appRevealed, setAppRevealed] = useState(!enteredFromLanding);
+
+  useEffect(() => {
+    if (enteredFromLanding) {
+      const t = setTimeout(() => setAppRevealed(true), 100);
+      return () => clearTimeout(t);
+    }
+  }, [enteredFromLanding]);
+
   const [stage, setStage] = useState<AppStage>("simulation");
   const [sessionId, setSessionId] = useState(`session-${Date.now()}`);
   const [splatPath, setSplatPath] = useState<string | null>(null);
@@ -441,7 +454,7 @@ function AppPage() {
 
   const navBar = (label?: string) => (
     <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
+      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -480,11 +493,16 @@ function AppPage() {
 
   // ──── SIMULATION STAGE ────
   return (
-    <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden" }}>
+    <div style={{
+      width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)",
+      display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden",
+      opacity: appRevealed ? 1 : 0,
+      transition: "opacity 0.8s ease",
+    }}>
       {/* Header — minimal */}
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
+          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
