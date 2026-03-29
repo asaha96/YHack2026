@@ -167,6 +167,8 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   const cleanupAll = () => {
     animFramesRef.current.forEach(id => cancelAnimationFrame(id));
     animFramesRef.current = [];
+    // Restore skin layer
+    viewerRef.current?.restoreSkin();
     if (tumorMeshRef.current) {
       tumorMeshRef.current.geometry.dispose();
       (tumorMeshRef.current.material as THREE.Material).dispose();
@@ -341,6 +343,9 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   useEffect(() => {
     if (!triggered || hasPlayedRef.current) return;
     hasPlayedRef.current = true;
+
+    // Hide skin so internal structures are visible
+    viewerRef.current?.hideSkin();
 
     viewerRef.current?.zoomToAnatomyPoint(TUMOR_POSITION, 0.15, 1500);
 

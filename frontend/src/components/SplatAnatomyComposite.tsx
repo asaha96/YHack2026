@@ -62,6 +62,9 @@ export interface LayeredViewerHandle {
   gestureInput: GestureInput;
   /** Smoothly move camera to look at an anatomy-local point */
   zoomToAnatomyPoint: (localPoint: [number, number, number], distance?: number, durationMs?: number) => void;
+  /** Hide/restore skin layer for surgical visibility */
+  hideSkin: () => void;
+  restoreSkin: () => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -154,6 +157,20 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           if (t < 1) requestAnimationFrame(animate);
         }
         animate();
+      },
+      hideSkin: () => {
+        const skinGroup = layerGroupsRef.current.get("skin");
+        if (skinGroup) {
+          skinGroup.visible = false;
+          setLayerVisibility(prev => ({ ...prev, skin: false }));
+        }
+      },
+      restoreSkin: () => {
+        const skinGroup = layerGroupsRef.current.get("skin");
+        if (skinGroup) {
+          skinGroup.visible = true;
+          setLayerVisibility(prev => ({ ...prev, skin: true }));
+        }
       },
     }));
 
