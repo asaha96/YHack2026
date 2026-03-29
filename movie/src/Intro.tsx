@@ -66,7 +66,7 @@ export const Intro: React.FC<IntroProps> = ({
       {seq(0, <TitleScene />)}
       {seq(1, <ProblemScene />)}
       {seq(2, <FoundersScene videoSrc={foundersVideoSrc} />)}
-      {seq(3, <HeroScene />)}
+      {seq(3, <HeroScene         videoPlaybackRate={videoPlaybackRates[3]} />)}
       {seq(4, <UploadScene       videoPlaybackRate={videoPlaybackRates[4]} />)}
       {seq(5, <ReconstructScene  videoPlaybackRate={videoPlaybackRates[5]} />)}
       {seq(6, <HandTrackingScene videoPlaybackRate={videoPlaybackRates[6]} />)}

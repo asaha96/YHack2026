@@ -3,9 +3,12 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { Board } from "../components/AnatomyUI";
+import type { VideoSceneProps } from "../Intro";
+import { VideoDropIn } from "../components/VideoDropIn";
+import { VIDEO_SOURCES } from "../videoSources";
 
 // Local frame: 0 → 180 (6s)
-export const HeroScene: React.FC = () => {
+export const HeroScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -61,18 +64,26 @@ export const HeroScene: React.FC = () => {
             textAlign: "center",
           }}
         >
-          Imaging · Simulation · Guidance
+          One place to prepare the case.
         </p>
       </div>
 
-      {/* The board */}
+      {/* Main stage */}
       <div
         style={{
           transform: `translateY(${boardLift}px) scale(${cameraScale})`,
           marginTop: 60,
         }}
       >
-        <Board />
+        <VideoDropIn
+          windowTitle="praxis — main workspace"
+          stepLabel="MAIN WORKSPACE"
+          scale={1}
+          videoSrc={VIDEO_SOURCES[3]?.src}
+          playbackRate={videoPlaybackRate ?? undefined}
+        >
+          <Board />
+        </VideoDropIn>
       </div>
     </AbsoluteFill>
   );
