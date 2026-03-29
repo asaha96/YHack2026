@@ -48,7 +48,7 @@ export const SCENE_NARRATIONS: SceneNarration[][] = [
   [],
   // Scene 8: AIScene
   [
-    { offset: 14, text: "The orchestration layer generates a live annotated simulation showing exactly how that procedure plays out on this body, where the risk is, and what this person's anatomy changes about the approach.", audio: "line-08.mp3" },
+    { offset: 14, text: "The orchestration layer generates a live annotated simulation showing exactly how that procedure plays out on this body, where the risk is, and what this person's anatomy changes about the procedure.", audio: "line-08.mp3" },
   ],
   // Scene 9: SummaryScene
   [

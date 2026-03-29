@@ -31,7 +31,7 @@ export const VIDEO_SOURCES: (VideoSlot | null)[] = [
   // ── Screen recordings of the Praxis app ─────────────────────────────────────
   { src: "footage/upload-demo.mp4" },  // 4 · UploadScene      — drag-drop DICOM → progress bar → case created
   { src: "footage/agent_quick.mp4" },  // 5 · ReconstructScene — K2 thinking agents / reconstruction demo
-  null,  // 6 · HandTrackingScene— hand skeleton overlay, pinch gesture navigating anatomy
+  { src: "footage/handuse.mp4" },  // 6 · HandTrackingScene — hand-use demo for line-07
   { src: "footage/demo_agent.mp4", useNativeDuration: true, useEmbeddedAudio: true },  // 7 · DemoAgentScene   — agent demo clip with embedded audio
   null,  // 8 · AIScene          — surgeon types a question, copilot streams an answer
   null,  // 9 · SummaryScene     — surgical summary panel, PDF export flow
