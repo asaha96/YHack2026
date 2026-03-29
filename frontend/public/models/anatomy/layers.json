@@ -894,6 +894,174 @@
           "file": "anatomy/muscles/left_transversus_abdominis.obj",
           "fma_id": "FMA15571",
           "label": "Left Transversus Abdominis"
+        },
+        {
+          "name": "right_biceps_femoris",
+          "file": "anatomy/muscles/right_biceps_femoris.obj",
+          "fma_id": "FMA22356",
+          "label": "Right Biceps Femoris"
+        },
+        {
+          "name": "left_biceps_femoris",
+          "file": "anatomy/muscles/left_biceps_femoris.obj",
+          "fma_id": "FMA22357",
+          "label": "Left Biceps Femoris"
+        },
+        {
+          "name": "right_semitendinosus",
+          "file": "anatomy/muscles/right_semitendinosus.obj",
+          "fma_id": "FMA22438",
+          "label": "Right Semitendinosus"
+        },
+        {
+          "name": "left_semitendinosus",
+          "file": "anatomy/muscles/left_semitendinosus.obj",
+          "fma_id": "FMA22439",
+          "label": "Left Semitendinosus"
+        },
+        {
+          "name": "right_semimembranosus",
+          "file": "anatomy/muscles/right_semimembranosus.obj",
+          "fma_id": "FMA22357",
+          "label": "Right Semimembranosus"
+        },
+        {
+          "name": "left_semimembranosus",
+          "file": "anatomy/muscles/left_semimembranosus.obj",
+          "fma_id": "FMA22358",
+          "label": "Left Semimembranosus"
+        },
+        {
+          "name": "right_vastus_lateralis",
+          "file": "anatomy/muscles/right_vastus_lateralis.obj",
+          "fma_id": "FMA22431",
+          "label": "Right Vastus Lateralis"
+        },
+        {
+          "name": "left_vastus_lateralis",
+          "file": "anatomy/muscles/left_vastus_lateralis.obj",
+          "fma_id": "FMA22432",
+          "label": "Left Vastus Lateralis"
+        },
+        {
+          "name": "right_vastus_medialis",
+          "file": "anatomy/muscles/right_vastus_medialis.obj",
+          "fma_id": "FMA22433",
+          "label": "Right Vastus Medialis"
+        },
+        {
+          "name": "left_vastus_medialis",
+          "file": "anatomy/muscles/left_vastus_medialis.obj",
+          "fma_id": "FMA22434",
+          "label": "Left Vastus Medialis"
+        },
+        {
+          "name": "right_sartorius",
+          "file": "anatomy/muscles/right_sartorius.obj",
+          "fma_id": "FMA22353",
+          "label": "Right Sartorius"
+        },
+        {
+          "name": "left_sartorius",
+          "file": "anatomy/muscles/left_sartorius.obj",
+          "fma_id": "FMA22354",
+          "label": "Left Sartorius"
+        },
+        {
+          "name": "right_adductor_magnus",
+          "file": "anatomy/muscles/right_adductor_magnus.obj",
+          "fma_id": "FMA22441",
+          "label": "Right Adductor Magnus"
+        },
+        {
+          "name": "left_adductor_magnus",
+          "file": "anatomy/muscles/left_adductor_magnus.obj",
+          "fma_id": "FMA22442",
+          "label": "Left Adductor Magnus"
+        },
+        {
+          "name": "right_gastrocnemius",
+          "file": "anatomy/muscles/right_gastrocnemius.obj",
+          "fma_id": "FMA22541",
+          "label": "Right Gastrocnemius"
+        },
+        {
+          "name": "left_gastrocnemius",
+          "file": "anatomy/muscles/left_gastrocnemius.obj",
+          "fma_id": "FMA22542",
+          "label": "Left Gastrocnemius"
+        },
+        {
+          "name": "right_soleus",
+          "file": "anatomy/muscles/right_soleus.obj",
+          "fma_id": "FMA22543",
+          "label": "Right Soleus"
+        },
+        {
+          "name": "left_soleus",
+          "file": "anatomy/muscles/left_soleus.obj",
+          "fma_id": "FMA22544",
+          "label": "Left Soleus"
+        },
+        {
+          "name": "right_tibialis_anterior",
+          "file": "anatomy/muscles/right_tibialis_anterior.obj",
+          "fma_id": "FMA22532",
+          "label": "Right Tibialis Anterior"
+        },
+        {
+          "name": "left_tibialis_anterior",
+          "file": "anatomy/muscles/left_tibialis_anterior.obj",
+          "fma_id": "FMA22533",
+          "label": "Left Tibialis Anterior"
+        },
+        {
+          "name": "right_peroneus_longus",
+          "file": "anatomy/muscles/right_peroneus_longus.obj",
+          "fma_id": "FMA22539",
+          "label": "Right Peroneus Longus"
+        },
+        {
+          "name": "left_peroneus_longus",
+          "file": "anatomy/muscles/left_peroneus_longus.obj",
+          "fma_id": "FMA22540",
+          "label": "Left Peroneus Longus"
+        },
+        {
+          "name": "right_tibialis_posterior",
+          "file": "anatomy/muscles/right_tibialis_posterior.obj",
+          "fma_id": "FMA22599",
+          "label": "Right Tibialis Posterior"
+        },
+        {
+          "name": "left_tibialis_posterior",
+          "file": "anatomy/muscles/left_tibialis_posterior.obj",
+          "fma_id": "FMA22600",
+          "label": "Left Tibialis Posterior"
+        },
+        {
+          "name": "right_brachioradialis",
+          "file": "anatomy/muscles/right_brachioradialis.obj",
+          "fma_id": "FMA38485",
+          "label": "Right Brachioradialis"
+        },
+        {
+          "name": "left_brachioradialis",
+          "file": "anatomy/muscles/left_brachioradialis.obj",
+          "fma_id": "FMA38486",
+          "label": "Left Brachioradialis"
+        },
+        {
+          "name": "right_flexor_carpi",
+          "file": "anatomy/muscles/right_flexor_carpi.obj",
+          "fma_id": "FMA38459",
+          "label": "Right Flexor Carpi"
+        },
+        {
+          "name": "left_flexor_carpi",
+          "file": "anatomy/muscles/left_flexor_carpi.obj",
+          "fma_id": "FMA38460",
+          "label": "Left Flexor Carpi"
         }
       ]
     },
