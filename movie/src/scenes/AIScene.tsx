@@ -52,7 +52,7 @@ export const AIScene: React.FC = () => {
             opacity: fade(frame, 14, 48),
           }}
         >
-          Ask anything. Get an actual answer.
+          Ask for guidance inside the workflow.
         </p>
 
         <div

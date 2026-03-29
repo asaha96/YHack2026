@@ -52,7 +52,7 @@ export const ReconstructScene: React.FC = () => {
             opacity: fade(frame, 14, 48),
           }}
         >
-          Full 3D anatomy. Your patient, specifically.
+          Turn slices into a patient-specific 3D view.
         </p>
 
         <div

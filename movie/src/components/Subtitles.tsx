@@ -23,116 +23,116 @@ export interface SubtitleEntry {
 // If a file is missing, Remotion will warn but won't crash.
 //
 export const SUBTITLE_SCRIPT: SubtitleEntry[] = [
-  // ── Title Scene (0–180) ──────────────────────────────────────────────────── Nik
+  // ── Title Scene (0–200) ──────────────────────────────────────────────────── Nik
   {
-    from: 15, to: 85,
+    from: 18, to: 92,
     text: "Meet Praxis.",
     style: "punchline",
-    audio: "line-01.mp3",   // "Meet Praxis."
+    audio: "line-01.mp3",
   },
   {
-    from: 90, to: 168,
-    text: "It knows your patient before you do.",
-    audio: "line-02.mp3",   // "It knows your patient before you do."
-  },
-
-  // ── Problem Scene (180–360) ──────────────────────────────────────────────── Sujal
-  {
-    from: 195, to: 330,
-    text: "Most surgeons see their patient's anatomy for the first time. In the OR.",
-    audio: "line-03.mp3",   // "Most surgeons see their patient's anatomy for the first time. In the OR."
-  },
-  {
-    from: 340, to: 420,
-    text: "Surgeons practice on real patients. Which is… fine. (It's not fine.)",
-    audio: "line-04.mp3",   // "Surgeons practice on real patients. Which is… fine. (It's not fine.)"
+    from: 98, to: 188,
+    text: "The workspace for patient-specific surgical planning and rehearsal.",
+    audio: "line-02.mp3",
   },
 
-  // ── Upload Scene (360–540) ───────────────────────────────────────────────── Aritra
+  // ── Problem Scene (200–400) ──────────────────────────────────────────────── Sujal
   {
-    from: 370, to: 430,
-    text: "But we thought we could build something better.",
+    from: 214, to: 306,
+    text: "Today, surgeons plan from flat scans, disconnected tools, and mental reconstruction.",
+    audio: "line-03.mp3",
+  },
+  {
+    from: 314, to: 392,
+    text: "That means less certainty before incision and fewer chances to rehearse the exact case.",
+    audio: "line-04.mp3",
+  },
+
+  // ── Upload Scene (400–600) ───────────────────────────────────────────────── Aritra
+  {
+    from: 414, to: 486,
+    text: "Praxis starts with the scan the team already has.",
     style: "punchline",
-    audio: "line-05.mp3",   // "So we built something better."
+    audio: "line-05.mp3",
   },
   {
-    from: 435, to: 528,
-    text: "Upload a CT or MRI scan. Any scan. Yes, even that one.",
-    audio: "line-06.mp3",   // "Upload a CT or MRI scan. Any scan. Yes, even that one."
-  },
-
-  // ── Reconstruct Scene (540–720) ──────────────────────────────────────────── Vedant
-  {
-    from: 550, to: 638,
-    text: "Praxis reconstructs the full 3D anatomy in seconds.",
-    audio: "line-07.mp3",   // "Praxis reconstructs the full 3D anatomy in seconds."
-  },
-  {
-    from: 643, to: 710,
-    text: "Your patient's actual liver. Their actual heart.",
-    audio: "line-08.mp3",   // "Your patient's actual liver. Their actual heart."
+    from: 492, to: 590,
+    text: "Upload CT or MRI data, and Praxis organizes the case in seconds.",
+    audio: "line-06.mp3",
   },
 
-  // ── Hand Tracking Scene (720–900) ────────────────────────────────────────── Sujal
+  // ── Reconstruct Scene (600–800) ──────────────────────────────────────────── Vedant
   {
-    from: 730, to: 810,
-    text: "Rehearse the operation with your real hands.",
-    audio: "line-09.mp3",   // "Rehearse the operation with your real hands."
+    from: 614, to: 704,
+    text: "Praxis converts image slices into an interactive 3D anatomy model.",
+    audio: "line-07.mp3",
   },
   {
-    from: 815, to: 890,
-    text: "No $50k haptic gloves. Just a webcam and courage.",
-    audio: "line-10.mp3",   // "No $50k haptic gloves. Just a webcam and courage."
+    from: 710, to: 790,
+    text: "Now the team can inspect organs, vessels, and spatial risk before entering the OR.",
+    audio: "line-08.mp3",
   },
 
-  // ── AI Scene (900–1080) ──────────────────────────────────────────────────── Aritra 
+  // ── Hand Tracking Scene (800–1000) ───────────────────────────────────────── Sujal
   {
-    from: 908, to: 978,
-    text: "Stuck? Ask the AI anything.",
+    from: 814, to: 900,
+    text: "Then surgeons rehearse the procedure with natural hand tracking.",
+    audio: "line-09.mp3",
+  },
+  {
+    from: 906, to: 990,
+    text: "They can trace an approach, explore anatomy, and simulate decisions on real patient geometry.",
+    audio: "line-10.mp3",
+  },
+
+  // ── AI Scene (1000–1200) ─────────────────────────────────────────────────── Aritra
+  {
+    from: 1014, to: 1086,
+    text: "Need support mid-plan? Ask the built-in surgical copilot.",
     style: "punchline",
-    audio: "line-11.mp3",   // "Stuck? Ask the AI anything."
+    audio: "line-11.mp3",
   },
   {
-    from: 983, to: 1068,
-    text: "Like a brilliant colleague who never says 'just Google it.'",
-    audio: "line-12.mp3",   // "Like a brilliant colleague who never says 'just Google it.'"
-  },
-
-  // ── Summary Scene (1080–1260) ────────────────────────────────────────────── Nik
-  {
-    from: 1088, to: 1168,
-    text: "Export the full surgical plan to PDF.",
-    audio: "line-13.mp3",   // "Export the full surgical plan to PDF."
-  },
-  {
-    from: 1173, to: 1250,
-    text: "Print it. Frame it. Impress your attendings.",
-    audio: "line-14.mp3",   // "Print it. Frame it. Impress your attendings."
+    from: 1092, to: 1190,
+    text: "It explains structures, answers workflow questions, and keeps the team moving.",
+    audio: "line-12.mp3",
   },
 
-  // ── Hero Scene (1260–1440) ───────────────────────────────────────────────── Vedant
+  // ── Summary Scene (1200–1400) ────────────────────────────────────────────── Nik
   {
-    from: 1268, to: 1348,
-    text: "Workflow. Anatomy. Guidance. All in one platform.",
-    audio: "line-15.mp3",   // "Workflow. Anatomy. Guidance. All in one platform."
+    from: 1214, to: 1290,
+    text: "When planning is done, Praxis exports a clear surgical summary.",
+    audio: "line-13.mp3",
   },
   {
-    from: 1353, to: 1428,
-    text: "Because the OR is not the place to wing it.",
-    audio: "line-16.mp3",   // "Because the OR is not the place to wing it."
+    from: 1296, to: 1390,
+    text: "Teams can share risks, steps, and findings with attendings and collaborators.",
+    audio: "line-14.mp3",
   },
 
-  // ── Closing Scene (1440–1590) ────────────────────────────────────────────── Nik
+  // ── Hero Scene (1400–1600) ───────────────────────────────────────────────── Vedant
   {
-    from: 1455, to: 1520,
+    from: 1414, to: 1494,
+    text: "One platform for imaging, simulation, guidance, and communication.",
+    audio: "line-15.mp3",
+  },
+  {
+    from: 1500, to: 1590,
+    text: "So preparation happens before the operating room, not inside it.",
+    audio: "line-16.mp3",
+  },
+
+  // ── Closing Scene (1600–1800) ────────────────────────────────────────────── Nik
+  {
+    from: 1620, to: 1688,
     text: "Praxis.",
     style: "punchline",
-    audio: "line-17.mp3",   // "Praxis."
+    audio: "line-17.mp3",
   },
   {
-    from: 1525, to: 1578,
-    text: "Practice makes perfect. Now you can.",
-    audio: "line-18.mp3",   // "Practice makes perfect. Now you can."
+    from: 1696, to: 1788,
+    text: "See the patient. Rehearse the case. Walk in ready.",
+    audio: "line-18.mp3",
   },
 ];
 

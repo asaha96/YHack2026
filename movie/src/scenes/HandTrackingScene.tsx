@@ -52,9 +52,9 @@ export const HandTrackingScene: React.FC = () => {
             opacity: fade(frame, 14, 48),
           }}
         >
-          Operate with your hands.
+          Rehearse with natural hand tracking.
           <br />
-          <span style={{ color: C.inkSoft, fontSize: 36 }}>No special hardware required.</span>
+          <span style={{ color: C.inkSoft, fontSize: 36 }}>Explore the case before the room goes live.</span>
         </p>
 
         <div

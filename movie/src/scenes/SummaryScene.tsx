@@ -52,7 +52,7 @@ export const SummaryScene: React.FC = () => {
             opacity: fade(frame, 14, 48),
           }}
         >
-          Leave with a plan, not a memory.
+          Leave with a plan the whole team can use.
         </p>
 
         <div

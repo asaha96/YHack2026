@@ -36,7 +36,7 @@ export const HeroScene: React.FC = () => {
           opacity: fade(frame, 20, 55),
         }}
       >
-        <Eyebrow text="Everything in one platform" />
+        <Eyebrow text="One workflow from scan to plan" />
       </div>
 
       {/* Headline floats above board */}
@@ -61,7 +61,7 @@ export const HeroScene: React.FC = () => {
             textAlign: "center",
           }}
         >
-          Workflow · Anatomy · Guidance
+          Imaging · Simulation · Guidance
         </p>
       </div>
 

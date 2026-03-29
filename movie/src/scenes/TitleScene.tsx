@@ -24,15 +24,15 @@ export const TitleScene: React.FC = () => {
       >
         {/* Left: text */}
         <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-          <Eyebrow text="Patient-specific surgical rehearsal" />
+          <Eyebrow text="Patient-specific surgical planning" />
           <PraxisWordmark />
           <AnimatedHeadline
-            lines={["Rehearse the operation", "before the room goes live."]}
+            lines={["See the case clearly", "before the first incision."]}
             delay={26}
             size={66}
           />
           <AnimatedBody
-            text="From CT scan to full 3D simulation in minutes — with AI guidance, hand tracking, and a surgical plan you can actually use."
+            text="From CT or MRI to interactive anatomy, procedural rehearsal, AI guidance, and a shareable surgical plan in one workflow."
             delay={48}
             maxWidth={720}
           />

@@ -91,9 +91,9 @@ export const ClosingScene: React.FC = () => {
             textAlign: "center",
           }}
         >
-          Practice makes perfect.
+          See the patient.
           <br />
-          <span style={{ color: C.ember }}>Now you can practice.</span>
+          <span style={{ color: C.ember }}>Rehearse the case. Walk in ready.</span>
         </p>
 
         {/* Small ornament */}

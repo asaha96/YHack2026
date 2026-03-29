@@ -24,21 +24,21 @@ export const ProblemScene: React.FC = () => {
     {
       number: "73%",
       label: "of complications are preventable",
-      detail: "with adequate pre-surgical rehearsal",
+      detail: "when teams can prepare with enough context",
       color: C.ember,
       delay: 40,
     },
     {
       number: "0×",
-      label: "times a surgeon sees this patient's anatomy before the OR",
-      detail: "CT reports aren't the same as seeing",
+      label: "true rehearsals for a specific patient",
+      detail: "most planning stops before simulation starts",
       color: C.accent,
       delay: 60,
     },
     {
       number: "$150",
       label: "per minute of OR time",
-      detail: "every mistake, every hesitation, costs",
+      detail: "hesitation gets expensive very quickly",
       color: C.sage,
       delay: 80,
     },
@@ -65,9 +65,9 @@ export const ProblemScene: React.FC = () => {
             maxWidth: 900,
           }}
         >
-          Surgeons are brilliant.
+          Surgical teams are ready.
           <br />
-          <span style={{ color: C.inkSoft }}>The preparation is not.</span>
+          <span style={{ color: C.inkSoft }}>Their tools still are not.</span>
         </p>
 
         {/* Subtext */}
@@ -82,8 +82,9 @@ export const ProblemScene: React.FC = () => {
             opacity: fade(frame, 30, 70),
           }}
         >
-          Every surgical case is unique. Yet every surgeon walks in having seen
-          the same generic anatomy — not <em>their</em> patient's.
+          Every case is different, but planning still happens across static scans,
+          disconnected software, and mental guesswork instead of a rehearsal
+          space built around <em>that</em> patient.
         </p>
 
         {/* Stat cards */}
@@ -125,7 +126,7 @@ export const ProblemScene: React.FC = () => {
             fontStyle: "italic",
           }}
         >
-          There is a better way.
+          Praxis gives teams that better way.
         </p>
       </div>
     </AbsoluteFill>

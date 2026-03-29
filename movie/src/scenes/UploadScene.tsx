@@ -54,7 +54,7 @@ export const UploadScene: React.FC = () => {
             opacity: fade(frame, 14, 48),
           }}
         >
-          Drop in the scan. Praxis handles the rest.
+          Start with the imaging data you already have.
         </p>
 
         {/* Video frame */}
