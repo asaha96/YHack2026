@@ -441,7 +441,7 @@ function AppPage() {
 
   const navBar = (label?: string) => (
     <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
+      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -483,7 +483,7 @@ function AppPage() {
       {/* Header — minimal */}
       <header style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
+          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(1.3)" }} />
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
