@@ -248,6 +248,13 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
 
     // 4. Create 3D surgical objects that animate in with each step
     createSurgicalObjects();
+
+    // 5. Clean up surgical objects after the last step finishes
+    const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
+    const cleanupTimer = setTimeout(() => {
+      cleanupAll();
+    }, lastDelay + 3000);
+    objectTimersRef.current.push(cleanupTimer);
   }, [triggered, viewerRef, playAnnotations, onNarrate]);
 
   return null;

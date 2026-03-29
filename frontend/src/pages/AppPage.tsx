@@ -406,6 +406,7 @@ function AppPage() {
   // Gesture handling
   const lastGestureActionRef = useRef<number>(0);
   const wasPinchingRef = useRef(false);
+  const lastPinchScreenRef = useRef<{ x: number; y: number } | null>(null);
   const lastHoverAnnotationRef = useRef<string>("");
   const hoverAnnotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -453,6 +454,7 @@ function AppPage() {
       // Track pinch → release for first-pinch simulation trigger
       if (type === "pinch" && screenPos) {
         wasPinchingRef.current = true;
+        lastPinchScreenRef.current = { x: screenPos.x, y: screenPos.y };
         return; // don't do anything while actively pinching
       }
 
@@ -464,8 +466,22 @@ function AppPage() {
           simulationTriggeredRef.current = true;
           setSimulationTriggered(true);
           lastGestureActionRef.current = now;
+          return;
         }
-        // Don't do anything else on this frame — just acknowledge the release
+        // Subsequent pinch releases → raycast to organ, open mic + annotations
+        if (lastPinchScreenRef.current) {
+          const px = lastPinchScreenRef.current.x / 640;
+          const py = lastPinchScreenRef.current.y / 480;
+          const hit = gestureRaycast(px, py);
+          if (hit) {
+            handleOrganClick(hit.organName, hit.point, hit.normal);
+          } else {
+            // No organ hit — still open mic for general voice query
+            setIsVoiceListening(true);
+            try { recognitionRef.current?.start(); } catch { /* already started */ }
+          }
+          lastGestureActionRef.current = now;
+        }
         return;
       }
 
@@ -724,7 +740,10 @@ function AppPage() {
           </div>
         )}
 
-        {/* Agent narration hidden — logged to session for report */}
+        {/* Agent narration */}
+        <div style={{ position: "absolute", bottom: 16, right: 16, zIndex: 15 }}>
+          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => {}} />
+        </div>
 
         {/* Hand tracker — bottom left */}
         {handTrackingEnabled && (

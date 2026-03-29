@@ -2,31 +2,32 @@ import os
 import httpx
 from io import BytesIO
 
+ELEVENLABS_VOICE_ID = "UgBBYS2sOqTuMpoF3BR0"
 
-def _get_groq_key() -> str:
-    """Optional: Groq is only used for TTS; LLM inference uses Kimi (K2_API_KEY)."""
-    return os.getenv("GROQ_API_KEY", "")
+
+def _get_elevenlabs_key() -> str:
+    return os.getenv("ELEVENLABS_API_KEY", "")
 
 
 async def generate_speech(text: str) -> BytesIO:
-    """Generate speech using Groq TTS (PlayAI Dialog). Requires GROQ_API_KEY."""
-    if not _get_groq_key():
-        raise RuntimeError(
-            "GROQ_API_KEY is not set. Narration TTS still uses Groq; "
-            "add GROQ_API_KEY for /api/narrate and the LiveKit agent, or disable TTS."
-        )
+    """Generate speech using ElevenLabs TTS."""
+    key = _get_elevenlabs_key()
+    if not key:
+        raise RuntimeError("ELEVENLABS_API_KEY is not set.")
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "https://api.groq.com/openai/v1/audio/speech",
+            f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}",
             headers={
-                "Authorization": f"Bearer {_get_groq_key()}",
+                "xi-api-key": key,
                 "Content-Type": "application/json",
             },
             json={
-                "model": "playai-tts",
-                "input": text,
-                "voice": "Arista-PlayAI",
-                "response_format": "mp3",
+                "text": text,
+                "model_id": "eleven_turbo_v2_5",
+                "voice_settings": {
+                    "stability": 0.5,
+                    "similarity_boost": 0.75,
+                },
             },
             timeout=30.0,
         )
