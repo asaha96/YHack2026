@@ -403,10 +403,10 @@ export default function LiveViewPage() {
       style={{
         position: "fixed",
         inset: 0,
-        background: "var(--bg-primary, #0a0e17)",
+        background: "var(--page-gradient)",
         display: "flex",
         flexDirection: "column",
-        fontFamily: "'DM Sans', sans-serif",
+        fontFamily: "var(--font-sans)",
         overflow: "hidden",
       }}
     >
@@ -416,27 +416,32 @@ export default function LiveViewPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 20px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          padding: "12px 20px",
+          borderBottom: "1px solid var(--border)",
+          background: "rgba(255,252,247,0.72)",
+          backdropFilter: "blur(12px)",
           flexShrink: 0,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span
             style={{
-              fontSize: 18,
-              fontWeight: 700,
-              color: "#2dd4bf",
-              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 24,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-serif)",
+              letterSpacing: "-0.04em",
             }}
           >
-            SurgiVision
+            Praxis
           </span>
           <span
             style={{
               fontSize: 12,
-              color: "rgba(255,255,255,0.3)",
-              fontFamily: "'JetBrains Mono', monospace",
+              color: "var(--text-muted)",
+              fontFamily: "var(--font-mono)",
+              letterSpacing: "0.12em",
+              textTransform: "uppercase",
             }}
           >
             LIVE
@@ -444,11 +449,12 @@ export default function LiveViewPage() {
           <span
             style={{
               fontSize: 12,
-              color: "rgba(255,255,255,0.4)",
-              fontFamily: "'JetBrains Mono', monospace",
-              background: "rgba(255,255,255,0.05)",
+              color: "var(--text-secondary)",
+              fontFamily: "var(--font-mono)",
+              background: "rgba(255,255,255,0.46)",
               padding: "4px 10px",
-              borderRadius: 6,
+              borderRadius: 999,
+              border: "1px solid var(--border)",
             }}
           >
             Room: {roomName}
@@ -458,22 +464,22 @@ export default function LiveViewPage() {
               width: 8,
               height: 8,
               borderRadius: "50%",
-              background: connectionState === "connected" ? "#22c55e" : "#eab308",
+              background: connectionState === "connected" ? "var(--risk-low)" : "var(--risk-medium)",
               boxShadow: connectionState === "connected"
-                ? "0 0 8px #22c55e"
-                : "0 0 8px #eab308",
+                ? "0 0 8px var(--risk-low)"
+                : "0 0 8px var(--risk-medium)",
             }}
           />
           {selectedOrgan && (
             <span
               style={{
                 fontSize: 11,
-                color: "#2dd4bf",
-                fontFamily: "'JetBrains Mono', monospace",
-                background: "rgba(45, 212, 191, 0.1)",
+                color: "var(--accent-light)",
+                fontFamily: "var(--font-mono)",
+                background: "var(--accent-dim)",
                 padding: "3px 10px",
-                borderRadius: 6,
-                border: "1px solid rgba(45, 212, 191, 0.2)",
+                borderRadius: 999,
+                border: "1px solid var(--border)",
               }}
             >
               {selectedOrgan.replace(/_/g, " ")}
@@ -495,14 +501,14 @@ export default function LiveViewPage() {
               onClick={() => toggleLayer(layer)}
               style={{
                 padding: "5px 10px",
-                borderRadius: 6,
-                border: `1px solid ${visibleLayers.has(layer) ? color + "60" : "rgba(255,255,255,0.08)"}`,
+                borderRadius: 999,
+                border: `1px solid ${visibleLayers.has(layer) ? color + "60" : "var(--border)"}`,
                 background: visibleLayers.has(layer)
                   ? color + "18"
-                  : "transparent",
-                color: visibleLayers.has(layer) ? color : "rgba(255,255,255,0.35)",
+                  : "rgba(255,255,255,0.42)",
+                color: visibleLayers.has(layer) ? color : "var(--text-secondary)",
                 fontSize: 11,
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "var(--font-mono)",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
               }}
@@ -511,42 +517,42 @@ export default function LiveViewPage() {
             </button>
           ))}
 
-          <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 2px" }} />
 
           <button
             onClick={() => setShowLabels((p) => !p)}
             style={{
               padding: "5px 10px",
-              borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 999,
+              border: "1px solid var(--border)",
               background: showLabels
-                ? "rgba(45, 212, 191, 0.15)"
-                : "transparent",
-              color: showLabels ? "#2dd4bf" : "rgba(255,255,255,0.35)",
+                ? "var(--accent-dim)"
+                : "rgba(255,255,255,0.42)",
+              color: showLabels ? "var(--accent-light)" : "var(--text-secondary)",
               fontSize: 11,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               cursor: "pointer",
             }}
           >
             Labels
           </button>
 
-          <div style={{ width: 1, height: 20, background: "rgba(255,255,255,0.08)", margin: "0 2px" }} />
+          <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 2px" }} />
 
           <button
             onClick={() => setHandTrackingEnabled((p) => !p)}
             style={{
               padding: "6px 14px",
-              borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 999,
+              border: "1px solid var(--border)",
               background: handTrackingEnabled
-                ? "rgba(45, 212, 191, 0.15)"
-                : "transparent",
+                ? "var(--accent-dim)"
+                : "rgba(255,255,255,0.42)",
               color: handTrackingEnabled
-                ? "#2dd4bf"
-                : "rgba(255,255,255,0.5)",
+                ? "var(--accent-light)"
+                : "var(--text-secondary)",
               fontSize: 12,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               cursor: "pointer",
             }}
           >
@@ -558,20 +564,20 @@ export default function LiveViewPage() {
             title={speechUnsupported ? "Speech recognition not supported in this browser" : ""}
             style={{
               padding: "6px 14px",
-              borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 999,
+              border: "1px solid var(--border)",
               background: isVoiceListening
-                ? "rgba(239, 68, 68, 0.15)"
+                ? "color-mix(in srgb, var(--risk-high) 18%, white)"
                 : speechUnsupported
-                  ? "rgba(255,255,255,0.03)"
-                  : "transparent",
+                  ? "rgba(255,255,255,0.3)"
+                  : "rgba(255,255,255,0.42)",
               color: isVoiceListening
-                ? "#ef4444"
+                ? "var(--risk-high)"
                 : speechUnsupported
-                  ? "rgba(255,255,255,0.2)"
-                  : "rgba(255,255,255,0.5)",
+                  ? "var(--text-muted)"
+                  : "var(--text-secondary)",
               fontSize: 12,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               cursor: speechUnsupported ? "not-allowed" : "pointer",
               textDecoration: speechUnsupported ? "line-through" : "none",
             }}
@@ -583,12 +589,12 @@ export default function LiveViewPage() {
             onClick={requestAgent}
             style={{
               padding: "6px 14px",
-              borderRadius: 8,
-              border: "1px solid rgba(255,255,255,0.1)",
-              background: "transparent",
-              color: "rgba(255,255,255,0.5)",
+              borderRadius: 999,
+              border: "1px solid var(--border)",
+              background: "rgba(255,255,255,0.42)",
+              color: "var(--text-secondary)",
               fontSize: 12,
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "var(--font-mono)",
               cursor: "pointer",
             }}
           >
@@ -647,9 +653,9 @@ export default function LiveViewPage() {
                   top: 16,
                   right: 16,
                   padding: "8px 16px",
-                  borderRadius: 8,
-                  border: "1px solid #ef4444",
-                  backgroundColor: "rgba(248, 113, 113, 0.1)",
+                  borderRadius: 999,
+                  border: "1px solid var(--risk-high)",
+                  backgroundColor: "color-mix(in srgb, var(--risk-high) 14%, white)",
                   zIndex: 20,
                   display: "flex",
                   alignItems: "center",
@@ -662,16 +668,16 @@ export default function LiveViewPage() {
                     width: 8,
                     height: 8,
                     borderRadius: "50%",
-                    backgroundColor: "#ef4444",
+                    backgroundColor: "var(--risk-high)",
                     animation: "dotPulse 1s infinite",
                   }}
                 />
                 <span
                   style={{
                     fontSize: 11,
-                    color: "#ef4444",
-                    fontFamily: "'JetBrains Mono', monospace",
-                    letterSpacing: "0.04em",
+                    color: "var(--risk-high)",
+                    fontFamily: "var(--font-mono)",
+                    letterSpacing: "0.08em",
                     textTransform: "uppercase",
                   }}
                 >
@@ -689,17 +695,17 @@ export default function LiveViewPage() {
                   left: "50%",
                   transform: "translateX(-50%)",
                   padding: "6px 16px",
-                  borderRadius: 8,
-                  background: "rgba(10, 10, 12, 0.8)",
-                  border: "1px solid rgba(45, 212, 191, 0.3)",
+                  borderRadius: 999,
+                  background: "var(--panel-glass)",
+                  border: "1px solid var(--border)",
                   zIndex: 20,
                 }}
               >
                 <span
                   style={{
                     fontSize: 11,
-                    color: "#2dd4bf",
-                    fontFamily: "'JetBrains Mono', monospace",
+                    color: "var(--accent-light)",
+                    fontFamily: "var(--font-mono)",
                   }}
                 >
                   Analyzing...
@@ -716,10 +722,10 @@ export default function LiveViewPage() {
                   left: 12,
                   width: 240,
                   height: 180,
-                  borderRadius: 12,
+                  borderRadius: 20,
                   overflow: "hidden",
-                  border: "1px solid rgba(45, 212, 191, 0.3)",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-md)",
                 }}
               >
                 <HandTracker
@@ -737,16 +743,17 @@ export default function LiveViewPage() {
         <div
           style={{
             padding: "10px 20px",
-            borderTop: "1px solid rgba(255,255,255,0.06)",
+            borderTop: "1px solid var(--border)",
+            background: "rgba(255,252,247,0.72)",
             flexShrink: 0,
           }}
         >
           <div
             style={{
               fontSize: 13,
-              color: "rgba(255,255,255,0.6)",
+              color: "var(--text-secondary)",
               lineHeight: 1.5,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "var(--font-sans)",
               maxWidth: 900,
               margin: "0 auto",
               textAlign: "center",

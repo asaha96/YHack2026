@@ -14,7 +14,7 @@ export default function Landing() {
   useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);
 
   return (
-    <div style={{ width: "100vw", height: "100vh", overflow: "auto", backgroundColor: "var(--bg-primary)", fontFamily: "var(--font-sans)" }}>
+    <div style={{ width: "100vw", height: "100vh", overflow: "auto", background: "var(--page-gradient)", fontFamily: "var(--font-sans)" }}>
       {/* Hero with 3D background */}
       <HeroSection />
 
@@ -28,17 +28,17 @@ export default function Landing() {
         <p style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
           Workflow
         </p>
-        <h2 style={{ fontSize: "1.8rem", fontWeight: 500, lineHeight: 1.15, letterSpacing: "-0.03em", color: "var(--text-primary)", marginBottom: 32, maxWidth: 560 }}>
+        <h2 style={{ fontSize: "clamp(2.4rem, 4.2vw, 3.6rem)", fontWeight: 600, lineHeight: 0.98, letterSpacing: "-0.05em", color: "var(--text-primary)", marginBottom: 32, maxWidth: 620, fontFamily: "var(--font-serif)" }}>
           Five steps from imaging to rehearsal.
         </h2>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, borderRadius: 8, overflow: "hidden", border: "1px solid var(--border)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 1, borderRadius: 28, overflow: "hidden", border: "1px solid var(--border)", boxShadow: "var(--shadow-md)", background: "rgba(255,255,255,0.32)" }}>
           {STEPS.map((s, i) => (
-            <div key={i} style={{ padding: "20px 16px", backgroundColor: "var(--bg-surface)" }}>
+            <div key={i} style={{ padding: "24px 18px", backgroundColor: "var(--bg-surface)" }}>
               <div style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--accent)", marginBottom: 10, letterSpacing: "0.06em" }}>
                 {s.num}
               </div>
-              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 4, fontFamily: "var(--font-sans)" }}>
+              <div style={{ fontSize: "1.15rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 6, fontFamily: "var(--font-serif)", letterSpacing: "-0.03em" }}>
                 {s.label}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)", lineHeight: 1.5, fontFamily: "var(--font-sans)" }}>
@@ -82,10 +82,10 @@ export default function Landing() {
               {f.label}
             </div>
             <div>
-              <h3 style={{ fontSize: "1rem", fontWeight: 500, color: "var(--text-primary)", marginBottom: 8, lineHeight: 1.4, fontFamily: "var(--font-sans)" }}>
+              <h3 style={{ fontSize: "1.9rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: 10, lineHeight: 1.08, fontFamily: "var(--font-serif)", letterSpacing: "-0.04em" }}>
                 {f.title}
               </h3>
-              <p style={{ fontSize: "0.85rem", lineHeight: 1.75, color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
+              <p style={{ fontSize: "0.92rem", lineHeight: 1.85, color: "var(--text-secondary)", fontFamily: "var(--font-sans)", maxWidth: 620 }}>
                 {f.body}
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function Landing() {
 
       {/* Footer */}
       <footer style={{ padding: "20px 40px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <img src="/logo.png" alt="Praxis" style={{ height: 18, filter: "brightness(0) invert(1)", opacity: 0.6 }} />
+        <img src="/logo.png" alt="Praxis" style={{ height: 18, filter: "var(--logo-filter)", opacity: 0.78 }} />
         <span style={{ fontSize: "0.62rem", color: "var(--text-muted)", fontFamily: "var(--font-sans)" }}>Three.js / Gaussian Splatting / Groq / MediaPipe</span>
       </footer>
     </div>

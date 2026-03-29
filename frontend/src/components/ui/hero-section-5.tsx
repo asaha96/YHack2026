@@ -141,12 +141,13 @@ export function HeroSection() {
       position: "relative",
       minHeight: "100svh",
       overflow: "hidden",
-      backgroundColor: "var(--bg-primary)",
+      background: "var(--page-gradient)",
       fontFamily: "var(--font-sans)",
     }}>
       <DnaHelix />
 
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 220, background: "linear-gradient(transparent, var(--bg-primary))", pointerEvents: "none", zIndex: 5 }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(47,39,31,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(47,39,31,0.03) 1px, transparent 1px)", backgroundSize: "120px 120px", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 92%)", pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 260, background: "linear-gradient(transparent, rgba(248,244,236,0.94))", pointerEvents: "none", zIndex: 5 }} />
 
       <header style={{
         position: "relative", zIndex: 20,
@@ -154,13 +155,13 @@ export function HeroSection() {
         padding: "20px 40px",
       }}>
         <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "brightness(0) invert(1)" }} />
+          <img src="/logo.png" alt="Praxis" style={{ height: 28, filter: "var(--logo-filter)" }} />
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <a href="#pipeline" style={{ padding: "7px 16px", borderRadius: 4, border: "1px solid var(--border)", backgroundColor: "transparent", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
+          <a href="#pipeline" style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid var(--border)", backgroundColor: "rgba(255,252,247,0.5)", color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none", backdropFilter: "blur(10px)" }}>
             How it works
           </a>
-          <Link to="/app" style={{ padding: "7px 16px", borderRadius: 4, border: "1px solid var(--accent)", backgroundColor: "var(--accent-dim)", color: "var(--accent)", fontSize: "0.75rem", fontWeight: 500, fontFamily: "var(--font-sans)", textDecoration: "none" }}>
+          <Link to="/app" style={{ padding: "9px 18px", borderRadius: 999, border: "1px solid var(--accent)", backgroundColor: "var(--accent-dim)", color: "var(--accent-light)", fontSize: "0.75rem", fontWeight: 600, fontFamily: "var(--font-sans)", textDecoration: "none", backdropFilter: "blur(10px)" }}>
             Open Platform
           </Link>
         </div>
@@ -173,34 +174,34 @@ export function HeroSection() {
       }}>
         <div style={{
           display: "inline-block",
-          padding: "4px 14px", marginBottom: 28,
+          padding: "6px 16px", marginBottom: 28,
           border: "1px solid var(--border)",
-          borderRadius: 4,
+          borderRadius: 999,
           fontSize: "0.62rem", fontWeight: 500, fontFamily: "var(--font-mono)",
           color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase",
-          backgroundColor: "rgba(10, 10, 12, 0.6)",
-          backdropFilter: "blur(8px)",
+          backgroundColor: "var(--panel-glass)",
+          backdropFilter: "blur(10px)",
         }}>
           Patient-Specific Surgical Simulation
         </div>
 
         <h1 style={{
-          fontSize: "clamp(2.2rem, 5.5vw, 4rem)",
+          fontSize: "clamp(3.4rem, 8vw, 6.6rem)",
           fontWeight: 600,
-          lineHeight: 1.05,
-          letterSpacing: "-0.05em",
+          lineHeight: 0.92,
+          letterSpacing: "-0.06em",
           color: "var(--text-primary)",
           marginBottom: 20,
-          fontFamily: "var(--font-sans)",
-          maxWidth: 580,
+          fontFamily: "var(--font-serif)",
+          maxWidth: 720,
         }}>
           Rehearse the procedure before the first incision.
         </h1>
 
         <p style={{
-          fontSize: "0.95rem", lineHeight: 1.7,
+          fontSize: "1rem", lineHeight: 1.75,
           color: "var(--text-secondary)",
-          maxWidth: 460, marginBottom: 36,
+          maxWidth: 500, marginBottom: 36,
           fontFamily: "var(--font-sans)",
         }}>
           Upload patient imaging, reconstruct a 3D anatomy model, and simulate the intervention with hand tracking and AI-guided risk narration.
@@ -208,24 +209,24 @@ export function HeroSection() {
 
         <div style={{ display: "flex", gap: 10 }}>
           <Link to="/app" style={{
-            padding: "11px 26px", borderRadius: 4,
+            padding: "12px 26px", borderRadius: 999,
             border: "1px solid var(--accent)",
             backgroundColor: "var(--accent-dim)",
-            color: "var(--accent)",
-            fontSize: "0.82rem", fontWeight: 500, fontFamily: "var(--font-sans)",
+            color: "var(--accent-light)",
+            fontSize: "0.82rem", fontWeight: 600, fontFamily: "var(--font-sans)",
             textDecoration: "none",
-            backdropFilter: "blur(8px)",
+            backdropFilter: "blur(10px)",
           }}>
             Start simulation
           </Link>
           <a href="#pipeline" style={{
-            padding: "11px 22px", borderRadius: 4,
+            padding: "12px 22px", borderRadius: 999,
             border: "1px solid var(--border)",
-            backgroundColor: "rgba(10, 10, 12, 0.5)",
-            color: "var(--text-muted)",
+            backgroundColor: "rgba(255,252,247,0.46)",
+            color: "var(--text-secondary)",
             fontSize: "0.82rem", fontWeight: 500, fontFamily: "var(--font-sans)",
             textDecoration: "none",
-            backdropFilter: "blur(8px)",
+            backdropFilter: "blur(10px)",
           }}>
             See workflow
           </a>

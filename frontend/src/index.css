@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "./styles/palette.css";
 @import "tailwindcss";
 
 @theme inline {
@@ -23,69 +23,11 @@
   --color-ring: var(--ring);
 }
 
-:root {
-  /* Clinical dark — like a PACS radiology viewer */
-  --bg-primary: #0a0a0c;
-  --bg-secondary: #0e0e11;
-  --bg-surface: #141417;
-  --bg-surface-hover: #1a1a1e;
-  --bg-elevated: #1e1e22;
-
-  --border: #1f1f24;
-  --border-hover: #2a2a30;
-  --border-active: #3a3a42;
-
-  /* Teal accent — medical equipment / OR monitors */
-  --accent: #2dd4bf;
-  --accent-dim: rgba(45, 212, 191, 0.12);
-  --accent-muted: rgba(45, 212, 191, 0.5);
-  --accent-secondary: #818cf8;
-
-  --text-primary: #dcdce0;
-  --text-secondary: #85858f;
-  --text-muted: #4a4a55;
-
-  --risk-high: #f87171;
-  --risk-medium: #fbbf24;
-  --risk-low: #4ade80;
-
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md: 0 2px 10px rgba(0,0,0,0.5);
-  --shadow-lg: 0 8px 30px rgba(0,0,0,0.6);
-
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 10px;
-
-  --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-
-  --background: #0a0a0c;
-  --foreground: #dcdce0;
-  --card: #141417;
-  --card-foreground: #dcdce0;
-  --popover: #141417;
-  --popover-foreground: #dcdce0;
-  --primary: #2dd4bf;
-  --primary-foreground: #03110f;
-  --secondary: #141417;
-  --secondary-foreground: #dcdce0;
-  --muted: #101014;
-  --muted-foreground: #85858f;
-  --accent-ui: #1a1a1e;
-  --accent-foreground: #dcdce0;
-  --destructive: #f87171;
-  --destructive-foreground: #fff5f5;
-  --border-ui: #1f1f24;
-  --input: #1f1f24;
-  --ring: #2dd4bf;
-}
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
   width: 100%; height: 100%; overflow: hidden;
-  background-color: var(--bg-primary);
+  background: var(--page-gradient);
   color: var(--text-primary);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -94,7 +36,7 @@ html, body, #root {
 
 ::selection {
   background: var(--accent-dim);
-  color: var(--accent);
+  color: var(--accent-light);
 }
 
 ::-webkit-scrollbar { width: 3px; }
@@ -186,8 +128,8 @@ button:active {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(45, 212, 191, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(45, 212, 191, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(109, 98, 87, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(109, 98, 87, 0.03) 1px, transparent 1px);
   background-size: 80px 80px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.95), transparent 92%);
   z-index: -3;
@@ -207,7 +149,7 @@ button:active {
   left: 10%;
   width: 360px;
   height: 280px;
-  background: radial-gradient(circle, rgba(45, 212, 191, 0.32) 0%, rgba(45, 212, 191, 0) 72%);
+  background: radial-gradient(circle, rgba(109, 98, 87, 0.22) 0%, rgba(109, 98, 87, 0) 72%);
 }
 
 .hero-futuristic__glow--bottom {
@@ -215,7 +157,7 @@ button:active {
   bottom: 8%;
   width: 420px;
   height: 320px;
-  background: radial-gradient(circle, rgba(129, 140, 248, 0.26) 0%, rgba(129, 140, 248, 0) 72%);
+  background: radial-gradient(circle, rgba(178, 110, 87, 0.18) 0%, rgba(178, 110, 87, 0) 72%);
 }
 
 .hero-futuristic__content {

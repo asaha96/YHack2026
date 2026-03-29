@@ -1,0 +1,71 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+:root,
+[data-theme="editorial-warm"] {
+  --theme-name: "editorial-warm";
+
+  --bg-primary: #f8f4ec;
+  --bg-secondary: #f3ede4;
+  --bg-surface: #fcfaf5;
+  --bg-surface-hover: #f0e8de;
+  --bg-elevated: #ece3d8;
+
+  --border: rgba(47, 39, 31, 0.12);
+  --border-hover: rgba(47, 39, 31, 0.18);
+  --border-active: rgba(47, 39, 31, 0.26);
+
+  --accent: #6d6257;
+  --accent-dim: rgba(109, 98, 87, 0.11);
+  --accent-muted: rgba(109, 98, 87, 0.55);
+  --accent-light: #332c26;
+  --accent-glow: rgba(109, 98, 87, 0.12);
+  --accent-secondary: #b26e57;
+  --accent-secondary-glow: rgba(178, 110, 87, 0.12);
+
+  --text-primary: #171311;
+  --text-secondary: #635b54;
+  --text-muted: #8b8178;
+
+  --risk-high: #b26e57;
+  --risk-medium: #b69252;
+  --risk-low: #82907d;
+
+  --shadow-sm: 0 1px 4px rgba(38, 29, 20, 0.06);
+  --shadow-md: 0 10px 28px rgba(38, 29, 20, 0.08);
+  --shadow-lg: 0 28px 80px rgba(38, 29, 20, 0.12);
+
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", "Iowan Old Style", "Baskerville", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --background: #f8f4ec;
+  --foreground: #171311;
+  --card: #fcfaf5;
+  --card-foreground: #171311;
+  --popover: #fcfaf5;
+  --popover-foreground: #171311;
+  --primary: #6d6257;
+  --primary-foreground: #fcfaf5;
+  --secondary: #f3ede4;
+  --secondary-foreground: #171311;
+  --muted: #efe7dd;
+  --muted-foreground: #635b54;
+  --accent-ui: #ece3d8;
+  --accent-foreground: #171311;
+  --destructive: #b26e57;
+  --destructive-foreground: #fff8f5;
+  --border-ui: rgba(47, 39, 31, 0.12);
+  --input: rgba(47, 39, 31, 0.12);
+  --ring: #6d6257;
+
+  --page-gradient:
+    radial-gradient(circle at 16% 18%, rgba(201, 190, 176, 0.22), transparent 24%),
+    radial-gradient(circle at 82% 78%, rgba(178, 110, 87, 0.1), transparent 24%),
+    linear-gradient(145deg, #fcfaf4 0%, #f8f4ec 44%, #fbf8f2 100%);
+  --panel-glass: rgba(255, 252, 247, 0.72);
+  --logo-filter: none;
+}

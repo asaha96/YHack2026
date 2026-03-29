@@ -440,8 +440,8 @@ function AppPage() {
   );
 
   const navBar = (label?: string) => (
-    <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
+    <header style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
+      <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "var(--logo-filter)" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -461,12 +461,13 @@ function AppPage() {
   // ──── RECONSTRUCTING STAGE ────
   if (stage === "reconstructing") {
     return (
-      <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
+      <div style={{ width: "100vw", height: "100vh", background: "var(--page-gradient)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 24 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
           <div style={{ width: 24, height: 24, border: "1.5px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <div style={{ textAlign: "center" }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.65rem", color: "var(--accent)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Reconstructing</p>
-            <p style={{ color: "var(--text-secondary)", fontSize: "0.82rem", fontWeight: 400 }}>{reconstructMessage || "Processing volume data..."}</p>
+            <p style={{ color: "var(--text-primary)", fontSize: "2rem", fontWeight: 600, fontFamily: "var(--font-serif)", letterSpacing: "-0.04em", marginBottom: 8 }}>Building the rehearsal model</p>
+            <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", fontWeight: 400 }}>{reconstructMessage || "Processing volume data..."}</p>
           </div>
         </div>
         <div style={{ width: 240, height: 2, backgroundColor: "var(--border)", overflow: "hidden", borderRadius: 1 }}>
@@ -481,10 +482,10 @@ function AppPage() {
   return (
     <div style={{ width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)", display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden" }}>
       {/* Header — minimal */}
-      <header style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20 }}>
+      <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "brightness(0) invert(1)" }} />
-          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
+          <img src="/logo.png" alt="Praxis" style={{ height: 22, filter: "var(--logo-filter)" }} />
+          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase" }}>Simulation</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -501,10 +502,10 @@ function AppPage() {
           <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => {}} />
 
           <button onClick={() => setShowSummary(true)} style={{
-            padding: "5px 14px", borderRadius: "var(--radius-sm)",
+            padding: "5px 14px", borderRadius: "999px",
             border: "1px solid var(--accent)",
             backgroundColor: "var(--accent-dim)",
-            color: "var(--accent)", fontSize: "0.65rem", fontWeight: 500,
+            color: "var(--accent-light)", fontSize: "0.65rem", fontWeight: 600,
           }}>
             Generate Report
           </button>
@@ -528,8 +529,8 @@ function AppPage() {
           <div
             style={{
               position: "absolute", top: 16, right: 16,
-              padding: "12px 20px", borderRadius: "var(--radius-md)",
-              border: "1px solid var(--accent)", backgroundColor: "rgba(10, 10, 12, 0.9)",
+              padding: "12px 20px", borderRadius: "999px",
+              border: "1px solid var(--accent)", backgroundColor: "var(--panel-glass)",
               zIndex: 20, display: "flex", alignItems: "center", gap: 10,
               animation: "glowPulse 2s ease-in-out infinite",
             }}
@@ -538,7 +539,7 @@ function AppPage() {
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
             </svg>
-            <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            <span style={{ fontSize: "0.72rem", color: "var(--accent-light)", fontFamily: "var(--font-mono)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
               Listening...
             </span>
           </div>
@@ -549,9 +550,10 @@ function AppPage() {
           <div style={{
             position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
             maxWidth: 560, width: "80%", padding: "8px 14px",
-            borderRadius: "var(--radius-sm)", border: "1px solid var(--border)",
-            backgroundColor: "rgba(10, 10, 12, 0.75)",
+            borderRadius: "999px", border: "1px solid var(--border)",
+            backgroundColor: "var(--panel-glass)",
             zIndex: 15, pointerEvents: "none",
+            backdropFilter: "blur(12px)",
           }}>
             <p style={{ fontSize: "0.72rem", lineHeight: 1.5, color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
               {narrationText}

@@ -98,7 +98,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       const height = container.clientHeight;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x080a0e);
+      scene.background = new THREE.Color(0xf8f4ec);
       sceneRef.current = scene;
 
       const camera = new THREE.PerspectiveCamera(40, width / height, 1, 10000);
@@ -135,22 +135,22 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       controlsRef.current = controls;
 
       // Lighting — clinical, well-lit anatomy
-      scene.add(new THREE.AmbientLight(0x556677, 1.0));
+      scene.add(new THREE.AmbientLight(0xf2ebe2, 1.35));
 
-      const mainLight = new THREE.DirectionalLight(0xfff5ee, 1.4);
+      const mainLight = new THREE.DirectionalLight(0xfffaf4, 1.55);
       mainLight.position.set(600, 100, 2000);
       mainLight.castShadow = true;
       scene.add(mainLight);
 
-      const fillLight = new THREE.DirectionalLight(0x2dd4bf, 0.25);
+      const fillLight = new THREE.DirectionalLight(0xd8cdc0, 0.45);
       fillLight.position.set(-500, -200, 800);
       scene.add(fillLight);
 
-      const backLight = new THREE.DirectionalLight(0xffffff, 0.4);
+      const backLight = new THREE.DirectionalLight(0xffffff, 0.55);
       backLight.position.set(-200, 300, -400);
       scene.add(backLight);
 
-      const rimLight = new THREE.DirectionalLight(0xeeddcc, 0.3);
+      const rimLight = new THREE.DirectionalLight(0xcdb9ab, 0.4);
       rimLight.position.set(300, -400, 1200);
       scene.add(rimLight);
 
@@ -326,7 +326,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
         if (mod.label && mod.coordinates.length >= 1 && progress > 0.5) {
           const c = mod.coordinates[0];
           const div = document.createElement("div");
-          div.style.cssText = `padding:3px 8px;border-radius:6px;background:rgba(15,15,20,0.85);backdrop-filter:blur(4px);border:1px solid rgba(124,92,252,0.3);color:#f0eef6;font-size:11px;font-family:Inter,system-ui,sans-serif;font-weight:500;white-space:nowrap;opacity:${Math.min(1,(progress-0.5)*2)};`;
+          div.style.cssText = `padding:4px 10px;border-radius:999px;background:rgba(255,252,247,0.86);backdrop-filter:blur(8px);border:1px solid rgba(47,39,31,0.12);color:#171311;font-size:11px;font-family:var(--font-mono), ui-monospace, monospace;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;box-shadow:0 8px 20px rgba(38,29,20,0.08);opacity:${Math.min(1,(progress-0.5)*2)};`;
           div.textContent = mod.label + (mod.score !== undefined ? ` ${Math.round(mod.score * 100)}%` : "");
           const labelObj = new CSS2DObject(div);
           labelObj.position.set(c[0], c[1] + 30, c[2]);
@@ -387,7 +387,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const toggleLayer = (name: string) => setLayerVisibility((prev) => ({ ...prev, [name]: !prev[name] }));
 
     return (
-      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
         {/* Layer controls */}
         <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
@@ -399,15 +399,16 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
                 alignItems: "center",
                 gap: 8,
                 padding: "6px 12px",
-                borderRadius: 8,
-                backgroundColor: layerVisibility[name] ? "rgba(15, 15, 20, 0.85)" : "rgba(15, 15, 20, 0.5)",
+                borderRadius: 999,
+                backgroundColor: layerVisibility[name] ? "rgba(255,252,247,0.82)" : "rgba(255,252,247,0.56)",
                 border: `1px solid ${layerVisibility[name] ? "var(--accent)" : "var(--border)"}`,
                 cursor: "pointer",
-                backdropFilter: "blur(4px)",
+                backdropFilter: "blur(10px)",
                 transition: "all 0.2s ease",
                 fontSize: "0.75rem",
                 fontWeight: 500,
-                color: layerVisibility[name] ? "var(--text-primary)" : "var(--text-muted)",
+                color: layerVisibility[name] ? "var(--text-primary)" : "var(--text-secondary)",
+                boxShadow: "var(--shadow-sm)",
               }}
             >
               <div style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: `#${LAYER_COLORS[name]?.toString(16).padStart(6, "0")}`, opacity: layerVisibility[name] ? 1 : 0.3 }} />
@@ -437,7 +438,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           </div>
         )}
         {cursorPosition && (
-          <div style={{ position: "absolute", left: cursorPosition.x - 10, top: cursorPosition.y - 10, width: 20, height: 20, border: "2px solid var(--accent)", borderRadius: "50%", pointerEvents: "none", boxShadow: "0 0 8px rgba(124, 92, 252, 0.4)" }} />
+          <div style={{ position: "absolute", left: cursorPosition.x - 10, top: cursorPosition.y - 10, width: 20, height: 20, border: "2px solid var(--accent)", borderRadius: "50%", pointerEvents: "none", boxShadow: "0 0 8px rgba(109, 98, 87, 0.28)" }} />
         )}
       </div>
     );
