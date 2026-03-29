@@ -6,10 +6,14 @@ The agent dynamically understands what's on screen and leads the surgeon through
 """
 
 import json
+import logging
 from fastapi import APIRouter
 from pydantic import BaseModel
-from services.agent import _call_groq
+from services.agent import _parse_json_response
+from services.llm import KimiAPIError, chat_completions
 from services.session import add_to_session
+
+_log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -69,25 +73,21 @@ async def get_guidance(req: GuideRequest):
 
     try:
         messages = [{"role": "user", "content": prompt}]
-        response = await _call_groq(messages, max_tokens=800)
+        response = await chat_completions(messages, max_completion_tokens=800)
 
         text = response.strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[1] if "\n" in text else text[3:]
             text = text.rsplit("```", 1)[0]
 
-        try:
-            result = json.loads(text)
-        except json.JSONDecodeError:
-            start = text.find("{")
-            end = text.rfind("}") + 1
-            if start >= 0 and end > start:
-                result = json.loads(text[start:end])
-            else:
-                result = {"narration": text, "new_annotations": [], "next_focus": ""}
+        result = _parse_json_response(text)
+        if not result:
+            result = {"narration": text, "new_annotations": [], "next_focus": ""}
 
         # Add camera positions to annotations
-        for ann in result.get("new_annotations", []):
+        for ann in result.get("new_annotations", []) or []:
+            if not isinstance(ann, dict):
+                continue
             pos = ann.get("position", [0, -100, 1000])
             ann["camera_position"] = [pos[0] + 150, pos[1] + 50, pos[2] + 200]
             ann["camera_target"] = pos
@@ -95,14 +95,17 @@ async def get_guidance(req: GuideRequest):
         add_to_session(req.session_id, {"type": "guide", "data": result})
 
         return GuideResponse(
-            narration=result.get("narration", ""),
-            new_annotations=result.get("new_annotations", []),
-            next_focus=result.get("next_focus", ""),
+            narration=str(result.get("narration", "") or ""),
+            new_annotations=[x for x in (result.get("new_annotations") or []) if isinstance(x, dict)],
+            next_focus=str(result.get("next_focus", "") or ""),
         )
 
+    except KimiAPIError:
+        raise
     except Exception as e:
+        _log.exception("guide: unexpected error after LLM call")
         return GuideResponse(
-            narration="Analyzing the anatomy...",
+            narration="Could not parse the guide response. Please try again.",
             new_annotations=[],
-            next_focus="liver region",
+            next_focus="",
         )

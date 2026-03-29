@@ -11,7 +11,7 @@ import SummaryView from "../components/SummaryView";
 import UploadPanel from "../components/UploadPanel";
 import AgentTour from "../components/AgentTour";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
-import { sendAction, sendChat, sendSemanticQuery } from "../utils/api";
+import { API_BASE, sendAction, sendChat, sendSemanticQuery } from "../utils/api";
 import type { AgentResponse, Modification } from "../utils/api";
 import type { GestureType } from "../hooks/useGestures";
 
@@ -77,7 +77,7 @@ function AppPage() {
 
     const generateAnnotations = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/poi/generate", {
+        const res = await fetch(`${API_BASE}/poi/generate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session_id: sessionId }),
@@ -117,7 +117,7 @@ function AppPage() {
     const poll = async () => {
       while (!controller.signal.aborted) {
         try {
-          const res = await fetch(`http://localhost:8000/api/skeleton/latest/${sessionId}`, { signal: controller.signal });
+          const res = await fetch(`${API_BASE}/skeleton/latest/${sessionId}`, { signal: controller.signal });
           const data = await res.json();
           if (data.skeleton_detected) {
             console.log("[skeleton] Received organ positions:", Object.keys(data.organ_positions).length);
@@ -141,7 +141,7 @@ function AppPage() {
     const poll = async () => {
       while (!controller.signal.aborted) {
         try {
-          const res = await fetch(`http://localhost:8000/api/reconstruct/${sessionId}`, { signal: controller.signal });
+          const res = await fetch(`${API_BASE}/reconstruct/${sessionId}`, { signal: controller.signal });
           const data = await res.json();
           setReconstructProgress(data.progress);
           setReconstructMessage(data.message);
@@ -166,7 +166,7 @@ function AppPage() {
   const handleUploadComplete = useCallback((sid: string, _path: string) => {
     setSessionId(sid);
     // Trigger reconstruction
-    fetch("http://localhost:8000/api/reconstruct", {
+    fetch(`${API_BASE}/reconstruct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sid }),
@@ -176,11 +176,11 @@ function AppPage() {
 
   const handleUseSample = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/upload/sample", { method: "POST" });
+      const res = await fetch(`${API_BASE}/upload/sample`, { method: "POST" });
       const data = await res.json();
       setSessionId(data.session_id);
       // Trigger reconstruction
-      fetch("http://localhost:8000/api/reconstruct", {
+      fetch(`${API_BASE}/reconstruct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: data.session_id }),
@@ -237,7 +237,7 @@ function AppPage() {
   const handleVoiceInput = useCallback(async (transcript: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/guide", {
+      const res = await fetch(`${API_BASE}/guide`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
