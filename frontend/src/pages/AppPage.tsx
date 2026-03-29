@@ -10,6 +10,7 @@ import NarrationPlayer from "../components/NarrationPlayer";
 import SummaryView from "../components/SummaryView";
 import UploadPanel from "../components/UploadPanel";
 import AgentTour from "../components/AgentTour";
+import SurgicalSimulation from "../components/SurgicalSimulation";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
 import { API_BASE, sendAction, sendChat, sendSemanticQuery } from "../utils/api";
 import type { AgentResponse, Modification } from "../utils/api";
@@ -49,8 +50,10 @@ function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [narrationText, setNarrationText] = useState<string | null>(null);
-  const [handTrackingEnabled, setHandTrackingEnabled] = useState(false);
+  const handTrackingEnabled = true;
   const [showSummary, setShowSummary] = useState(false);
+  const [simulationTriggered, setSimulationTriggered] = useState(false);
+  const simulationTriggeredRef = useRef(false);
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
 
   const viewerRef = useRef<LayeredViewerHandle>(null);
@@ -368,6 +371,7 @@ function AppPage() {
 
   // Gesture handling
   const lastGestureActionRef = useRef<number>(0);
+  const wasPinchingRef = useRef(false);
   const lastHoverAnnotationRef = useRef<string>("");
   const hoverAnnotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -403,25 +407,45 @@ function AppPage() {
       const normY = screenPos ? screenPos.y / 480 : 0;
       const rect = viewerRef.current?.getCanvasRect();
 
-      // Update cursor for all gestures that have a screen position
+      // Update cursor for gestures that have a screen position
       if (screenPos && rect) {
         setCursorPosition({ x: normX * rect.width, y: normY * rect.height });
       } else if (type === "none") {
         setCursorPosition(null);
       }
 
-      // POINT: hover/inspect — highlight and auto-annotate after dwelling on a new organ
+      // ── Organ interaction gestures ──────────────────────────────────
+
+      // Track pinch → release for first-pinch simulation trigger
+      if (type === "pinch" && screenPos) {
+        wasPinchingRef.current = true;
+        return; // don't do anything while actively pinching
+      }
+
+      // Pinch just released
+      if (wasPinchingRef.current && type !== "pinch") {
+        wasPinchingRef.current = false;
+        if (!simulationTriggeredRef.current) {
+          // First pinch release → trigger simulation
+          simulationTriggeredRef.current = true;
+          setSimulationTriggered(true);
+          lastGestureActionRef.current = now;
+        }
+        // Don't do anything else on this frame — just acknowledge the release
+        return;
+      }
+
+      // POINT: hover/inspect — highlight and auto-annotate after dwelling
       if (type === "point" && screenPos) {
         const hit = gestureRaycast(normX, normY);
         if (hit) {
           if (hit.organName !== selectedOrgan) {
             setSelectedOrgan(hit.organName);
           }
-          // Trigger annotation after hovering on a new organ for 1.5s
           if (hit.organName !== lastHoverAnnotationRef.current) {
             if (hoverAnnotationTimerRef.current) clearTimeout(hoverAnnotationTimerRef.current);
             hoverAnnotationTimerRef.current = setTimeout(async () => {
-              if (lastHoverAnnotationRef.current === hit.organName) return; // already annotated
+              if (lastHoverAnnotationRef.current === hit.organName) return;
               lastHoverAnnotationRef.current = hit.organName;
               actionContextRef.current.push(`Hovering over ${hit.organName.replace(/_/g, " ")}`);
               try {
@@ -438,45 +462,6 @@ function AppPage() {
         }
       }
 
-      // PINCH: SELECT — confirm selection and trigger AI analysis
-      else if (type === "pinch" && screenPos) {
-        if (now - lastGestureActionRef.current > 2000) {
-          let hit = gestureRaycast(normX, normY);
-          if (!hit) hit = gestureRaycast(0.5, 0.5);
-          if (hit) {
-            lastGestureActionRef.current = now;
-            handleOrganClick(hit.organName, hit.point, hit.normal);
-          }
-        }
-      }
-
-      // FIST: retract tissue — ask AI about what's beneath
-      else if (type === "fist" && screenPos) {
-        if (now - lastGestureActionRef.current > 3000) {
-          const target = selectedOrgan || gestureRaycast(normX, normY)?.organName;
-          if (target) {
-            lastGestureActionRef.current = now;
-            handleChatMessage(`I'm retracting tissue near the ${target.replace(/_/g, " ")}. What structures would be exposed beneath and what are the risks?`);
-          }
-        }
-      }
-
-      // SPREAD: zoom into the area — tell AI to focus on details
-      else if (type === "spread" && screenPos) {
-        if (now - lastGestureActionRef.current > 3000) {
-          const target = selectedOrgan || gestureRaycast(normX, normY)?.organName;
-          if (target) {
-            lastGestureActionRef.current = now;
-            handleChatMessage(`Zoom in on the ${target.replace(/_/g, " ")} — give me a detailed view of the vasculature and any anomalies in this area.`);
-          }
-        }
-      }
-
-      // INCISION (two fingers tracing): show cursor while tracing
-      else if (type === "incision" && screenPos && tracePath.length > 3) {
-        // Visual feedback only while tracing — action fires on completion below
-      }
-
       // INCISION COMPLETE: two fingers lifted after tracing
       if (type === "incision" && tracePath.length > 8 && !screenPos) {
         const worldPoints: number[][] = [];
@@ -489,7 +474,7 @@ function AppPage() {
         if (worldPoints.length >= 2) handleIncisionTrace(traceOrgan, worldPoints);
       }
     },
-    [selectedOrgan, handleOrganClick, handleIncisionTrace, handleChatMessage, gestureRaycast, sessionId, playAnnotations, visibleMods]
+    [selectedOrgan, handleOrganClick, handleIncisionTrace, gestureRaycast, sessionId, playAnnotations, visibleMods]
   );
 
   const navBar = (label?: string) => (
@@ -543,22 +528,10 @@ function AppPage() {
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
-          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
+          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.02em" }}>Praxis</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setHandTrackingEnabled((e) => !e)} style={{
-            padding: "5px 14px", borderRadius: "var(--radius-sm)",
-            border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
-            backgroundColor: handTrackingEnabled ? "var(--accent-dim)" : "transparent",
-            color: handTrackingEnabled ? "var(--accent)" : "var(--text-muted)",
-            fontSize: "0.65rem", fontWeight: 500,
-          }}>
-            {handTrackingEnabled ? "Tracking" : "Hands"}
-          </button>
-
-          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => { }} />
-
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "999px",
             border: "1px solid var(--accent)",
@@ -581,6 +554,13 @@ function AppPage() {
           animationProgress={combinedProgress}
           selectedOrgan={selectedOrgan}
           cursorPosition={cursorPosition}
+        />
+
+        <SurgicalSimulation
+          triggered={simulationTriggered}
+          viewerRef={viewerRef}
+          playAnnotations={playAnnotations}
+          onNarrate={setNarrationText}
         />
 
         {/* Scenario toggle chips */}

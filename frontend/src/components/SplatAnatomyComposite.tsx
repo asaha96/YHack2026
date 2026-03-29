@@ -20,6 +20,7 @@ const LAYER_OPACITY: Record<string, number> = {
 const DEFAULT_SCALE = 0.0006;
 const DEFAULT_OFFSET = { x: 0, y: 0.5, z: 0.85 };
 const SHOW_PLACEMENT_UI = false;
+const SHOW_CAMERA_DEBUG = false;
 
 // WASD + Space/Shift movement speed
 const MOVE_SPEED = 0.02;
@@ -43,11 +44,22 @@ interface Props {
   cursorPosition: { x: number; y: number } | null;
 }
 
+export interface GestureInput {
+  type: "pan" | "rotate" | "zoom" | "none";
+  /** Normalized screen position 0-1 */
+  screenX: number;
+  screenY: number;
+}
+
 export interface LayeredViewerHandle {
   getCamera: () => THREE.Camera | null;
   getScene: () => THREE.Scene | null;
   getCanvasRect: () => DOMRect | null;
   captureCanvas: () => string | null;
+  /** Write gesture input every frame — render loop reads it */
+  gestureInput: GestureInput;
+  /** Smoothly move camera to look at an anatomy-local point */
+  zoomToAnatomyPoint: (localPoint: [number, number, number], distance?: number, durationMs?: number) => void;
 }
 
 // ── Component ───────────────────────────────────────────────────────────
@@ -66,6 +78,8 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
 
     const [isLoading, setIsLoading] = useState(true);
     const [loadProgress, setLoadProgress] = useState("Initializing world...");
+    const [cameraDebug, setCameraDebug] = useState({ x: 0, y: 0, z: 0, zoom: 0 });
+    const cameraDebugFrameRef = useRef(0);
 
     const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
       skin: true, muscles: true, organs: true, vascular: true, skeleton: true,
@@ -78,6 +92,13 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
     const [anatomyScale, setAnatomyScale] = useState(DEFAULT_SCALE);
     const [anatomyOffset, setAnatomyOffset] = useState(DEFAULT_OFFSET);
     const keysDownRef = useRef<Set<string>>(new Set());
+
+    // Gesture-based camera control (written by AppPage, read by render loop)
+    const gestureInputRef = useRef<GestureInput>({ type: "none", screenX: 0.5, screenY: 0.5 });
+    const prevGesturePosRef = useRef<{ x: number; y: number } | null>(null);
+    // Smoothed velocity for gesture camera — lerp toward target delta
+    const gestureVelRef = useRef({ dx: 0, dy: 0 });
+    const GESTURE_SMOOTHING = 0.15; // lerp factor (0 = no response, 1 = instant)
 
     // Compute offset vector from state (used in raycasting & label placement)
     const anatomyOffsetVec = new THREE.Vector3(anatomyOffset.x, anatomyOffset.y, anatomyOffset.z);
@@ -96,6 +117,39 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           const canvas = containerRef.current?.querySelector("canvas");
           return canvas?.toDataURL("image/png").split(",")[1] || null;
         } catch { return null; }
+      },
+      get gestureInput() { return gestureInputRef.current; },
+      set gestureInput(v: GestureInput) { gestureInputRef.current = v; },
+      zoomToAnatomyPoint: (localPoint: [number, number, number], distance = 0.25, durationMs = 1500) => {
+        const camera = cameraRef.current;
+        const viewer = splatViewerRef.current;
+        if (!camera || !viewer) return;
+
+        // Convert anatomy-local coords to world coords
+        const grp = anatomyGroupRef.current;
+        const targetWorld = new THREE.Vector3(...localPoint)
+          .multiplyScalar(grp.scale.x)
+          .add(grp.position);
+
+        // Camera end position: offset from target along current view direction
+        const camDir = new THREE.Vector3();
+        camera.getWorldDirection(camDir);
+        const endPos = targetWorld.clone().sub(camDir.multiplyScalar(distance));
+
+        const startPos = camera.position.clone();
+        const startTarget = viewer.controls?.target?.clone() || targetWorld.clone();
+        const startTime = performance.now();
+
+        function animate() {
+          const t = Math.min((performance.now() - startTime) / durationMs, 1);
+          const ease = t * t * (3 - 2 * t); // smoothstep
+          camera.position.lerpVectors(startPos, endPos, ease);
+          if (viewer.controls?.target) {
+            viewer.controls.target.lerpVectors(startTarget, targetWorld, ease);
+          }
+          if (t < 1) requestAnimationFrame(animate);
+        }
+        animate();
       },
     }));
 
@@ -213,8 +267,8 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         setLoadProgress("Loading world environment...");
         const viewer = new GaussianSplats3D.Viewer({
           cameraUp: [0, -1, 0],
-          initialCameraPosition: [0, 0, -2],
-          initialCameraLookAt: [0, 0, 2],
+          initialCameraPosition: [0.1345, -0.0296, -0.1243],
+          initialCameraLookAt: [0, 0, 1],
           rootElement: container,
           selfDrivenMode: false,
           sharedMemoryForWorkers: false,
@@ -279,6 +333,68 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
             if (keys.has("shift")) delta.y += MOVE_SPEED;
             camera.position.add(delta);
             if (viewer.controls?.target) viewer.controls.target.add(delta);
+          }
+
+          // Apply hand gesture camera control (smoothed)
+          const gi = gestureInputRef.current;
+          const vel = gestureVelRef.current;
+          if (gi.type !== "none" && camera) {
+            const prev = prevGesturePosRef.current;
+            if (prev) {
+              const rawDx = gi.screenX - prev.x;
+              const rawDy = gi.screenY - prev.y;
+              // Lerp velocity toward raw delta for smooth transitions
+              vel.dx += (rawDx - vel.dx) * GESTURE_SMOOTHING;
+              vel.dy += (rawDy - vel.dy) * GESTURE_SMOOTHING;
+              const dx = vel.dx;
+              const dy = vel.dy;
+
+              if (gi.type === "pan") {
+                const right = new THREE.Vector3();
+                const up = new THREE.Vector3();
+                camera.matrixWorld.extractBasis(right, up, new THREE.Vector3());
+                const panDelta = new THREE.Vector3();
+                panDelta.addScaledVector(right, -dx * 4.0);
+                panDelta.addScaledVector(up, dy * 4.0);
+                camera.position.add(panDelta);
+                if (viewer.controls?.target) viewer.controls.target.add(panDelta);
+              } else if (gi.type === "rotate") {
+                const controls = viewer.controls;
+                if (controls) {
+                  const offset = camera.position.clone().sub(controls.target);
+                  const spherical = new THREE.Spherical().setFromVector3(offset);
+                  spherical.theta -= dx * 6.0;
+                  spherical.phi += dy * 6.0;
+                  spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                  offset.setFromSpherical(spherical);
+                  camera.position.copy(controls.target).add(offset);
+                  camera.lookAt(controls.target);
+                }
+              } else if (gi.type === "zoom") {
+                const forward = new THREE.Vector3();
+                camera.getWorldDirection(forward);
+                camera.position.addScaledVector(forward, -dy * 5.0);
+              }
+            }
+            prevGesturePosRef.current = { x: gi.screenX, y: gi.screenY };
+          } else {
+            // Decay velocity smoothly when gesture stops
+            vel.dx *= 0.85;
+            vel.dy *= 0.85;
+            if (Math.abs(vel.dx) > 0.0001 || Math.abs(vel.dy) > 0.0001) {
+              // Apply residual momentum for smooth stop
+              // (only if we had a previous gesture type to continue)
+            }
+            prevGesturePosRef.current = null;
+          }
+
+          // Update camera debug info every 10 frames
+          cameraDebugFrameRef.current++;
+          if (cameraDebugFrameRef.current % 10 === 0 && camera) {
+            const p = camera.position;
+            const target = viewer.controls?.target;
+            const dist = target ? p.distanceTo(target) : 0;
+            setCameraDebug({ x: p.x, y: p.y, z: p.z, zoom: dist });
           }
 
           // 1. Render splats (clears canvas + draws splat cloud)
@@ -646,8 +762,8 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        {/* Layer controls */}
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Layer controls — hidden for demo */}
+        {false && <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
             <div
               key={name}
@@ -676,7 +792,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {/* Anatomy placement controls (dev tuning) */}
         {SHOW_PLACEMENT_UI && <div style={{
@@ -720,6 +836,21 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
             <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", fontFamily: "var(--font-mono)" }}>{loadProgress}</span>
           </div>
         )}
+
+        {/* Camera position debug */}
+        {SHOW_CAMERA_DEBUG && <div style={{
+          position: "absolute", top: 16, right: 16, zIndex: 10,
+          padding: "8px 12px", borderRadius: 8,
+          backgroundColor: "rgba(10,10,18,0.85)", backdropFilter: "blur(8px)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "rgba(255,255,255,0.6)",
+          lineHeight: 1.6,
+        }}>
+          <div>x: {cameraDebug.x.toFixed(4)}</div>
+          <div>y: {cameraDebug.y.toFixed(4)}</div>
+          <div>z: {cameraDebug.z.toFixed(4)}</div>
+          <div style={{ marginTop: 4, color: "rgba(255,255,255,0.4)" }}>zoom: {cameraDebug.zoom.toFixed(4)}</div>
+        </div>}
 
         {cursorPosition && (
           <div style={{ position: "absolute", left: cursorPosition.x - 10, top: cursorPosition.y - 10, width: 20, height: 20, border: "2px solid var(--accent)", borderRadius: "50%", pointerEvents: "none", boxShadow: "0 0 8px rgba(109, 98, 87, 0.28)" }} />
