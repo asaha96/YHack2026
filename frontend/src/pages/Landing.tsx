@@ -168,7 +168,7 @@ export default function Landing() {
           position: "absolute", top: 0, left: 0, right: 0,
           padding: "20px 40px", zIndex: 5,
         }}>
-          <img src="/logo.png" alt="Praxis" onClick={() => { setStage("hero"); setIntakeVisible(false); }} style={{ height: 36, filter: "var(--logo-filter)", cursor: "pointer" }} />
+          <img src="/logo.png" alt="Praxis" onClick={() => { setStage("hero"); setIntakeVisible(false); }} style={{ height: 44, filter: "var(--logo-filter)", cursor: "pointer" }} />
         </header>
 
         {/* Form */}
