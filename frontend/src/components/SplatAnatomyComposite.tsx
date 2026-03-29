@@ -195,51 +195,61 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         animate();
       },
       hideForSurgery: () => {
-        ["skin", "muscles", "nervous"].forEach(name => {
-          const group = layerGroupsRef.current.get(name);
-          if (group) group.visible = false;
-        });
-        setLayerVisibility(prev => ({ ...prev, skin: false, muscles: false, nervous: false }));
-      },
-      restoreFromSurgery: () => {
-        ["skin", "muscles", "nervous"].forEach(name => {
-          const group = layerGroupsRef.current.get(name);
-          if (group) group.visible = true;
-        });
-        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, nervous: true }));
-      },
-      fadeRestoreLayers: (durationMs = 2000) => {
-        // Make hidden layers visible but at 0 opacity, then fade in
-        const hiddenLayers = ["skin", "muscles", "nervous"];
-        hiddenLayers.forEach(name => {
+        const minOpacities: Record<string, number> = { skin: 0.03, muscles: 0.05, nervous: 0.08, organs: 0.08, vascular: 0.06, skeleton: 0.05 };
+        Object.entries(minOpacities).forEach(([name, opacity]) => {
           const group = layerGroupsRef.current.get(name);
           if (group) {
             group.visible = true;
             group.traverse(child => {
               if (child instanceof THREE.Mesh) {
-                (child.material as THREE.MeshPhongMaterial).opacity = 0;
+                (child.material as THREE.MeshPhongMaterial).opacity = opacity;
               }
             });
           }
         });
-        setLayerVisibility(prev => ({ ...prev, skin: true, muscles: true, nervous: true }));
+        setLayerOpacity(minOpacities);
+      },
+      restoreFromSurgery: () => {
+        const defaults: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15 };
+        Object.entries(defaults).forEach(([name, opacity]) => {
+          const group = layerGroupsRef.current.get(name);
+          if (group) {
+            group.visible = true;
+            group.traverse(child => {
+              if (child instanceof THREE.Mesh) {
+                (child.material as THREE.MeshPhongMaterial).opacity = opacity;
+              }
+            });
+          }
+        });
+        setLayerVisibility({ skin: true, muscles: true, nervous: true, organs: true, vascular: true, skeleton: true });
+        setLayerOpacity(defaults);
+      },
+      fadeRestoreLayers: (durationMs = 2000) => {
+        const minOpacities: Record<string, number> = { skin: 0.03, muscles: 0.05, nervous: 0.08, organs: 0.08, vascular: 0.06, skeleton: 0.05 };
+        const targetOpacities: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15 };
+        const all = Object.keys(targetOpacities);
+
+        setLayerVisibility({ skin: true, muscles: true, nervous: true, organs: true, vascular: true, skeleton: true });
 
         const t0 = performance.now();
-        const targetOpacities: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9 };
         function fadeIn() {
           const p = Math.min((performance.now() - t0) / durationMs, 1);
           const ease = p * p * (3 - 2 * p);
-          hiddenLayers.forEach(name => {
+          all.forEach(name => {
             const group = layerGroupsRef.current.get(name);
             if (!group) return;
-            const target = targetOpacities[name] ?? 0.5;
+            const from = minOpacities[name] ?? 0;
+            const to = targetOpacities[name] ?? 0.5;
+            const current = from + (to - from) * ease;
             group.traverse(child => {
               if (child instanceof THREE.Mesh) {
-                (child.material as THREE.MeshPhongMaterial).opacity = target * ease;
+                (child.material as THREE.MeshPhongMaterial).opacity = current;
               }
             });
           });
           if (p < 1) requestAnimationFrame(fadeIn);
+          else setLayerOpacity(targetOpacities);
         }
         requestAnimationFrame(fadeIn);
       },
