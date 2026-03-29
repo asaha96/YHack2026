@@ -131,7 +131,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       controls.minDistance = 400;
       controls.maxDistance = 4000;
       controls.autoRotate = false;
-      controls.enableRotate = false;
+      controls.enableRotate = true;
       controlsRef.current = controls;
 
       // Lighting — clinical, well-lit anatomy
