@@ -42,6 +42,8 @@ interface Props {
   animationProgress?: Map<number, number>;
   selectedOrgan: string | null;
   cursorPosition: { x: number; y: number } | null;
+  onReady?: () => void;
+  onLoadProgress?: (step: string, progress: number) => void;
 }
 
 export interface GestureInput {
@@ -64,7 +66,7 @@ export interface LayeredViewerHandle {
 
 // ── Component ───────────────────────────────────────────────────────────
 const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
-  ({ worldId, onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition }, ref) => {
+  ({ worldId, onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition, onReady, onLoadProgress }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const splatViewerRef = useRef<any>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
@@ -261,10 +263,12 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         if (!worldId) throw new Error("No worldId");
 
         setLoadProgress("Fetching world model...");
+        onLoadProgress?.("Connecting to World Labs...", 0.05);
         const world = await getWorld(worldId);
         const spzUrl = selectSpzUrl(world);
         if (!spzUrl) throw new Error("No SPZ URL available");
         if (disposed) return;
+        onLoadProgress?.("Downloading world environment...", 0.10);
 
         setLoadProgress("Loading world environment...");
         const viewer = new GaussianSplats3D.Viewer({
@@ -278,6 +282,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         });
         splatViewerRef.current = viewer;
 
+        onLoadProgress?.("Reconstructing 3D environment...", 0.15);
         await viewer.addSplatScene(spzUrl, {
           splatAlphaRemovalThreshold: 5,
           showLoadingUI: false,
@@ -286,6 +291,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           scale: [1, 1, 1],
         });
         if (disposed) return;
+        onLoadProgress?.("Initializing spatial renderer...", 0.50);
 
         cameraRef.current = viewer.camera || null;
         const camera = cameraRef.current;
@@ -433,11 +439,17 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
 
         // Load anatomy layers (works in both modes)
         setLoadProgress("Loading anatomy model...");
+        onLoadProgress?.("Segmenting anatomical structures...", 0.55);
         await loadLayers();
         if (disposed) return;
 
+        onLoadProgress?.("Preparing simulation environment...", 0.95);
         setIsLoading(false);
         setLoadProgress("");
+        // Brief delay so the progress bar visually reaches 100%
+        await new Promise(r => setTimeout(r, 400));
+        onLoadProgress?.("Ready", 1.0);
+        onReady?.();
       })();
 
       const handleResize = () => {
@@ -475,8 +487,15 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       const res = await fetch("/models/anatomy/layers.json");
       const data: LayersMetadata = await res.json();
       const loader = new OBJLoader();
+      const layerEntries = Object.entries(data.layers);
+      let layerIdx = 0;
 
-      for (const [layerName, layerData] of Object.entries(data.layers)) {
+      for (const [layerName, layerData] of layerEntries) {
+        // Report per-layer progress (0.55 → 0.95 range)
+        const layerProgress = 0.55 + (layerIdx / layerEntries.length) * 0.40;
+        const label = layerData.label || layerName;
+        onLoadProgress?.(`Building ${label.toLowerCase()} layer...`, layerProgress);
+        layerIdx++;
         const group = new THREE.Group();
         group.name = layerName;
         group.visible = true;

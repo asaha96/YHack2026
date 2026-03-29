@@ -117,6 +117,11 @@ html, body, #root {
   50% { box-shadow: 0 0 20px rgba(109, 98, 87, 0.3); }
 }
 
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
 /* Base button reset */
 button {
   font-family: var(--font-sans);

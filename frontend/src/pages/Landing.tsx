@@ -67,9 +67,9 @@ export default function Landing() {
 
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    setStage("processing");
-    processStartRef.current = performance.now();
-  }, []);
+    setStage("transitioning");
+    setTimeout(() => navigate("/app", { state: { entered: true } }), 800);
+  }, [navigate]);
 
   // Processing animation
   useEffect(() => {
