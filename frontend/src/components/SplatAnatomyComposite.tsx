@@ -195,7 +195,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         animate();
       },
       hideForSurgery: () => {
-        const minOpacities: Record<string, number> = { skin: 0.03, muscles: 0.05, nervous: 0.08, organs: 0.08, vascular: 0.06, skeleton: 0.05 };
+        const minOpacities: Record<string, number> = { skin: 0.13, muscles: 0.15, nervous: 0.18, organs: 0.18, vascular: 0.16, skeleton: 0.15 };
         Object.entries(minOpacities).forEach(([name, opacity]) => {
           const group = layerGroupsRef.current.get(name);
           if (group) {
@@ -226,7 +226,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         setLayerOpacity(defaults);
       },
       fadeRestoreLayers: (durationMs = 2000) => {
-        const minOpacities: Record<string, number> = { skin: 0.03, muscles: 0.05, nervous: 0.08, organs: 0.08, vascular: 0.06, skeleton: 0.05 };
+        const minOpacities: Record<string, number> = { skin: 0.13, muscles: 0.15, nervous: 0.18, organs: 0.18, vascular: 0.16, skeleton: 0.15 };
         const targetOpacities: Record<string, number> = { skin: 0.08, muscles: 0.18, nervous: 0.9, organs: 0.85, vascular: 0.7, skeleton: 0.15 };
         const all = Object.keys(targetOpacities);
 

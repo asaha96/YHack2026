@@ -204,6 +204,7 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
   const narrationTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const objectTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const animFramesRef = useRef<number[]>([]);
+  const startCamRef = useRef<{ pos: THREE.Vector3; target: THREE.Vector3 } | null>(null);
   const [activeStep, setActiveStep] = useState<number | null>(null);
 
   useEffect(() => {
@@ -460,6 +461,12 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
     if (!triggered || hasPlayedRef.current) return;
     hasPlayedRef.current = true;
 
+    // Save starting camera position
+    const cam = viewerRef.current?.getCamera();
+    if (cam) {
+      startCamRef.current = { pos: cam.position.clone(), target: new THREE.Vector3(0, 0, 0) };
+    }
+
     // Hide skin so internal structures are visible
     viewerRef.current?.hideForSurgery();
 
@@ -480,11 +487,23 @@ export default function SurgicalSimulation({ triggered, viewerRef, playAnnotatio
 
     const lastDelay = Math.max(...SURGICAL_STEPS.map(s => (s.modification.delay_ms ?? 0) + (s.modification.duration_ms ?? 0)));
 
-    // Smooth outro: pull camera back to full body, fade layers in, then cleanup
+    // Smooth outro: return camera to starting position, fade layers in, then cleanup
     objectTimersRef.current.push(setTimeout(() => {
       setActiveStep(null);
-      const bodyCenter: [number, number, number] = [0, -50, 500];
-      viewerRef.current?.orbitToPoint(bodyCenter, 1.2, 0, 0.15, 2500);
+      const saved = startCamRef.current;
+      const cam = viewerRef.current?.getCamera();
+      if (saved && cam) {
+        const startPos = cam.position.clone();
+        const endPos = saved.pos;
+        const t0 = performance.now();
+        function animateBack() {
+          const p = Math.min((performance.now() - t0) / 2500, 1);
+          const ease = p * p * (3 - 2 * p);
+          cam!.position.lerpVectors(startPos, endPos, ease);
+          if (p < 1) requestAnimationFrame(animateBack);
+        }
+        animateBack();
+      }
     }, lastDelay + 1000));
 
     objectTimersRef.current.push(setTimeout(() => {
