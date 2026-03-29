@@ -29,14 +29,48 @@ function AppPage() {
   const location = useLocation();
   const nav = useNavigate();
   const enteredFromLanding = !!(location.state as any)?.entered;
-  const [appRevealed, setAppRevealed] = useState(!enteredFromLanding);
+  const [sceneReady, setSceneReady] = useState(false);
+  const [appRevealed, setAppRevealed] = useState(false);
+  const [loadStep, setLoadStep] = useState("Initializing...");
+  const [displayProgress, setDisplayProgress] = useState(0);
+  const targetProgressRef = useRef(0);
+  const LOAD_BLOCKS = 8;
 
+  // Animated progress — smoothly lerps toward target, never overshoots
   useEffect(() => {
-    if (enteredFromLanding) {
-      const t = setTimeout(() => setAppRevealed(true), 100);
+    if (appRevealed) return;
+    let raf: number;
+    const tick = () => {
+      setDisplayProgress((prev) => {
+        const target = targetProgressRef.current;
+        if (prev >= 1) return 1;
+        const diff = target - prev;
+        if (Math.abs(diff) < 0.001) return target;
+        // Smooth lerp — faster when far, slower when close
+        return prev + diff * 0.04;
+      });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [appRevealed]);
+
+  // When scene finishes loading, fade in
+  useEffect(() => {
+    if (sceneReady) {
+      const t = setTimeout(() => setAppRevealed(true), 600);
       return () => clearTimeout(t);
     }
-  }, [enteredFromLanding]);
+  }, [sceneReady]);
+
+  const lastLoadStepRef = useRef("");
+  const handleLoadProgress = useCallback((step: string, progress: number) => {
+    targetProgressRef.current = progress;
+    if (step !== lastLoadStepRef.current) {
+      lastLoadStepRef.current = step;
+      setLoadStep(step);
+    }
+  }, []);
 
   const [stage, setStage] = useState<AppStage>("simulation");
   const [sessionId, setSessionId] = useState(`session-${Date.now()}`);
@@ -521,9 +555,79 @@ function AppPage() {
     <div style={{
       width: "100vw", height: "100vh", backgroundColor: "var(--bg-primary)",
       display: "grid", gridTemplateRows: "auto 1fr", overflow: "hidden",
-      opacity: appRevealed ? 1 : 0,
-      transition: "opacity 0.8s ease",
+      position: "relative",
     }}>
+      {/* Loading overlay — matches Landing processing UI */}
+      {!appRevealed && (
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 100,
+          background: "var(--bg-primary)",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 28,
+          transition: "opacity 0.8s ease",
+          opacity: sceneReady ? 0 : 1,
+          pointerEvents: sceneReady ? "none" : "auto",
+        }}>
+          <div style={{ textAlign: "center" }}>
+            <p style={{
+              fontSize: "0.65rem", fontFamily: "var(--font-mono)",
+              color: "var(--accent)", letterSpacing: "0.08em",
+              textTransform: "uppercase", marginBottom: 12,
+            }}>
+              Building World Model
+            </p>
+            <p
+              key={loadStep}
+              style={{
+                fontSize: "1.6rem", fontWeight: 600,
+                fontFamily: "var(--font-serif)",
+                color: "var(--text-primary)",
+                letterSpacing: "-0.03em",
+                animation: "fadeIn 0.5s ease forwards",
+              }}
+            >
+              {loadStep}
+            </p>
+          </div>
+
+          {/* Segmented progress bar */}
+          <div style={{ display: "flex", gap: 4, width: 320 }}>
+            {Array.from({ length: LOAD_BLOCKS }).map((_, i) => {
+              const blockStart = i / LOAD_BLOCKS;
+              const blockEnd = (i + 1) / LOAD_BLOCKS;
+              const isFilled = displayProgress >= blockEnd;
+              const isActive = displayProgress > blockStart && displayProgress < blockEnd;
+              const fillFraction = isActive
+                ? (displayProgress - blockStart) / (blockEnd - blockStart)
+                : 0;
+
+              return (
+                <div key={i} style={{
+                  flex: 1, height: 6, borderRadius: 3,
+                  position: "relative",
+                  backgroundColor: "var(--border)",
+                  opacity: isFilled ? 1 : isActive ? 0.8 : 0.3,
+                  overflow: "hidden",
+                }}>
+                  {/* Fill bar inside each block */}
+                  <div style={{
+                    position: "absolute", inset: 0, borderRadius: 3,
+                    backgroundColor: "var(--accent)",
+                    width: isFilled ? "100%" : isActive ? `${fillFraction * 100}%` : "0%",
+                    transition: isFilled ? "width 0.3s ease" : "none",
+                  }} />
+                </div>
+              );
+            })}
+          </div>
+
+          <p style={{
+            fontSize: "0.68rem", fontFamily: "var(--font-mono)",
+            color: "var(--text-muted)", letterSpacing: "0.04em",
+          }}>
+            {Math.round(displayProgress * 100)}%
+          </p>
+        </div>
+      )}
       {/* Header — minimal */}
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -553,6 +657,8 @@ function AppPage() {
           animationProgress={combinedProgress}
           selectedOrgan={selectedOrgan}
           cursorPosition={cursorPosition}
+          onReady={() => setSceneReady(true)}
+          onLoadProgress={handleLoadProgress}
         />
 
         <SurgicalSimulation
