@@ -255,23 +255,25 @@ function AppPage() {
   }, [sessionId, selectedOrgan, playAnnotations, visibleMods]);
 
   const handleOrganClick = useCallback(
-    async (organName: string, point: number[], _normal: number[]) => {
+    (organName: string, point: number[], _normal: number[]) => {
       setSelectedOrgan(organName);
       actionContextRef.current.push(`Pinched/selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-      // Annotate the pinched area with contextual info
-      try {
-        const res = await fetch("http://localhost:8000/api/guide", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            session_id: sessionId,
-            selected_structure: organName,
-            existing_annotations: currentAnnotationsRef.current.slice(-5),
-            camera_region: `User pinched and selected ${organName.replace(/_/g, " ")}. Recent actions: ${actionContextRef.current.slice(-5).join("; ")}. Provide a focused annotation for this structure — key anatomy, risks, and surgical relevance.`,
-          }),
-        });
-        const guide = await res.json();
+      // Start voice immediately — don't wait for annotation API
+      setIsVoiceListening(true);
+      try { recognitionRef.current?.start(); } catch { /* already started */ }
+
+      // Fire annotation call in background (non-blocking)
+      fetch("http://localhost:8000/api/guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          selected_structure: organName,
+          existing_annotations: currentAnnotationsRef.current.slice(-5),
+          camera_region: `User pinched and selected ${organName.replace(/_/g, " ")}. Recent actions: ${actionContextRef.current.slice(-5).join("; ")}. Provide a focused annotation for this structure — key anatomy, risks, and surgical relevance.`,
+        }),
+      }).then(r => r.json()).then(guide => {
         if (guide.narration) setNarrationText(guide.narration);
         if (guide.new_annotations?.length) {
           const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
@@ -287,11 +289,7 @@ function AppPage() {
           playAnnotations(mods);
           currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
         }
-      } catch { /* guide call failed, still proceed to listening */ }
-
-      // Auto-start listening — no button tap needed
-      setIsVoiceListening(true);
-      try { recognitionRef.current?.start(); } catch { /* already started */ }
+      }).catch(() => { /* guide call failed */ });
     },
     [sessionId, playAnnotations, visibleMods]
   );
@@ -496,7 +494,7 @@ function AppPage() {
 
   const navBar = (label?: string) => (
     <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
+      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -544,7 +542,7 @@ function AppPage() {
       {/* Header — minimal */}
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
+          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
           <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
         </div>
 
