@@ -418,6 +418,102 @@
           "file": "anatomy/skeleton/left_maxilla.obj",
           "fma_id": "FMA53650",
           "label": "Left Maxilla"
+        },
+        {
+          "name": "frontal_bone",
+          "file": "anatomy/skeleton/frontal_bone.obj",
+          "fma_id": "FMA52734",
+          "label": "Frontal Bone"
+        },
+        {
+          "name": "right_parietal_bone",
+          "file": "anatomy/skeleton/right_parietal_bone.obj",
+          "fma_id": "FMA52735",
+          "label": "Right Parietal Bone"
+        },
+        {
+          "name": "left_parietal_bone",
+          "file": "anatomy/skeleton/left_parietal_bone.obj",
+          "fma_id": "FMA52736",
+          "label": "Left Parietal Bone"
+        },
+        {
+          "name": "occipital_bone",
+          "file": "anatomy/skeleton/occipital_bone.obj",
+          "fma_id": "FMA52737",
+          "label": "Occipital Bone"
+        },
+        {
+          "name": "right_temporal_bone",
+          "file": "anatomy/skeleton/right_temporal_bone.obj",
+          "fma_id": "FMA52739",
+          "label": "Right Temporal Bone"
+        },
+        {
+          "name": "left_temporal_bone",
+          "file": "anatomy/skeleton/left_temporal_bone.obj",
+          "fma_id": "FMA52740",
+          "label": "Left Temporal Bone"
+        },
+        {
+          "name": "sphenoid_bone",
+          "file": "anatomy/skeleton/sphenoid_bone.obj",
+          "fma_id": "FMA52741",
+          "label": "Sphenoid Bone"
+        },
+        {
+          "name": "ethmoid_bone",
+          "file": "anatomy/skeleton/ethmoid_bone.obj",
+          "fma_id": "FMA52742",
+          "label": "Ethmoid Bone"
+        },
+        {
+          "name": "right_zygomatic_bone",
+          "file": "anatomy/skeleton/right_zygomatic_bone.obj",
+          "fma_id": "FMA52747",
+          "label": "Right Zygomatic Bone"
+        },
+        {
+          "name": "left_zygomatic_bone",
+          "file": "anatomy/skeleton/left_zygomatic_bone.obj",
+          "fma_id": "FMA52750",
+          "label": "Left Zygomatic Bone"
+        },
+        {
+          "name": "right_nasal_bone",
+          "file": "anatomy/skeleton/right_nasal_bone.obj",
+          "fma_id": "FMA52745",
+          "label": "Right Nasal Bone"
+        },
+        {
+          "name": "left_nasal_bone",
+          "file": "anatomy/skeleton/left_nasal_bone.obj",
+          "fma_id": "FMA52746",
+          "label": "Left Nasal Bone"
+        },
+        {
+          "name": "atlas_c1",
+          "file": "anatomy/skeleton/atlas_c1.obj",
+          "fma_id": "FMA12519",
+          "label": "Atlas (C1)"
+        },
+        {
+          "name": "axis_c2",
+          "file": "anatomy/skeleton/axis_c2.obj",
+          "fma_id": "FMA12520",
+          "label": "Axis (C2)"
+        },
+        {
+          "name": "right_hip_bone",
+          "file": "anatomy/skeleton/right_hip_bone.obj",
+          "fma_id": "FMA16580",
+          "label": "Right Hip Bone"
+        },
+        {
+          "name": "left_hip_bone",
+          "file": "anatomy/skeleton/left_hip_bone.obj",
+          "fma_id": "FMA16581",
+          "label": "Left Hip Bone"
         }
       ]
     },
@@ -714,6 +810,90 @@
           "file": "anatomy/muscles/left_trapezius_desc.obj",
           "fma_id": "FMA33587",
           "label": "Left Trapezius Desc"
+        },
+        {
+          "name": "right_sternocleidomastoid",
+          "file": "anatomy/muscles/right_sternocleidomastoid.obj",
+          "fma_id": "FMA13407",
+          "label": "Right Sternocleidomastoid"
+        },
+        {
+          "name": "left_sternocleidomastoid",
+          "file": "anatomy/muscles/left_sternocleidomastoid.obj",
+          "fma_id": "FMA13408",
+          "label": "Left Sternocleidomastoid"
+        },
+        {
+          "name": "right_masseter",
+          "file": "anatomy/muscles/right_masseter.obj",
+          "fma_id": "FMA49012",
+          "label": "Right Masseter"
+        },
+        {
+          "name": "left_masseter",
+          "file": "anatomy/muscles/left_masseter.obj",
+          "fma_id": "FMA49013",
+          "label": "Left Masseter"
+        },
+        {
+          "name": "right_temporalis",
+          "file": "anatomy/muscles/right_temporalis.obj",
+          "fma_id": "FMA49006",
+          "label": "Right Temporalis"
+        },
+        {
+          "name": "left_temporalis",
+          "file": "anatomy/muscles/left_temporalis.obj",
+          "fma_id": "FMA49007",
+          "label": "Left Temporalis"
+        },
+        {
+          "name": "right_biceps_brachii",
+          "file": "anatomy/muscles/right_biceps_brachii.obj",
+          "fma_id": "FMA37670",
+          "label": "Right Biceps Brachii"
+        },
+        {
+          "name": "left_biceps_brachii",
+          "file": "anatomy/muscles/left_biceps_brachii.obj",
+          "fma_id": "FMA37671",
+          "label": "Left Biceps Brachii"
+        },
+        {
+          "name": "right_triceps_brachii",
+          "file": "anatomy/muscles/right_triceps_brachii.obj",
+          "fma_id": "FMA37688",
+          "label": "Right Triceps Brachii"
+        },
+        {
+          "name": "left_triceps_brachii",
+          "file": "anatomy/muscles/left_triceps_brachii.obj",
+          "fma_id": "FMA37689",
+          "label": "Left Triceps Brachii"
+        },
+        {
+          "name": "right_internal_oblique",
+          "file": "anatomy/muscles/right_internal_oblique.obj",
+          "fma_id": "FMA13362",
+          "label": "Right Internal Oblique"
+        },
+        {
+          "name": "left_internal_oblique",
+          "file": "anatomy/muscles/left_internal_oblique.obj",
+          "fma_id": "FMA13363",
+          "label": "Left Internal Oblique"
+        },
+        {
+          "name": "right_transversus_abdominis",
+          "file": "anatomy/muscles/right_transversus_abdominis.obj",
+          "fma_id": "FMA15570",
+          "label": "Right Transversus Abdominis"
+        },
+        {
+          "name": "left_transversus_abdominis",
+          "file": "anatomy/muscles/left_transversus_abdominis.obj",
+          "fma_id": "FMA15571",
+          "label": "Left Transversus Abdominis"
         }
       ]
     },

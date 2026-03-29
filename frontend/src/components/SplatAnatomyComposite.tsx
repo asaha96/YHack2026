@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
 import * as THREE from "three";
 import * as GaussianSplats3D from "@mkkellogg/gaussian-splats-3d";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { CSS2DRenderer, CSS2DObject } from "three/examples/jsm/renderers/CSS2DRenderer.js";
 import { getWorld, selectSpzUrl } from "../utils/worldlabs";
@@ -55,6 +56,7 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
     const containerRef = useRef<HTMLDivElement>(null);
     const splatViewerRef = useRef<any>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
+    const anatomySceneRef = useRef<THREE.Scene>(new THREE.Scene());  // separate scene for anatomy overlay
     const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
     const anatomyGroupRef = useRef<THREE.Group>(new THREE.Group());
     const layerGroupsRef = useRef<Map<string, THREE.Group>>(new Map());
@@ -90,8 +92,6 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       getScene: () => sceneRef.current,
       getCanvasRect: () => containerRef.current?.getBoundingClientRect() || null,
       captureCanvas: () => {
-        const viewer = splatViewerRef.current;
-        if (!viewer) return null;
         try {
           const canvas = containerRef.current?.querySelector("canvas");
           return canvas?.toDataURL("image/png").split(",")[1] || null;
@@ -99,11 +99,14 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       },
     }));
 
-    // ── Initialize splat viewer & load world + anatomy ──────────────────
+    // ── Initialize: try splat world, fall back to standalone renderer ──
     useEffect(() => {
-      if (!containerRef.current || !worldId) return;
+      if (!containerRef.current) return;
       const container = containerRef.current;
       let disposed = false;
+      let rendererRef: THREE.WebGLRenderer | null = null;
+      let controlsRef: OrbitControls | null = null;
+      let rafId: number;
 
       // CSS2D label renderer (overlays HTML labels on the 3D scene)
       const labelRenderer = new CSS2DRenderer();
@@ -132,112 +135,191 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
 
+      // ── Fallback: standalone Three.js renderer (matches original LayeredAnatomyViewer) ──
+      function initStandalone() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8f4ec);
+        sceneRef.current = scene;
+
+        const camera = new THREE.PerspectiveCamera(40, w / h, 1, 10000);
+        camera.position.set(400, -50, 1800);
+        camera.lookAt(0, -120, 900);
+        cameraRef.current = camera;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+        renderer.setSize(w, h);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        container.appendChild(renderer.domElement);
+        rendererRef = renderer;
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, -120, 1000);
+        controls.minDistance = 400;
+        controls.maxDistance = 4000;
+        controlsRef = controls;
+
+        // Lighting — clinical, well-lit anatomy (exact match)
+        scene.add(new THREE.AmbientLight(0xf2ebe2, 1.35));
+        const mainLight = new THREE.DirectionalLight(0xfffaf4, 1.55);
+        mainLight.position.set(600, 100, 2000);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const fillLight = new THREE.DirectionalLight(0xd8cdc0, 0.45);
+        fillLight.position.set(-500, -200, 800);
+        scene.add(fillLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.55);
+        backLight.position.set(-200, 300, -400);
+        scene.add(backLight);
+        const rimLight = new THREE.DirectionalLight(0xcdb9ab, 0.4);
+        rimLight.position.set(300, -400, 1200);
+        scene.add(rimLight);
+
+        // Anatomy at normal scale (no shrinking — layers added directly to scene like original)
+        anatomyGroupRef.current.name = "anatomy";
+        scene.add(anatomyGroupRef.current);
+        modGroupRef.current.name = "modifications";
+        scene.add(modGroupRef.current);
+        labelGroupRef.current.name = "labels";
+        scene.add(labelGroupRef.current);
+
+        function animate() {
+          if (disposed) return;
+          rafId = requestAnimationFrame(animate);
+          controls.update();
+          renderer.render(scene, camera);
+          labelRenderer.render(scene, camera);
+        }
+        animate();
+      }
+
+      // ── Try splat world first, fall back on any error ──
+      async function initSplat() {
+        if (!worldId) throw new Error("No worldId");
+
+        setLoadProgress("Fetching world model...");
+        const world = await getWorld(worldId);
+        const spzUrl = selectSpzUrl(world);
+        if (!spzUrl) throw new Error("No SPZ URL available");
+        if (disposed) return;
+
+        setLoadProgress("Loading world environment...");
+        const viewer = new GaussianSplats3D.Viewer({
+          cameraUp: [0, -1, 0],
+          initialCameraPosition: [0, 0, -2],
+          initialCameraLookAt: [0, 0, 2],
+          rootElement: container,
+          selfDrivenMode: false,
+          sharedMemoryForWorkers: false,
+          dynamicScene: false,
+        });
+        splatViewerRef.current = viewer;
+
+        await viewer.addSplatScene(spzUrl, {
+          splatAlphaRemovalThreshold: 5,
+          showLoadingUI: false,
+          position: [0, 0, 0],
+          rotation: [0, 0, 0, 1],
+          scale: [1, 1, 1],
+        });
+        if (disposed) return;
+
+        cameraRef.current = viewer.camera || null;
+        const camera = cameraRef.current;
+        if (!viewer.threeScene || !camera) throw new Error("Could not access splat viewer scene");
+        // Use the anatomy scene as the public scene ref (for raycasting, etc.)
+        sceneRef.current = anatomySceneRef.current;
+
+        // Anatomy goes in a SEPARATE scene so it renders ON TOP of splats
+        const anatScene = anatomySceneRef.current;
+        anatScene.add(new THREE.AmbientLight(0xf2ebe2, 1.35));
+        const mainLight = new THREE.DirectionalLight(0xfffaf4, 1.55);
+        mainLight.position.set(1, 0.5, 3);
+        anatScene.add(mainLight);
+        const fillLight = new THREE.DirectionalLight(0xd8cdc0, 0.45);
+        fillLight.position.set(-1, -0.5, 1);
+        anatScene.add(fillLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.55);
+        backLight.position.set(-0.5, 0.8, -1);
+        anatScene.add(backLight);
+
+        anatomyGroupRef.current.name = "anatomy";
+        anatomyGroupRef.current.scale.setScalar(DEFAULT_SCALE);
+        anatomyGroupRef.current.position.set(DEFAULT_OFFSET.x, DEFAULT_OFFSET.y, DEFAULT_OFFSET.z);
+        anatScene.add(anatomyGroupRef.current);
+        modGroupRef.current.name = "modifications";
+        anatomyGroupRef.current.add(modGroupRef.current);
+        labelGroupRef.current.name = "labels";
+        anatScene.add(labelGroupRef.current);
+
+        function animate() {
+          if (disposed) return;
+          rafId = requestAnimationFrame(animate);
+
+          const keys = keysDownRef.current;
+          if (keys.size > 0 && camera) {
+            const forward = new THREE.Vector3();
+            camera.getWorldDirection(forward);
+            forward.y = 0;
+            forward.normalize();
+            const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, -1, 0)).normalize();
+            const delta = new THREE.Vector3();
+            if (keys.has("w")) delta.addScaledVector(forward, MOVE_SPEED);
+            if (keys.has("s")) delta.addScaledVector(forward, -MOVE_SPEED);
+            if (keys.has("a")) delta.addScaledVector(right, -MOVE_SPEED);
+            if (keys.has("d")) delta.addScaledVector(right, MOVE_SPEED);
+            if (keys.has(" ")) delta.y -= MOVE_SPEED;
+            if (keys.has("shift")) delta.y += MOVE_SPEED;
+            camera.position.add(delta);
+            if (viewer.controls?.target) viewer.controls.target.add(delta);
+          }
+
+          // 1. Render splats (clears canvas + draws splat cloud)
+          viewer.update();
+          viewer.render();
+          // 2. Render anatomy ON TOP (no clear — overlays on splat background)
+          const r = viewer.renderer;
+          if (r) {
+            const prevAutoClear = r.autoClear;
+            r.autoClear = false;
+            r.render(anatScene, camera);
+            r.autoClear = prevAutoClear;
+          }
+          labelRenderer.render(anatScene, camera);
+        }
+        animate();
+      }
+
       (async () => {
         try {
-          // 1. Fetch world data & resolve SPZ URL
-          setLoadProgress("Fetching world model...");
-          const world = await getWorld(worldId);
-          const spzUrl = selectSpzUrl(world);
-          if (!spzUrl) throw new Error("No SPZ URL available");
-          if (disposed) return;
-
-          // 2. Initialize Gaussian splat viewer
-          setLoadProgress("Loading world environment...");
-          const viewer = new GaussianSplats3D.Viewer({
-            cameraUp: [0, -1, 0],
-            initialCameraPosition: [0, 0, -2],
-            initialCameraLookAt: [0, 0, 2],
-            rootElement: container,
-            selfDrivenMode: false,
-            sharedMemoryForWorkers: false,
-            dynamicScene: false,
-          });
-          splatViewerRef.current = viewer;
-
-          await viewer.addSplatScene(spzUrl, {
-            splatAlphaRemovalThreshold: 5,
-            showLoadingUI: false,
-            position: [0, 0, 0],
-            rotation: [0, 0, 0, 1],
-            scale: [1, 1, 1],
-          });
-          if (disposed) return;
-
-          // Grab scene & camera refs from the splat viewer
-          sceneRef.current = viewer.threeScene || null;
-          cameraRef.current = viewer.camera || null;
-          const scene = sceneRef.current;
-          const camera = cameraRef.current;
-          if (!scene || !camera) throw new Error("Could not access splat viewer scene");
-
-          // 3. Add lighting for the anatomy model
-          scene.add(new THREE.AmbientLight(0xf2ebe2, 1.35));
-          const mainLight = new THREE.DirectionalLight(0xfffaf4, 1.55);
-          mainLight.position.set(1, 0.5, 3);
-          scene.add(mainLight);
-          const fillLight = new THREE.DirectionalLight(0xd8cdc0, 0.45);
-          fillLight.position.set(-1, -0.5, 1);
-          scene.add(fillLight);
-
-          // 4. Setup anatomy container group
-          anatomyGroupRef.current.name = "anatomy";
-          anatomyGroupRef.current.scale.setScalar(DEFAULT_SCALE);
-          anatomyGroupRef.current.position.set(DEFAULT_OFFSET.x, DEFAULT_OFFSET.y, DEFAULT_OFFSET.z);
-          scene.add(anatomyGroupRef.current);
-
-          modGroupRef.current.name = "modifications";
-          anatomyGroupRef.current.add(modGroupRef.current);
-          labelGroupRef.current.name = "labels";
-          scene.add(labelGroupRef.current);
-
-          // 5. Load anatomy layers
-          setLoadProgress("Loading anatomy model...");
-          await loadLayers();
-          if (disposed) return;
-
-          setIsLoading(false);
-          setLoadProgress("");
-
-          // 6. Start render loop (manual mode — we render both splat + labels)
-          function animate() {
-            if (disposed) return;
-            requestAnimationFrame(animate);
-
-            // Apply WASD/Space/Shift movement — translate camera + orbit target together
-            const keys = keysDownRef.current;
-            if (keys.size > 0 && camera) {
-              const forward = new THREE.Vector3();
-              camera.getWorldDirection(forward);
-              // Flatten forward to XZ plane for consistent horizontal movement
-              forward.y = 0;
-              forward.normalize();
-              const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, -1, 0)).normalize();
-              const delta = new THREE.Vector3();
-
-              if (keys.has("w")) delta.addScaledVector(forward, MOVE_SPEED);
-              if (keys.has("s")) delta.addScaledVector(forward, -MOVE_SPEED);
-              if (keys.has("a")) delta.addScaledVector(right, -MOVE_SPEED);
-              if (keys.has("d")) delta.addScaledVector(right, MOVE_SPEED);
-              if (keys.has(" ")) delta.y -= MOVE_SPEED;     // up (Y inverted in splat)
-              if (keys.has("shift")) delta.y += MOVE_SPEED; // down
-
-              // Move both camera and orbit target so it's pure translation
-              camera.position.add(delta);
-              if (viewer.controls?.target) {
-                viewer.controls.target.add(delta);
-              }
-            }
-
-            viewer.update();
-            viewer.render();
-            if (camera && scene) labelRenderer.render(scene, camera);
-          }
-          animate();
+          await initSplat();
         } catch (err: any) {
           if (disposed) return;
-          console.error("SplatAnatomyComposite init error:", err);
-          setLoadProgress(`Error: ${err.message}`);
+          console.warn("Splat world failed, falling back to standalone renderer:", err.message);
+          // Reset scale/position for standalone mode (no splat world = normal scale)
+          setAnatomyScale(1);
+          setAnatomyOffset({ x: 0, y: 0, z: 0 });
+          anatomyGroupRef.current.scale.setScalar(1);
+          anatomyGroupRef.current.position.set(0, 0, 0);
+          initStandalone();
         }
+
+        if (disposed) return;
+
+        // Load anatomy layers (works in both modes)
+        setLoadProgress("Loading anatomy model...");
+        await loadLayers();
+        if (disposed) return;
+
+        setIsLoading(false);
+        setLoadProgress("");
       })();
 
       const handleResize = () => {
@@ -247,25 +329,26 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           cameraRef.current.aspect = w / h;
           cameraRef.current.updateProjectionMatrix();
         }
+        if (rendererRef) rendererRef.setSize(w, h);
         labelRenderer.setSize(w, h);
       };
       window.addEventListener("resize", handleResize);
 
       return () => {
         disposed = true;
+        cancelAnimationFrame(rafId);
         window.removeEventListener("resize", handleResize);
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
         if (splatViewerRef.current) {
-          try {
-            splatViewerRef.current.stop();
-            splatViewerRef.current.dispose();
-          } catch { /* viewer cleanup can throw */ }
+          try { splatViewerRef.current.stop(); splatViewerRef.current.dispose(); } catch { /* */ }
           splatViewerRef.current = null;
         }
-        if (container.contains(labelRenderer.domElement)) {
-          container.removeChild(labelRenderer.domElement);
+        if (rendererRef) {
+          rendererRef.dispose();
+          if (container.contains(rendererRef.domElement)) container.removeChild(rendererRef.domElement);
         }
+        if (container.contains(labelRenderer.domElement)) container.removeChild(labelRenderer.domElement);
       };
     }, [worldId]);
 
@@ -486,10 +569,12 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
           div.style.cssText = `padding:4px 10px;border-radius:999px;background:rgba(255,252,247,0.86);backdrop-filter:blur(8px);border:1px solid rgba(47,39,31,0.12);color:#171311;font-size:11px;font-family:var(--font-mono), ui-monospace, monospace;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;white-space:nowrap;box-shadow:0 8px 20px rgba(38,29,20,0.08);opacity:${Math.min(1, (progress - 0.5) * 2)};`;
           div.textContent = mod.label + (mod.score !== undefined ? ` ${Math.round(mod.score * 100)}%` : "");
           const labelObj = new CSS2DObject(div);
-          // Labels are in anatomy-local coords, need to be placed in world space
+          // Transform from anatomy-local coords to world space using actual group transform
+          const grp = anatomyGroupRef.current;
+          const s = grp.scale.x; // uniform scale
           const worldPos = new THREE.Vector3(c[0], c[1], c[2] + 30)
-            .multiplyScalar(anatomyScale)
-            .add(anatomyOffsetVec);
+            .multiplyScalar(s)
+            .add(grp.position);
           labelObj.position.copy(worldPos);
           labelGroupRef.current.add(labelObj);
         }
@@ -517,7 +602,8 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         const hits = rc.intersectObjects(anatomyGroupRef.current.children, true);
         if (hits.length > 0) {
           // Convert hit point back to anatomy-local coords for the backend
-          const localPt = hits[0].point.clone().sub(anatomyOffsetVec).divideScalar(anatomyScale);
+          const grp = anatomyGroupRef.current;
+          const localPt = hits[0].point.clone().sub(grp.position).divideScalar(grp.scale.x);
           tracePointsRef.current.push([localPt.x, localPt.y, localPt.z]);
           if (!traceOrganRef.current) traceOrganRef.current = hits[0].object.userData?.organName || "unknown";
         }
@@ -540,7 +626,8 @@ const SplatAnatomyComposite = forwardRef<LayeredViewerHandle, Props>(
         const hits = rc.intersectObjects(anatomyGroupRef.current.children, true);
         if (hits.length > 0) {
           const hit = hits[0];
-          const localPt = hit.point.clone().sub(anatomyOffsetVec).divideScalar(anatomyScale);
+          const grp = anatomyGroupRef.current;
+          const localPt = hit.point.clone().sub(grp.position).divideScalar(grp.scale.x);
           const normal = hit.face ? [hit.face.normal.x, hit.face.normal.y, hit.face.normal.z] : [0, 1, 0];
           onOrganClick(hit.object.userData?.organName || "unknown", [localPt.x, localPt.y, localPt.z], normal);
         }
