@@ -1,4 +1,10 @@
-export const API_BASE = "http://localhost:8000/api";
+/**
+ * In dev, use `/api` so Vite proxies to the backend — works from phone on LAN.
+ * Set `VITE_API_URL` (e.g. `http://192.168.1.10:8000/api`) if you need an explicit API host.
+ */
+export const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.DEV ? "/api" : "http://localhost:8000/api");
 
 export interface Risk {
   structure: string;
@@ -8,7 +14,7 @@ export interface Risk {
 }
 
 export interface Modification {
-  type: "incision" | "highlight" | "label" | "zone" | "heatmap";
+  type: "incision" | "highlight" | "label" | "zone" | "heatmap" | "measurement" | "corridor";
   coordinates: number[][];
   color: string;
   label: string;
@@ -17,6 +23,10 @@ export interface Modification {
   animation?: "draw" | "pulse" | "fade";
   score?: number;
   radius?: number;
+  distance_mm?: number;
+  risk_gradient?: number[];
+  scenario?: string;
+  scenario_label?: string;
 }
 
 export interface AgentResponse {

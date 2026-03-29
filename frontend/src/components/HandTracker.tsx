@@ -12,12 +12,15 @@ interface Props {
 
 const GESTURE_LABELS: Record<GestureType, string> = {
   point: "Inspect", pinch: "Select", incision: "Incision",
-  fist: "Retract", spread: "Zoom", none: "",
+  fist: "", spread: "", rotate: "", zoom_in: "",
+  zoom_out: "", pan: "", none: "",
 };
 
 const GESTURE_COLORS: Record<GestureType, string> = {
   point: "var(--text-secondary)", pinch: "var(--accent)", incision: "var(--risk-high)",
-  fist: "var(--risk-medium)", spread: "var(--accent-secondary)", none: "",
+  fist: "var(--risk-medium)", spread: "var(--accent-secondary)",
+  rotate: "#a78bfa", zoom_in: "#34d399", zoom_out: "#f97316",
+  pan: "#60a5fa", none: "",
 };
 
 export default function HandTracker({ onGesture, enabled }: Props) {
@@ -31,10 +34,10 @@ export default function HandTracker({ onGesture, enabled }: Props) {
   const lastGestureRef = useRef<GestureType>("none");
   const tracePathRef = useRef<{ x: number; y: number }[]>([]);
   const smoothBufferRef = useRef<{ x: number; y: number }[]>([]);
-  // Stability: require N consecutive frames of same gesture before switching
   const gestureCountRef = useRef<{ type: GestureType; count: number }>({ type: "none", count: 0 });
+
   const SMOOTH_FRAMES = 5;
-  const STABILITY_FRAMES = 3; // need 3 consecutive frames to confirm a new gesture
+  const STABILITY_FRAMES = 3;
 
   useEffect(() => {
     if (!enabled) return;
@@ -147,33 +150,22 @@ export default function HandTracker({ onGesture, enabled }: Props) {
 
     const lm = results.multiHandLandmarks[0];
     const wrist = lm[0];
-    const thumbTip = lm[4]; const thumbIp = lm[3];
-    const indexTip = lm[8]; const indexPip = lm[6]; const indexMcp = lm[5];
-    const middleTip = lm[12]; const middlePip = lm[10]; const middleMcp = lm[9];
-    const ringTip = lm[16]; const ringPip = lm[14]; const ringMcp = lm[13];
-    const pinkyTip = lm[20]; const pinkyPip = lm[18]; const pinkyMcp = lm[17];
+    const thumbTip = lm[4];
+    const indexTip = lm[8]; const indexPip = lm[6];
+    const middleTip = lm[12]; const middlePip = lm[10];
+    const ringTip = lm[16]; const ringPip = lm[14];
+    const pinkyTip = lm[20]; const pinkyPip = lm[18];
 
-    // Distance helper (2D — z is noisy from mediapipe)
     const dist2d = (a: any, b: any) => Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-
-    // Finger extended: tip is further from wrist than PIP joint
-    // Using PIP (not DIP) for more reliable detection — larger difference
-    const isUp = (tip: any, pip: any) => {
-      const tipDist = dist2d(tip, wrist);
-      const pipDist = dist2d(pip, wrist);
-      return tipDist > pipDist * 1.05; // very forgiving threshold
-    };
+    const isUp = (tip: any, pip: any) => dist2d(tip, wrist) > dist2d(pip, wrist) * 1.05;
 
     const indexUp = isUp(indexTip, indexPip);
     const middleUp = isUp(middleTip, middlePip);
     const ringUp = isUp(ringTip, ringPip);
     const pinkyUp = isUp(pinkyTip, pinkyPip);
-    const thumbOut = dist2d(thumbTip, wrist) > dist2d(thumbIp, wrist) * 1.05;
-
     const pinchDist = dist2d(thumbTip, indexTip);
-    const fingersUp = [indexUp, middleUp, ringUp, pinkyUp].filter(Boolean).length;
 
-    // Smoothed screen position
+    // Smoothed screen position (index finger tip)
     const rawX = (1 - indexTip.x) * 640;
     const rawY = indexTip.y * 480;
     smoothBufferRef.current.push({ x: rawX, y: rawY });
@@ -183,47 +175,37 @@ export default function HandTracker({ onGesture, enabled }: Props) {
       { x: 0, y: 0 }
     );
 
-    // Detect raw gesture for this frame
+    // ── Detect gesture ──────────────────────────────────────────────
     let rawGesture: GestureType = "none";
 
     if (pinchDist < 0.07) {
-      // Thumb and index close = PINCH (select)
       rawGesture = "pinch";
-    } else if (fingersUp === 0 && !thumbOut) {
-      // All curled = FIST (retract)
-      rawGesture = "fist";
     } else if (indexUp && middleUp && !ringUp && !pinkyUp) {
-      // Peace sign = INCISION
       rawGesture = "incision";
     } else if (indexUp && !middleUp && !ringUp && !pinkyUp) {
-      // Index only = POINT (inspect)
       rawGesture = "point";
-    } else if (fingersUp >= 3 && thumbOut) {
-      // Open hand = no gesture (navigate)
-      rawGesture = "none";
     }
 
-    // Stability check: only switch gesture after N consecutive same frames
+    // ── Stability check ─────────────────────────────────────────────
     if (rawGesture === gestureCountRef.current.type) {
       gestureCountRef.current.count++;
     } else {
       gestureCountRef.current = { type: rawGesture, count: 1 };
     }
 
-    // Don't switch until stable (except for incision traces which need responsiveness)
     const isStable = gestureCountRef.current.count >= STABILITY_FRAMES;
     const confirmedGesture = isStable ? rawGesture : lastGestureRef.current;
 
-    // Handle incision tracing (needs to be responsive, skip stability for trace updates)
+    // Incision tracing (responsive, skip stability)
     if (rawGesture === "incision" && lastGestureRef.current === "incision") {
       tracePathRef.current.push(pos);
       onGesture("incision", pos, [...tracePathRef.current]);
-      return; // don't go through the rest, just keep tracing
+      return;
     }
 
-    if (!isStable) return; // wait for stability
+    if (!isStable) return;
 
-    // End previous incision if switching away
+    // End previous incision
     if (lastGestureRef.current === "incision" && confirmedGesture !== "incision") {
       if (tracePathRef.current.length > 5) {
         onGesture("incision", null, [...tracePathRef.current]);
@@ -231,7 +213,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
       tracePathRef.current = [];
     }
 
-    // Apply confirmed gesture
+    // Fire gesture
     if (confirmedGesture !== lastGestureRef.current || confirmedGesture === "point" || confirmedGesture === "pinch") {
       lastGestureRef.current = confirmedGesture;
       setCurrentGesture(confirmedGesture);
@@ -265,7 +247,7 @@ export default function HandTracker({ onGesture, enabled }: Props) {
       {isActive && (
         <>
           <div style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%", backgroundColor: currentGesture !== "none" ? GESTURE_COLORS[currentGesture] : "#34d399" }} />
-          {currentGesture !== "none" && (
+          {currentGesture !== "none" && GESTURE_LABELS[currentGesture] && (
             <div style={{
               position: "absolute", bottom: 5, left: 5, padding: "2px 7px", borderRadius: 5,
               backgroundColor: "rgba(10, 10, 12, 0.85)",

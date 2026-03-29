@@ -103,6 +103,10 @@ const GESTURE_CURSOR_COLORS: Record<GestureType, string> = {
   incision: "#ef4444",
   fist: "#f59e0b",
   spread: "#818cf8",
+  rotate: "#a78bfa",
+  zoom_in: "#34d399",
+  zoom_out: "#f97316",
+  pan: "#60a5fa",
   none: "transparent",
 };
 

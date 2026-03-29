@@ -17,6 +17,7 @@ interface LayersMetadata {
 }
 
 interface Props {
+  transparentBackground?: boolean;
   onOrganClick: (organName: string, point: number[], normal: number[]) => void;
   onIncisionTrace: (organName: string, points: number[][]) => void;
   modifications: Modification[];
@@ -32,13 +33,14 @@ export interface LayeredViewerHandle {
   captureCanvas: () => string | null;
 }
 
-const LAYER_ORDER = ["skin", "muscles", "organs", "vascular", "skeleton"];
+const LAYER_ORDER = ["skin", "muscles", "nervous", "organs", "vascular", "skeleton"];
 const LAYER_COLORS: Record<string, number> = {
   skin: 0xe8beaa,
   muscles: 0xc94040,
   skeleton: 0xf5f0e8,
   organs: 0xcc7766,
   vascular: 0x4466cc,
+  nervous: 0xf0d060,
 };
 const LAYER_OPACITY: Record<string, number> = {
   skin: 0.25,
@@ -46,10 +48,11 @@ const LAYER_OPACITY: Record<string, number> = {
   skeleton: 0.9,
   organs: 0.85,
   vascular: 0.75,
+  nervous: 0.85,
 };
 
 const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
-  ({ onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition }, ref) => {
+  ({ transparentBackground, onOrganClick, onIncisionTrace, modifications, animationProgress, selectedOrgan, cursorPosition }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
     const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -64,16 +67,18 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
       skin: true,
       muscles: true,
+      nervous: true,
       organs: true,
       vascular: true,
       skeleton: true,
     });
     const [layerOpacity, setLayerOpacity] = useState<Record<string, number>>({
-      skin: 0.06,
-      muscles: 0.12,
-      organs: 0.9,
-      vascular: 0.85,
-      skeleton: 0.2,
+      skin: 0.08,
+      muscles: 0.18,
+      nervous: 0.9,
+      organs: 0.85,
+      vascular: 0.7,
+      skeleton: 0.15,
     });
     const isDraggingRef = useRef(false);
     const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -98,7 +103,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       const height = container.clientHeight;
 
       const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf8f4ec);
+      scene.background = transparentBackground ? null : new THREE.Color(0xf8f4ec);
       sceneRef.current = scene;
 
       const camera = new THREE.PerspectiveCamera(40, width / height, 1, 10000);
@@ -106,7 +111,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
       camera.lookAt(0, -120, 900);
       cameraRef.current = camera;
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: !!transparentBackground });
       renderer.setSize(width, height);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
@@ -207,15 +212,20 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
               obj.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
-                  child.material = new THREE.MeshPhongMaterial({
+                  const mat = new THREE.MeshPhongMaterial({
                     color: LAYER_COLORS[layerName] || 0xcccccc,
-                    specular: 0x222222,
-                    shininess: layerName === "skeleton" ? 60 : 20,
+                    specular: layerName === "nervous" ? 0x444400 : 0x222222,
+                    shininess: layerName === "skeleton" ? 60 : layerName === "nervous" ? 40 : 20,
                     transparent: true,
                     opacity: LAYER_OPACITY[layerName] || 0.8,
                     side: layerName === "skin" ? THREE.DoubleSide : THREE.FrontSide,
                     depthWrite: layerName !== "skin",
                   });
+                  if (layerName === "nervous") {
+                    mat.emissive = new THREE.Color(0x504010);
+                    mat.emissiveIntensity = 0.3;
+                  }
+                  child.material = mat;
                   child.userData.organName = part.name;
                   child.userData.layerName = layerName;
                   child.name = part.name;
@@ -286,7 +296,15 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
     // Render modifications
     useEffect(() => {
-      while (modGroupRef.current.children.length > 0) modGroupRef.current.remove(modGroupRef.current.children[0]);
+      while (modGroupRef.current.children.length > 0) {
+        const child = modGroupRef.current.children[0];
+        if (child instanceof THREE.Mesh || child instanceof THREE.Line) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+          else (child.material as THREE.Material).dispose();
+        }
+        modGroupRef.current.remove(child);
+      }
       while (labelGroupRef.current.children.length > 0) {
         const c = labelGroupRef.current.children[0];
         if (c instanceof CSS2DObject) c.element.remove();
@@ -321,6 +339,84 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           sphere.position.set(c[0], c[1], c[2]);
           sphere.scale.setScalar(0.5 + 0.5 * progress);
           modGroupRef.current.add(sphere);
+        } else if (mod.type === "measurement" && mod.coordinates.length >= 2) {
+          const start = new THREE.Vector3(...mod.coordinates[0] as [number, number, number]);
+          const end = new THREE.Vector3(...mod.coordinates[1] as [number, number, number]);
+          // Dashed line
+          const geo = new THREE.BufferGeometry().setFromPoints([start, end]);
+          const lineMat = new THREE.LineDashedMaterial({ color: mod.color || "#fbbf24", dashSize: 6, gapSize: 4, transparent: true, opacity: progress });
+          const line = new THREE.Line(geo, lineMat);
+          line.computeLineDistances();
+          modGroupRef.current.add(line);
+          // Endpoint spheres
+          for (const pt of [start, end]) {
+            const dot = new THREE.Mesh(new THREE.SphereGeometry(4, 8, 8), new THREE.MeshBasicMaterial({ color: mod.color || "#fbbf24", transparent: true, opacity: progress }));
+            dot.position.copy(pt);
+            modGroupRef.current.add(dot);
+          }
+          // Midpoint distance label
+          if (mod.distance_mm !== undefined && progress > 0.3) {
+            const mid = new THREE.Vector3().lerpVectors(start, end, 0.5);
+            const div = document.createElement("div");
+            div.style.cssText = `padding:3px 10px;border-radius:999px;background:rgba(251,191,36,0.18);backdrop-filter:blur(8px);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;font-size:11px;font-family:var(--font-mono),monospace;font-weight:600;letter-spacing:0.04em;white-space:nowrap;opacity:${Math.min(1,(progress-0.3)*1.4)};`;
+            div.textContent = `${mod.distance_mm.toFixed(1)} mm`;
+            const labelObj = new CSS2DObject(div);
+            labelObj.position.copy(mid).add(new THREE.Vector3(0, 15, 0));
+            labelGroupRef.current.add(labelObj);
+          }
+        } else if (mod.type === "corridor" && mod.coordinates.length >= 2) {
+          const pts = mod.coordinates.map(c => new THREE.Vector3(c[0], c[1], c[2]));
+          const curve = new THREE.CatmullRomCurve3(pts);
+          const segments = 64;
+          const radiusStart = 8, radiusEnd = 3;
+          const tubeGeo = new THREE.TubeGeometry(curve, segments, radiusStart, 8, false);
+          // Apply vertex colors from risk_gradient
+          const gradient = mod.risk_gradient || pts.map(() => 0.5);
+          const colors = new Float32Array(tubeGeo.attributes.position.count * 3);
+          const safeColor = new THREE.Color("#34d399");
+          const warnColor = new THREE.Color("#fbbf24");
+          const dangerColor = new THREE.Color("#ef4444");
+          for (let v = 0; v < tubeGeo.attributes.position.count; v++) {
+            const pos = new THREE.Vector3().fromBufferAttribute(tubeGeo.attributes.position, v);
+            // Approximate t along tube by closest point
+            let bestT = 0, bestDist = Infinity;
+            for (let s = 0; s <= 20; s++) {
+              const st = s / 20;
+              const d = curve.getPoint(st).distanceTo(pos);
+              if (d < bestDist) { bestDist = d; bestT = st; }
+            }
+            // Interpolate gradient
+            const gi = bestT * (gradient.length - 1);
+            const lo = Math.floor(gi), hi = Math.min(lo + 1, gradient.length - 1);
+            const frac = gi - lo;
+            const risk = gradient[lo] * (1 - frac) + gradient[hi] * frac;
+            const c = risk < 0.5
+              ? new THREE.Color().lerpColors(safeColor, warnColor, risk * 2)
+              : new THREE.Color().lerpColors(warnColor, dangerColor, (risk - 0.5) * 2);
+            colors[v * 3] = c.r; colors[v * 3 + 1] = c.g; colors[v * 3 + 2] = c.b;
+          }
+          tubeGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+          // Taper radius by scaling vertices
+          for (let v = 0; v < tubeGeo.attributes.position.count; v++) {
+            const pos = new THREE.Vector3().fromBufferAttribute(tubeGeo.attributes.position, v);
+            let bestT = 0, bestDist = Infinity;
+            for (let s = 0; s <= 20; s++) {
+              const st = s / 20;
+              const d = curve.getPoint(st).distanceTo(pos);
+              if (d < bestDist) { bestDist = d; bestT = st; }
+            }
+            const scale = 1 - bestT * (1 - radiusEnd / radiusStart);
+            const center = curve.getPoint(bestT);
+            const offset = pos.clone().sub(center);
+            offset.multiplyScalar(scale);
+            pos.copy(center).add(offset);
+            tubeGeo.attributes.position.setXYZ(v, pos.x, pos.y, pos.z);
+          }
+          tubeGeo.attributes.position.needsUpdate = true;
+          const tubeMat = new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.45 * progress, side: THREE.DoubleSide });
+          const tube = new THREE.Mesh(tubeGeo, tubeMat);
+          tube.scale.setScalar(0.3 + 0.7 * progress);
+          modGroupRef.current.add(tube);
         }
 
         if (mod.label && mod.coordinates.length >= 1 && progress > 0.5) {
@@ -333,6 +429,29 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
           labelGroupRef.current.add(labelObj);
         }
       });
+
+      // De-overlap labels: nudge any that are too close in 3D space
+      const labels = labelGroupRef.current.children as THREE.Object3D[];
+      const MIN_DIST = 45; // minimum distance between label positions
+      for (let i = 0; i < labels.length; i++) {
+        for (let j = i + 1; j < labels.length; j++) {
+          const a = labels[i].position;
+          const b = labels[j].position;
+          const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist < MIN_DIST) {
+            const push = (MIN_DIST - dist) / 2;
+            // Push apart vertically (Y axis) so they stack neatly
+            if (a.y >= b.y) {
+              a.y += push;
+              b.y -= push;
+            } else {
+              a.y -= push;
+              b.y += push;
+            }
+          }
+        }
+      }
     }, [modifications, animationProgress]);
 
     // Mouse handlers
@@ -387,9 +506,11 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const toggleLayer = (name: string) => setLayerVisibility((prev) => ({ ...prev, [name]: !prev[name] }));
 
     return (
-      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
-        {/* Layer controls */}
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+      <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: transparentBackground ? "transparent" : "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
+        {/* Layer controls — hidden by default, kept for dev tuning
+          Optimal defaults: skin 0.08, muscles 0.18, nervous 0.9, organs 0.85, vascular 0.7, skeleton 0.15
+        */}
+        {false && <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
             <div
               key={name}
@@ -429,7 +550,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {isLoading && (
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 10 }}>

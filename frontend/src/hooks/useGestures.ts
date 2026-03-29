@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 
-export type GestureType = "point" | "incision" | "pinch" | "fist" | "spread" | "none";
+export type GestureType = "point" | "incision" | "pinch" | "fist" | "spread" | "rotate" | "zoom_in" | "zoom_out" | "pan" | "none";
 
 interface HandLandmark {
   x: number;

@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import * as THREE from "three";
-import LayeredAnatomyViewer from "../components/LayeredAnatomyViewer";
-import type { LayeredViewerHandle } from "../components/LayeredAnatomyViewer";
+import SplatAnatomyComposite from "../components/SplatAnatomyComposite";
+import type { LayeredViewerHandle } from "../components/SplatAnatomyComposite";
 import SplatViewer from "../components/SplatViewer";
 import HandTracker from "../components/HandTracker";
 import ChatPanel from "../components/ChatPanel";
@@ -10,8 +10,9 @@ import NarrationPlayer from "../components/NarrationPlayer";
 import SummaryView from "../components/SummaryView";
 import UploadPanel from "../components/UploadPanel";
 import AgentTour from "../components/AgentTour";
+import SurgicalSimulation from "../components/SurgicalSimulation";
 import { useAnnotationSync } from "../hooks/useAnnotationSync";
-import { sendAction, sendChat, sendSemanticQuery } from "../utils/api";
+import { API_BASE, sendAction, sendChat, sendSemanticQuery } from "../utils/api";
 import type { AgentResponse, Modification } from "../utils/api";
 import type { GestureType } from "../hooks/useGestures";
 
@@ -49,53 +50,47 @@ function AppPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [narrationText, setNarrationText] = useState<string | null>(null);
-  const [handTrackingEnabled, setHandTrackingEnabled] = useState(false);
+  const handTrackingEnabled = true;
   const [showSummary, setShowSummary] = useState(false);
+  const [simulationTriggered, setSimulationTriggered] = useState(false);
+  const simulationTriggeredRef = useRef(false);
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
 
   const viewerRef = useRef<LayeredViewerHandle>(null);
   const { visibleMods, animationProgress, playAnnotations } = useAnnotationSync();
   const [historicMods, setHistoricMods] = useState<Modification[]>([]);
-  const allVisibleMods = [...historicMods, ...visibleMods];
+  const [activeScenarios, setActiveScenarios] = useState<Set<string>>(new Set(["primary_plan"]));
 
-  // Auto-generate AI annotations when simulation loads
+  // Collect all unique scenarios from modifications and auto-activate new ones
+  const allMods = [...historicMods, ...visibleMods];
+  const scenarioSet = new Set<string>();
+  allMods.forEach(m => { if (m.scenario) scenarioSet.add(m.scenario); });
+  const scenarios = Array.from(scenarioSet);
   useEffect(() => {
-    if (stage !== "simulation") return;
-    let cancelled = false;
+    scenarios.forEach(s => { if (!activeScenarios.has(s)) setActiveScenarios(prev => new Set(prev).add(s)); });
+  }, [scenarios.join(",")]);
 
-    const generateAnnotations = async () => {
-      try {
-        const res = await fetch("http://localhost:8000/api/poi/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId }),
-        });
-        const data = await res.json();
-        if (cancelled || !data.annotations?.length) return;
+  // Filter mods by active scenarios (mods without scenario always show)
+  const filteredMods = allMods.filter(m => !m.scenario || activeScenarios.has(m.scenario));
 
-        // Convert annotations to timed modifications
-        const mods: Modification[] = data.annotations.map((ann: any, i: number) => ({
-          type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
-          coordinates: [ann.position || [0, -100, 1000]],
-          color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
-          label: ann.label || "",
-          delay_ms: i * 1500,
-          duration_ms: 800,
-          animation: "pulse" as const,
-        }));
+  // Build combined animation progress: historic mods = 1 (fully visible), animating mods = real progress
+  const combinedProgress = useMemo(() => {
+    const map = new Map<number, number>();
+    const historicCount = historicMods.filter(m => !m.scenario || activeScenarios.has(m.scenario)).length;
+    for (let i = 0; i < historicCount; i++) {
+      map.set(i, 1);
+    }
+    if (animationProgress) {
+      animationProgress.forEach((value, key) => {
+        map.set(historicCount + key, value);
+      });
+    }
+    return map;
+  }, [historicMods, activeScenarios, animationProgress]);
 
-        playAnnotations(mods);
-        // Store for voice agent context
-        currentAnnotationsRef.current = data.annotations;
-      } catch (e) {
-        console.error("Failed to generate annotations:", e);
-      }
-    };
+  const allVisibleMods = filteredMods;
 
-    // Start immediately — annotations appear as soon as the model loads
-    const timer = setTimeout(generateAnnotations, 500);
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [stage, sessionId, playAnnotations]);
+  // No auto-annotation on load — annotations are triggered by user gestures only
 
   // Poll for skeleton data from mobile phone (updates organ positions)
   useEffect(() => {
@@ -105,7 +100,7 @@ function AppPage() {
     const poll = async () => {
       while (!controller.signal.aborted) {
         try {
-          const res = await fetch(`http://localhost:8000/api/skeleton/latest/${sessionId}`, { signal: controller.signal });
+          const res = await fetch(`${API_BASE}/skeleton/latest/${sessionId}`, { signal: controller.signal });
           const data = await res.json();
           if (data.skeleton_detected) {
             console.log("[skeleton] Received organ positions:", Object.keys(data.organ_positions).length);
@@ -129,7 +124,7 @@ function AppPage() {
     const poll = async () => {
       while (!controller.signal.aborted) {
         try {
-          const res = await fetch(`http://localhost:8000/api/reconstruct/${sessionId}`, { signal: controller.signal });
+          const res = await fetch(`${API_BASE}/reconstruct/${sessionId}`, { signal: controller.signal });
           const data = await res.json();
           setReconstructProgress(data.progress);
           setReconstructMessage(data.message);
@@ -154,7 +149,7 @@ function AppPage() {
   const handleUploadComplete = useCallback((sid: string, _path: string) => {
     setSessionId(sid);
     // Trigger reconstruction
-    fetch("http://localhost:8000/api/reconstruct", {
+    fetch(`${API_BASE}/reconstruct`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: sid }),
@@ -164,11 +159,11 @@ function AppPage() {
 
   const handleUseSample = useCallback(async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/upload/sample", { method: "POST" });
+      const res = await fetch(`${API_BASE}/upload/sample`, { method: "POST" });
       const data = await res.json();
       setSessionId(data.session_id);
       // Trigger reconstruction
-      fetch("http://localhost:8000/api/reconstruct", {
+      fetch(`${API_BASE}/reconstruct`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: data.session_id }),
@@ -191,7 +186,7 @@ function AppPage() {
         recommendations: response.recommendations,
       },
     ]);
-    setHistoricMods((prev) => [...prev, ...visibleMods]);
+    setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
     playAnnotations(response.modifications);
     setNarrationText(response.narration);
     setIsLoading(false);
@@ -225,14 +220,14 @@ function AppPage() {
   const handleVoiceInput = useCallback(async (transcript: string) => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/guide", {
+      const res = await fetch(`${API_BASE}/guide`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
           selected_structure: selectedOrgan,
           existing_annotations: currentAnnotationsRef.current.slice(-5),
-          camera_region: `User said: "${transcript}". Recent actions: ${actionContextRef.current.slice(-5).join("; ")}`,
+          camera_region: `User said: "${transcript}". Currently viewing: ${selectedOrgan?.replace(/_/g, " ") || "general anatomy"}. Recent actions: ${actionContextRef.current.slice(-8).join("; ")}`,
         }),
       });
       const guide = await res.json();
@@ -249,7 +244,7 @@ function AppPage() {
           duration_ms: 600,
           animation: "pulse" as const,
         }));
-        setHistoricMods((prev) => [...prev, ...visibleMods]);
+        setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
         playAnnotations(mods);
         currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
       }
@@ -263,17 +258,43 @@ function AppPage() {
   }, [sessionId, selectedOrgan, playAnnotations, visibleMods]);
 
   const handleOrganClick = useCallback(
-    async (organName: string, point: number[], _normal: number[]) => {
+    (organName: string, point: number[], _normal: number[]) => {
       setSelectedOrgan(organName);
+      actionContextRef.current.push(`Pinched/selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-      // Silent — just accumulate context, no AI call
-      actionContextRef.current.push(`Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
-
-      // Auto-start listening — no button tap needed
+      // Start voice immediately — don't wait for annotation API
       setIsVoiceListening(true);
       try { recognitionRef.current?.start(); } catch { /* already started */ }
+
+      // Fire annotation call in background (non-blocking)
+      fetch("http://localhost:8000/api/guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          selected_structure: organName,
+          existing_annotations: currentAnnotationsRef.current.slice(-5),
+          camera_region: `User pinched and selected ${organName.replace(/_/g, " ")}. Recent actions: ${actionContextRef.current.slice(-5).join("; ")}. Provide a focused annotation for this structure — key anatomy, risks, and surgical relevance.`,
+        }),
+      }).then(r => r.json()).then(guide => {
+        if (guide.narration) setNarrationText(guide.narration);
+        if (guide.new_annotations?.length) {
+          const mods: Modification[] = guide.new_annotations.map((ann: any, i: number) => ({
+            type: ann.type === "danger" ? "zone" as const : ann.type === "action" ? "highlight" as const : "label" as const,
+            coordinates: [ann.position || point],
+            color: ann.type === "danger" ? "#f87171" : ann.type === "action" ? "#2dd4bf" : "#818cf8",
+            label: ann.label || "",
+            delay_ms: i * 800,
+            duration_ms: 600,
+            animation: "pulse" as const,
+          }));
+          setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
+          playAnnotations(mods);
+          currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...guide.new_annotations];
+        }
+      }).catch(() => { /* guide call failed */ });
     },
-    []
+    [sessionId, playAnnotations, visibleMods]
   );
 
   const handleIncisionTrace = useCallback(
@@ -291,7 +312,7 @@ function AppPage() {
         duration_ms: 300,
         animation: "draw",
       }];
-      setHistoricMods((prev) => [...prev, ...visibleMods]);
+      setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
       playAnnotations(mods);
     },
     [playAnnotations, visibleMods]
@@ -337,7 +358,7 @@ function AppPage() {
             recommendations: response.regions.map((r) => `${r.label}: ${Math.round(r.score * 100)}% relevance`),
           },
         ]);
-        setHistoricMods((prev) => [...prev, ...visibleMods]);
+        setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
         playAnnotations(heatmapMods);
         setIsLoading(false);
       } catch (e: any) {
@@ -350,6 +371,9 @@ function AppPage() {
 
   // Gesture handling
   const lastGestureActionRef = useRef<number>(0);
+  const wasPinchingRef = useRef(false);
+  const lastHoverAnnotationRef = useRef<string>("");
+  const hoverAnnotationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const gestureRaycast = useCallback(
     (normX: number, normY: number): { organName: string; point: number[]; normal: number[] } | null => {
@@ -383,58 +407,59 @@ function AppPage() {
       const normY = screenPos ? screenPos.y / 480 : 0;
       const rect = viewerRef.current?.getCanvasRect();
 
-      // Update cursor for all gestures that have a screen position
+      // Update cursor for gestures that have a screen position
       if (screenPos && rect) {
         setCursorPosition({ x: normX * rect.width, y: normY * rect.height });
       } else if (type === "none") {
         setCursorPosition(null);
       }
 
-      // POINT: hover/inspect only — highlight what you're looking at but don't select
+      // ── Organ interaction gestures ──────────────────────────────────
+
+      // Track pinch → release for first-pinch simulation trigger
+      if (type === "pinch" && screenPos) {
+        wasPinchingRef.current = true;
+        return; // don't do anything while actively pinching
+      }
+
+      // Pinch just released
+      if (wasPinchingRef.current && type !== "pinch") {
+        wasPinchingRef.current = false;
+        if (!simulationTriggeredRef.current) {
+          // First pinch release → trigger simulation
+          simulationTriggeredRef.current = true;
+          setSimulationTriggered(true);
+          lastGestureActionRef.current = now;
+        }
+        // Don't do anything else on this frame — just acknowledge the release
+        return;
+      }
+
+      // POINT: hover/inspect — highlight and auto-annotate after dwelling
       if (type === "point" && screenPos) {
         const hit = gestureRaycast(normX, normY);
-        if (hit && hit.organName !== selectedOrgan) {
-          setSelectedOrgan(hit.organName); // visual highlight only, no API call
-        }
-      }
-
-      // PINCH: SELECT — confirm selection and trigger AI analysis
-      else if (type === "pinch" && screenPos) {
-        if (now - lastGestureActionRef.current > 2000) {
-          let hit = gestureRaycast(normX, normY);
-          if (!hit) hit = gestureRaycast(0.5, 0.5);
-          if (hit) {
-            lastGestureActionRef.current = now;
-            handleOrganClick(hit.organName, hit.point, hit.normal);
+        if (hit) {
+          if (hit.organName !== selectedOrgan) {
+            setSelectedOrgan(hit.organName);
+          }
+          if (hit.organName !== lastHoverAnnotationRef.current) {
+            if (hoverAnnotationTimerRef.current) clearTimeout(hoverAnnotationTimerRef.current);
+            hoverAnnotationTimerRef.current = setTimeout(async () => {
+              if (lastHoverAnnotationRef.current === hit.organName) return;
+              lastHoverAnnotationRef.current = hit.organName;
+              actionContextRef.current.push(`Hovering over ${hit.organName.replace(/_/g, " ")}`);
+              try {
+                const res = await sendAction(sessionId, "hover", [hit.point], hit.organName, `User is pointing at ${hit.organName.replace(/_/g, " ")}. Provide a brief label annotation identifying this structure.`);
+                if (res.modifications?.length) {
+                  setHistoricMods((prev) => [...prev, ...visibleMods].slice(-60));
+                  playAnnotations(res.modifications);
+                }
+                if (res.narration) setNarrationText(res.narration);
+                currentAnnotationsRef.current = [...currentAnnotationsRef.current, ...(res.modifications || [])];
+              } catch { /* hover annotation failed silently */ }
+            }, 1500);
           }
         }
-      }
-
-      // FIST: retract tissue — ask AI about what's beneath
-      else if (type === "fist" && screenPos) {
-        if (now - lastGestureActionRef.current > 3000) {
-          const target = selectedOrgan || gestureRaycast(normX, normY)?.organName;
-          if (target) {
-            lastGestureActionRef.current = now;
-            handleChatMessage(`I'm retracting tissue near the ${target.replace(/_/g, " ")}. What structures would be exposed beneath and what are the risks?`);
-          }
-        }
-      }
-
-      // SPREAD: zoom into the area — tell AI to focus on details
-      else if (type === "spread" && screenPos) {
-        if (now - lastGestureActionRef.current > 3000) {
-          const target = selectedOrgan || gestureRaycast(normX, normY)?.organName;
-          if (target) {
-            lastGestureActionRef.current = now;
-            handleChatMessage(`Zoom in on the ${target.replace(/_/g, " ")} — give me a detailed view of the vasculature and any anomalies in this area.`);
-          }
-        }
-      }
-
-      // INCISION (two fingers tracing): show cursor while tracing
-      else if (type === "incision" && screenPos && tracePath.length > 3) {
-        // Visual feedback only while tracing — action fires on completion below
       }
 
       // INCISION COMPLETE: two fingers lifted after tracing
@@ -449,12 +474,12 @@ function AppPage() {
         if (worldPoints.length >= 2) handleIncisionTrace(traceOrgan, worldPoints);
       }
     },
-    [selectedOrgan, handleOrganClick, handleIncisionTrace, handleChatMessage, gestureRaycast]
+    [selectedOrgan, handleOrganClick, handleIncisionTrace, gestureRaycast, sessionId, playAnnotations, visibleMods]
   );
 
   const navBar = (label?: string) => (
     <header style={{ padding: "10px 24px", borderBottom: "1px solid var(--border)", backgroundColor: "var(--bg-secondary)", display: "flex", alignItems: "center", gap: 10 }}>
-      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
+      <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
       {label && <span style={{ fontSize: "0.65rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em", marginLeft: 4 }}>{label}</span>}
     </header>
   );
@@ -502,23 +527,11 @@ function AppPage() {
       {/* Header — minimal */}
       <header style={{ padding: "12px 20px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", backgroundColor: "var(--bg-secondary)", zIndex: 20, boxShadow: "var(--shadow-sm)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 22, filter: "brightness(1.3)", cursor: "pointer" }} />
-          <span style={{ fontSize: "0.6rem", fontFamily: "var(--font-mono)", color: "var(--text-muted)", letterSpacing: "0.04em" }}>/ Simulation</span>
+          <img src="/logo.png" alt="Praxis" onClick={() => nav("/")} style={{ height: 36, filter: "brightness(1.3)", cursor: "pointer" }} />
+          <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)", letterSpacing: "0.02em" }}>Praxis</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setHandTrackingEnabled((e) => !e)} style={{
-            padding: "5px 14px", borderRadius: "var(--radius-sm)",
-            border: `1px solid ${handTrackingEnabled ? "var(--accent)" : "var(--border)"}`,
-            backgroundColor: handTrackingEnabled ? "var(--accent-dim)" : "transparent",
-            color: handTrackingEnabled ? "var(--accent)" : "var(--text-muted)",
-            fontSize: "0.65rem", fontWeight: 500,
-          }}>
-            {handTrackingEnabled ? "Tracking" : "Hands"}
-          </button>
-
-          <NarrationPlayer text={narrationText} autoPlay={true} onAgentMessage={() => { }} />
-
           <button onClick={() => setShowSummary(true)} style={{
             padding: "5px 14px", borderRadius: "999px",
             border: "1px solid var(--accent)",
@@ -532,15 +545,58 @@ function AppPage() {
 
       {/* Full-screen 3D Viewer */}
       <main style={{ position: "relative", overflow: "hidden" }}>
-        <LayeredAnatomyViewer
+        <SplatAnatomyComposite
           ref={viewerRef}
+          worldId={import.meta.env.VITE_WORLD_LABS_WORLD_ID}
           onOrganClick={handleOrganClick}
           onIncisionTrace={handleIncisionTrace}
           modifications={allVisibleMods}
-          animationProgress={animationProgress}
+          animationProgress={combinedProgress}
           selectedOrgan={selectedOrgan}
           cursorPosition={cursorPosition}
         />
+
+        <SurgicalSimulation
+          triggered={simulationTriggered}
+          viewerRef={viewerRef}
+          playAnnotations={playAnnotations}
+          onNarrate={setNarrationText}
+        />
+
+        {/* Scenario toggle chips */}
+        {scenarios.length > 1 && (
+          <div style={{
+            position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)",
+            display: "flex", gap: 6, zIndex: 20,
+            padding: "4px 6px", borderRadius: 999,
+            backgroundColor: "var(--panel-glass)", backdropFilter: "blur(12px)",
+            border: "1px solid var(--border)", boxShadow: "var(--shadow-sm)",
+          }}>
+            {scenarios.map(s => {
+              const isActive = activeScenarios.has(s);
+              const label = allMods.find(m => m.scenario === s)?.scenario_label || s.replace(/_/g, " ");
+              return (
+                <button key={s} onClick={() => {
+                  setActiveScenarios(prev => {
+                    const next = new Set(prev);
+                    if (next.has(s)) next.delete(s); else next.add(s);
+                    return next;
+                  });
+                }} style={{
+                  padding: "4px 12px", borderRadius: 999, border: "1px solid",
+                  borderColor: isActive ? "var(--accent)" : "var(--border)",
+                  backgroundColor: isActive ? "var(--accent-dim)" : "transparent",
+                  color: isActive ? "var(--accent-light)" : "var(--text-muted)",
+                  fontSize: "0.62rem", fontWeight: 600, fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.04em", textTransform: "capitalize",
+                  transition: "all 0.15s ease",
+                }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Voice listening indicator — auto-started on pinch, no tap needed */}
         {isVoiceListening && (
