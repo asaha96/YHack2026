@@ -256,8 +256,9 @@ function AppPage() {
       // Silent — just accumulate context, no AI call
       actionContextRef.current.push(`Selected ${organName.replace(/_/g, " ")} at [${point.map((p) => p.toFixed(0)).join(",")}]`);
 
-      // PINCH shows the mic button — user taps it to speak (browser requires user gesture)
+      // Auto-start listening — no button tap needed
       setIsVoiceListening(true);
+      try { recognitionRef.current?.start(); } catch { /* already started */ }
     },
     []
   );
@@ -522,22 +523,15 @@ function AppPage() {
             cursorPosition={cursorPosition}
           />
 
-        {/* Voice indicator — right side, clickable to start/retry mic */}
+        {/* Voice listening indicator — auto-started on pinch, no tap needed */}
         {isVoiceListening && (
-          <button
-            onClick={() => {
-              try {
-                recognitionRef.current?.start();
-              } catch {
-                // Already started or not available
-              }
-            }}
+          <div
             style={{
               position: "absolute", top: 16, right: 16,
               padding: "12px 20px", borderRadius: "var(--radius-md)",
               border: "1px solid var(--accent)", backgroundColor: "rgba(10, 10, 12, 0.9)",
               zIndex: 20, display: "flex", alignItems: "center", gap: 10,
-              cursor: "pointer",
+              animation: "glowPulse 2s ease-in-out infinite",
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -545,15 +539,9 @@ function AppPage() {
               <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
             </svg>
             <span style={{ fontSize: "0.72rem", color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-              Tap to speak
+              Listening...
             </span>
-            <button
-              onClick={(e) => { e.stopPropagation(); setIsVoiceListening(false); }}
-              style={{ background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.8rem", cursor: "pointer", padding: "0 0 0 4px" }}
-            >
-              ×
-            </button>
-          </button>
+          </div>
         )}
 
         {/* Agent narration — minimal bottom bar */}
