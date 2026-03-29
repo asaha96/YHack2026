@@ -1,6 +1,6 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { C, fade, mono, sans, serif, spr } from "../constants";
+import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { C, fade } from "../constants";
 import { AnimatedBody, AnimatedHeadline, Eyebrow, PraxisWordmark } from "../components/Typography";
 import { AnatomyDiagram } from "../components/AnatomyUI";
 

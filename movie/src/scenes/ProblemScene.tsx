@@ -1,6 +1,6 @@
 import React from "react";
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
-import { C, fade, mono, sans, serif, spr } from "../constants";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { C, fade, sans, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { StatCard } from "../components/Panels";
 
@@ -96,8 +96,7 @@ export const ProblemScene: React.FC = () => {
           }}
         >
           {stats.map((stat) => {
-            const { fps: localFps } = { fps };
-            const progress = spr(frame, fps, stat.delay, 20, 120, 0.85);
+              const progress = spr(frame, fps, stat.delay, 20, 120, 0.85);
             const cardY = interpolate(progress, [0, 1], [40, 0]);
             const cardOpacity = fade(frame, stat.delay, stat.delay + 30);
             return (

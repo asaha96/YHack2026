@@ -1,6 +1,6 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
-import { C, fade, mono, serif, spr } from "../constants";
+import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { Board } from "../components/AnatomyUI";
 
