@@ -33,13 +33,14 @@ export interface LayeredViewerHandle {
   captureCanvas: () => string | null;
 }
 
-const LAYER_ORDER = ["skin", "muscles", "organs", "vascular", "skeleton"];
+const LAYER_ORDER = ["skin", "muscles", "nervous", "organs", "vascular", "skeleton"];
 const LAYER_COLORS: Record<string, number> = {
   skin: 0xe8beaa,
   muscles: 0xc94040,
   skeleton: 0xf5f0e8,
   organs: 0xcc7766,
   vascular: 0x4466cc,
+  nervous: 0xf0d060,
 };
 const LAYER_OPACITY: Record<string, number> = {
   skin: 0.25,
@@ -47,6 +48,7 @@ const LAYER_OPACITY: Record<string, number> = {
   skeleton: 0.9,
   organs: 0.85,
   vascular: 0.75,
+  nervous: 0.85,
 };
 
 const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
@@ -65,16 +67,18 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
     const [layerVisibility, setLayerVisibility] = useState<Record<string, boolean>>({
       skin: true,
       muscles: true,
+      nervous: true,
       organs: true,
       vascular: true,
       skeleton: true,
     });
     const [layerOpacity, setLayerOpacity] = useState<Record<string, number>>({
-      skin: 0.06,
-      muscles: 0.12,
-      organs: 0.9,
-      vascular: 0.85,
-      skeleton: 0.2,
+      skin: 0.08,
+      muscles: 0.18,
+      nervous: 0.9,
+      organs: 0.85,
+      vascular: 0.7,
+      skeleton: 0.15,
     });
     const isDraggingRef = useRef(false);
     const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -208,15 +212,20 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
               obj.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
-                  child.material = new THREE.MeshPhongMaterial({
+                  const mat = new THREE.MeshPhongMaterial({
                     color: LAYER_COLORS[layerName] || 0xcccccc,
-                    specular: 0x222222,
-                    shininess: layerName === "skeleton" ? 60 : 20,
+                    specular: layerName === "nervous" ? 0x444400 : 0x222222,
+                    shininess: layerName === "skeleton" ? 60 : layerName === "nervous" ? 40 : 20,
                     transparent: true,
                     opacity: LAYER_OPACITY[layerName] || 0.8,
                     side: layerName === "skin" ? THREE.DoubleSide : THREE.FrontSide,
                     depthWrite: layerName !== "skin",
                   });
+                  if (layerName === "nervous") {
+                    mat.emissive = new THREE.Color(0x504010);
+                    mat.emissiveIntensity = 0.3;
+                  }
+                  child.material = mat;
                   child.userData.organName = part.name;
                   child.userData.layerName = layerName;
                   child.name = part.name;
@@ -498,8 +507,10 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
 
     return (
       <div ref={containerRef} style={{ width: "100%", height: "100%", position: "relative", cursor: "crosshair", background: transparentBackground ? "transparent" : "radial-gradient(circle at 50% 22%, rgba(255,255,255,0.76), rgba(248,244,236,0.98) 52%, rgba(243,237,228,1) 100%)" }} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp}>
-        {/* Layer controls */}
-        <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+        {/* Layer controls — hidden by default, kept for dev tuning
+          Optimal defaults: skin 0.08, muscles 0.18, nervous 0.9, organs 0.85, vascular 0.7, skeleton 0.15
+        */}
+        {false && <div style={{ position: "absolute", top: 16, left: 16, zIndex: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {LAYER_ORDER.map((name) => (
             <div
               key={name}
@@ -539,7 +550,7 @@ const LayeredAnatomyViewer = forwardRef<LayeredViewerHandle, Props>(
               )}
             </div>
           ))}
-        </div>
+        </div>}
 
         {isLoading && (
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", display: "flex", flexDirection: "column", alignItems: "center", gap: 12, zIndex: 10 }}>
