@@ -3,12 +3,12 @@
  *
  * When you have a screen recording ready:
  *   1. Drop the .mp4 into  movie/public/footage/
- *   2. Fill in the `src` below (e.g. "footage/upload-demo.mp4")
- *   3. Compute playbackRate = video_duration_seconds / scene_duration_seconds
- *      - Get video duration:  ffprobe -v quiet -show_entries format=duration -of csv=p=0 file.mp4
- *      - Get scene duration:  open Remotion Studio, hover the scene in the timeline
- *      - Example: 8.2s video / 9.4s scene = 0.87
- *   4. Set playbackRate. Values < 1 slow the video down; > 1 speed it up.
+ *   2. Fill in the `src` and `durationInSeconds` below.
+ *      Get duration:  ffprobe -v quiet -show_entries format=duration -of csv=p=0 file.mp4
+ *
+ * VideoDropIn reads `durationInSeconds` and computes the exact playbackRate at
+ * render time using the live scene duration — so the video always fills the
+ * scene perfectly even when audio changes the scene length.
  *
  * Scenes with no VideoDropIn (Title, Problem, Hero, Closing) are null and ignored.
  */
@@ -17,10 +17,10 @@ export interface VideoSlot {
   /** Path relative to public/, e.g. "footage/upload-demo.mp4" */
   src: string;
   /**
-   * video_duration_seconds / scene_duration_seconds.
-   * Remotion will stretch or compress the video to exactly fill the scene.
+   * Native length of the video file in seconds.
+   * Run:  ffprobe -v quiet -show_entries format=duration -of csv=p=0 file.mp4
    */
-  playbackRate: number;
+  durationInSeconds: number;
 }
 
 // prettier-ignore
@@ -29,7 +29,7 @@ export const VIDEO_SOURCES: (VideoSlot | null)[] = [
   null,  // 1 · ProblemScene     — no video panel
 
   // ── Screen recordings of the Praxis app ─────────────────────────────────────
-  { src: "footage/upload-demo.mp4", playbackRate: 0.87 },  // 2 · UploadScene      — drag-drop a DICOM/CT file → progress bar → case created
+  { src: "footage/upload-demo.mp4", durationInSeconds: 44.233 },  // 2 · UploadScene
   null,  // 3 · ReconstructScene — DICOM slices → 3D volume spinning in the viewer
   null,  // 4 · HandTrackingScene— hand skeleton overlay, pinch gesture navigating anatomy
   null,  // 5 · AIScene          — surgeon types a question, copilot streams an answer

@@ -10,10 +10,10 @@ import { PetDog, SparkleOverlay } from "../components/PetOverlay";
 export const ReconstructScene: React.FC = () => {
   const frame = useCurrentFrame();
   const slot = VIDEO_SOURCES[3];
-  const { fps } = useVideoConfig();
+  const { fps, durationInFrames } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
-  const fadeOut = fade(frame, 140, 180, 1, 0);
+  const fadeOut = fade(frame, durationInFrames - 40, durationInFrames, 1, 0);
   const opacity = fadeIn * fadeOut;
 
   const panelY = interpolate(
@@ -68,7 +68,7 @@ export const ReconstructScene: React.FC = () => {
             stepLabel="STEP 02 · VOLUME RECONSTRUCTION"
             scale={0.86}
             videoSrc={slot?.src}
-            playbackRate={slot?.playbackRate}
+            videoDurationInSeconds={slot?.durationInSeconds}
             overlayContent={
               <>
                 <PetDog

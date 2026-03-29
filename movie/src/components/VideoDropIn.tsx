@@ -1,5 +1,5 @@
 import React from "react";
-import { OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
+import { OffthreadVideo, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, fade, mono, sans, serif } from "../constants";
 import { WindowChrome } from "./Panels";
 
@@ -31,12 +31,12 @@ export const VideoDropIn: React.FC<{
    */
   videoSrc?: string;
   /**
-   * video_duration_seconds / scene_duration_seconds.
-   * Stretches or compresses the clip so it fills exactly the scene length.
-   * Values < 1 slow it down; > 1 speed it up. See videoSources.ts for how
-   * to compute this.
+   * Native duration of the video file in seconds (from ffprobe).
+   * VideoDropIn divides this by the live scene duration to compute the exact
+   * playbackRate, so the clip always fills the scene — even if audio changes
+   * the scene length.
    */
-  playbackRate?: number;
+  videoDurationInSeconds?: number;
 }> = ({
   children,
   windowTitle = "praxis — localhost:5173",
@@ -44,8 +44,14 @@ export const VideoDropIn: React.FC<{
   overlayContent,
   scale = 1,
   videoSrc,
-  playbackRate = 1,
+  videoDurationInSeconds,
 }) => {
+  const { durationInFrames, fps } = useVideoConfig();
+  // Compute playbackRate so the video fills the scene exactly.
+  // scene_duration_seconds = durationInFrames / fps
+  const playbackRate = videoDurationInSeconds != null
+    ? videoDurationInSeconds / (durationInFrames / fps)
+    : 1;
   const W = 1320 * scale;
   const H = 760 * scale;
 
