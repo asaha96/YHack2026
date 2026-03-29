@@ -113,6 +113,42 @@ export const Eyebrow: React.FC<{ text: string; delay?: number }> = ({
   );
 };
 
+export const StepBadge: React.FC<{ step: number; total: number; delay?: number }> = ({
+  step,
+  total,
+  delay = 0,
+}) => {
+  const frame = useCurrentFrame();
+  const opacity = fade(frame, 10 + delay, 34 + delay);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 36,
+        right: 44,
+        opacity,
+        transform: `translateY(${interpolate(opacity, [0, 1], [-10, 0])}px)`,
+        width: 54,
+        height: 54,
+        borderRadius: "50%",
+        background: "linear-gradient(135deg, rgba(248, 244, 236, 0.92), rgba(253, 250, 244, 0.75))",
+        border: `1.5px solid rgba(178, 110, 87, 0.25)`,
+        backdropFilter: "blur(12px)",
+        boxShadow: "0 4px 14px rgba(38, 29, 20, 0.08), inset 0 1px 0 rgba(255,255,255,0.6)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <span style={{ fontFamily: mono, fontSize: 13, fontWeight: 700, lineHeight: 1, letterSpacing: 0 }}>
+        <span style={{ color: C.ember }}>{step}</span>
+        <span style={{ color: C.accentSoft }}>/</span>
+        <span style={{ color: C.inkMuted }}>{total}</span>
+      </span>
+    </div>
+  );
+};
+
 export const AnimatedHeadline: React.FC<{
   lines: (string | React.ReactNode)[];
   delay?: number;

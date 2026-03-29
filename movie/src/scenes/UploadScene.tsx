@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, fade, serif, spr } from "../constants";
-import { Eyebrow } from "../components/Typography";
+import { StepBadge } from "../components/Typography";
 import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn } from "../components/VideoDropIn";
 import { VIDEO_SOURCES } from "../videoSources";
@@ -25,6 +25,7 @@ export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =>
 
   return (
     <AbsoluteFill style={{ opacity }}>
+      <StepBadge step={1} total={5} />
       <AbsoluteFill
         style={{
           padding: "60px 0 0",
@@ -34,15 +35,6 @@ export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) =>
           gap: 24,
         }}
       >
-        {/* Step label */}
-        <div
-          style={{
-            opacity: fade(frame, 10, 40),
-            transform: `translateY(${interpolate(fade(frame, 10, 40), [0, 1], [16, 0])}px)`,
-          }}
-        >
-          <Eyebrow text="Step 01 · Upload" />
-        </div>
 
         {/* Headline */}
         <p
