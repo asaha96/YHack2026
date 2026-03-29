@@ -24,6 +24,7 @@ import { ClosingScene } from "./scenes/ClosingScene";
 export interface IntroProps {
   sceneStarts: number[];    // absolute start frame for each of the 9 scenes
   sceneDurations: number[]; // duration in frames for each scene
+  clipFromFrames: number[]; // absolute start frame for each clip (18 total), no-overlap guaranteed
   audioDurations: number[]; // actual audio clip lengths in frames (18 clips, flattened)
 }
 
@@ -39,7 +40,7 @@ const SCENE_COMPONENTS = [
   ClosingScene,
 ];
 
-export const Intro: React.FC<IntroProps> = ({ sceneStarts, sceneDurations, audioDurations }) => {
+export const Intro: React.FC<IntroProps> = ({ sceneStarts, sceneDurations, clipFromFrames, audioDurations }) => {
   const frame = useCurrentFrame();
 
   const lastSceneIdx = sceneStarts.length - 1;
@@ -60,7 +61,7 @@ export const Intro: React.FC<IntroProps> = ({ sceneStarts, sceneDurations, audio
       ))}
 
       {/* ── Subtitles (global frame, outside any Sequence) ──────────── */}
-      <Subtitles sceneStarts={sceneStarts} audioDurations={audioDurations} />
+      <Subtitles clipFromFrames={clipFromFrames} audioDurations={audioDurations} />
 
       {/* ── Background music ─────────────────────────────────────────── */}
       <Audio src={staticFile("music.mp3")} volume={0.18} />

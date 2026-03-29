@@ -14,6 +14,7 @@ const TRAIL_FRAMES = 30;
 const DEFAULT_PROPS: IntroProps = {
   sceneStarts: [0, 200, 400, 600, 800, 1000, 1200, 1400, 1600],
   sceneDurations: Array(9).fill(200) as number[],
+  clipFromFrames: [18, 98, 214, 314, 414, 492, 614, 710, 814, 906, 1014, 1092, 1214, 1296, 1414, 1500, 1620, 1696],
   audioDurations: Array(18).fill(150) as number[],
 };
 
@@ -26,29 +27,38 @@ async function calculateMetadata() {
   );
   const audioDurations = clipSeconds.map((s) => Math.ceil(s * FPS));
 
-  // Build scene starts and durations:
-  // Each scene lasts until the end of its longest clip + TRAIL_FRAMES.
+  // Build scene starts, durations, and per-clip absolute from-frames.
+  // Within each scene, clips play sequentially: clip N+1 starts no earlier
+  // than clip N ends (no overlap). Scene duration grows to fit.
   const sceneStarts: number[] = [];
   const sceneDurations: number[] = [];
+  const clipFromFrames: number[] = [];
   let currentFrame = 0;
   let clipIdx = 0;
+  let prevClipEnd = 0; // tracks the end of the last clip globally
 
   for (const sceneClips of SCENE_NARRATIONS) {
     sceneStarts.push(currentFrame);
 
-    let maxEnd = 0;
+    let sceneMaxEnd = 0;
     for (const clip of sceneClips) {
-      const end = clip.offset + audioDurations[clipIdx];
-      if (end > maxEnd) maxEnd = end;
+      // Natural start = scene start + relative offset, but never before prev clip ends
+      const naturalFrom = currentFrame + clip.offset;
+      const from = Math.max(naturalFrom, prevClipEnd);
+      clipFromFrames.push(from);
+
+      const end = from + audioDurations[clipIdx];
+      prevClipEnd = end;
+      if (end - currentFrame > sceneMaxEnd) sceneMaxEnd = end - currentFrame;
       clipIdx++;
     }
 
-    const duration = maxEnd + TRAIL_FRAMES;
+    const duration = sceneMaxEnd + TRAIL_FRAMES;
     sceneDurations.push(duration);
     currentFrame += duration;
   }
 
-  const props: IntroProps = { sceneStarts, sceneDurations, audioDurations };
+  const props: IntroProps = { sceneStarts, sceneDurations, clipFromFrames, audioDurations };
   return { durationInFrames: currentFrame, props };
 }
 

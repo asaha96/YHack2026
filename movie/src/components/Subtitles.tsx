@@ -76,29 +76,22 @@ interface ResolvedEntry {
 }
 
 interface Props {
-  sceneStarts: number[];
-  audioDurations: number[]; // one per clip, flattened in scene order
+  clipFromFrames: number[]; // absolute start frame per clip (18 total), no-overlap guaranteed
+  audioDurations: number[]; // clip length in frames (18 total)
 }
 
-export const Subtitles: React.FC<Props> = ({ sceneStarts, audioDurations }) => {
+export const Subtitles: React.FC<Props> = ({ clipFromFrames, audioDurations }) => {
   const frame = useCurrentFrame();
 
-  // Build resolved entries from scene-relative offsets → absolute frames
-  const entries: ResolvedEntry[] = [];
-  let clipIdx = 0;
-  for (let i = 0; i < SCENE_NARRATIONS.length; i++) {
-    const sceneStart = sceneStarts[i] ?? 0;
-    for (const clip of SCENE_NARRATIONS[i]) {
-      entries.push({
-        from: sceneStart + clip.offset,
-        audioDuration: audioDurations[clipIdx] ?? 150,
-        text: clip.text,
-        style: clip.style,
-        audio: clip.audio,
-      });
-      clipIdx++;
-    }
-  }
+  // Build resolved entries directly from pre-computed, no-overlap frame positions
+  const allClips = SCENE_NARRATIONS.flat();
+  const entries: ResolvedEntry[] = allClips.map((clip, i) => ({
+    from: clipFromFrames[i] ?? 0,
+    audioDuration: audioDurations[i] ?? 150,
+    text: clip.text,
+    style: clip.style,
+    audio: clip.audio,
+  }));
 
   // Audio tracks — no durationInFrames so the clip plays to its natural end
   const audioTracks = entries.map((entry, i) => (
