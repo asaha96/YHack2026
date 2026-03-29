@@ -35,38 +35,58 @@ REF_TORSO_HEIGHT = 500    # mm (shoulder to hip)
 REF_SPINE_CENTER_Y = -120  # mm
 REF_SPINE_CENTER_Z = 1050  # mm (vertical midpoint of torso)
 
-# Organ positions relative to spine center, as fractions of torso dimensions
-# Format: (x_frac, y_frac, z_frac) where fracs are relative to shoulder_width, torso_depth, torso_height
+# ---------------------------------------------------------------------------
+# ALL organ/structure positions relative to spine center
+# Format: (x_frac, y_frac, z_frac)
+#   x_frac: lateral offset as fraction of shoulder_width (+ = patient left)
+#   y_frac: depth (unused for 2D projection)
+#   z_frac: vertical offset as fraction of torso_height (+ = superior/up)
+# ---------------------------------------------------------------------------
+
 ORGAN_RELATIVE_POSITIONS = {
-    # Organs
-    "liver":              (-0.12, -0.35, 0.12),
-    "stomach":            ( 0.08, -0.40, 0.20),
-    "spleen":             ( 0.28, -0.20, 0.10),
+    # === Organs ===
+    "liver":              (-0.12, -0.35,  0.12),
+    "stomach":            ( 0.08, -0.40,  0.20),
+    "spleen":             ( 0.28, -0.20,  0.10),
     "right_kidney":       (-0.22, -0.30, -0.15),
     "left_kidney":        ( 0.22, -0.30, -0.15),
-    "heart":              ( 0.02, -0.45, 0.35),
-    "right_lung_upper":   (-0.18, -0.35, 0.45),
-    "right_lung_lower":   (-0.18, -0.35, 0.20),
-    "right_lung_middle":  (-0.18, -0.35, 0.32),
-    "left_lung_upper":    ( 0.18, -0.35, 0.45),
-    "left_lung_lower":    ( 0.18, -0.35, 0.20),
-    "gallbladder":        (-0.10, -0.40, 0.05),
+    "heart":              ( 0.02, -0.45,  0.35),
+    "right_lung_upper":   (-0.18, -0.35,  0.45),
+    "right_lung_lower":   (-0.18, -0.35,  0.20),
+    "right_lung_middle":  (-0.18, -0.35,  0.32),
+    "left_lung_upper":    ( 0.18, -0.35,  0.45),
+    "left_lung_lower":    ( 0.18, -0.35,  0.20),
+    "gallbladder":        (-0.10, -0.40,  0.05),
     "urinary_bladder":    ( 0.00, -0.38, -0.40),
     "appendix":           (-0.15, -0.32, -0.30),
-    "diaphragm":          ( 0.00, -0.40, 0.30),
-    "trachea":            ( 0.00, -0.42, 0.55),
-    "bronchus":           ( 0.00, -0.40, 0.48),
-    "esophagus":          ( 0.00, -0.25, 0.40),
-    "thyroid_cartilage":  ( 0.00, -0.42, 0.60),
+    "diaphragm":          ( 0.00, -0.40,  0.30),
+    "trachea":            ( 0.00, -0.42,  0.55),
+    "bronchus":           ( 0.00, -0.40,  0.48),
+    "esophagus":          ( 0.00, -0.25,  0.40),
+    "thyroid_cartilage":  ( 0.00, -0.42,  0.60),
+    "rectum":             ( 0.00, -0.30, -0.42),
+    "right_adrenal":      (-0.18, -0.32, -0.05),
+    "left_adrenal":       ( 0.18, -0.32, -0.05),
 
-    # Vascular
-    "ascending_aorta":    ( 0.02, -0.30, 0.35),
-    "aortic_arch":        ( 0.02, -0.32, 0.42),
-    "descending_aorta":   ( 0.00, -0.20, 0.00),
-    "inferior_vena_cava": ( 0.03, -0.25, -0.05),
-    "superior_vena_cava": ( 0.03, -0.28, 0.40),
-    "pulmonary_artery":   ( 0.00, -0.38, 0.38),
-    "celiac_artery":      ( 0.00, -0.30, 0.10),
+    # === Vascular (organs layer in model) ===
+    "ascending_aorta":    ( 0.02, -0.30,  0.35),
+    "aortic_arch":        ( 0.02, -0.32,  0.42),
+    "descending_aorta":   ( 0.00, -0.20,  0.00),
+}
+
+# Vascular layer structures (separate from organs — own layer in layers.json)
+VASCULAR_RELATIVE_POSITIONS = {
+    "inferior_vena_cava":   ( 0.03, -0.25, -0.05),
+    "superior_vena_cava":   ( 0.03, -0.28,  0.40),
+    "pulmonary_artery":     ( 0.00, -0.38,  0.38),
+    "pulmonary_vein":       ( 0.04, -0.36,  0.36),
+    "celiac_artery":        ( 0.00, -0.30,  0.10),
+    "superior_mesenteric":  ( 0.00, -0.28,  0.02),
+    "inferior_mesenteric":  (-0.04, -0.26, -0.18),
+    "left_coronary":        ( 0.04, -0.44,  0.36),
+    "right_coronary":       (-0.02, -0.44,  0.34),
+    "left_renal_artery":    ( 0.15, -0.28, -0.12),
+    "right_renal_artery":   (-0.15, -0.28, -0.12),
 }
 
 # Bone-to-landmark mapping: maps skeleton OBJ part names to pairs of landmarks
@@ -172,6 +192,156 @@ RIB_SPINE_FRACTION = {
     "tenth_rib": 0.45,
     "eleventh_rib": 0.50,
     "twelfth_rib": 0.55,
+}
+
+# ---------------------------------------------------------------------------
+# Human-readable labels for every body part in the 3D model (layers.json)
+# ---------------------------------------------------------------------------
+
+PART_LABELS = {
+    # Organs
+    "liver": "Liver",
+    "stomach": "Stomach",
+    "spleen": "Spleen",
+    "right_kidney": "R. Kidney",
+    "left_kidney": "L. Kidney",
+    "heart": "Heart",
+    "right_lung_upper": "R. Lung Upper",
+    "right_lung_lower": "R. Lung Lower",
+    "right_lung_middle": "R. Lung Middle",
+    "left_lung_upper": "L. Lung Upper",
+    "left_lung_lower": "L. Lung Lower",
+    "gallbladder": "Gallbladder",
+    "urinary_bladder": "Bladder",
+    "appendix": "Appendix",
+    "diaphragm": "Diaphragm",
+    "trachea": "Trachea",
+    "bronchus": "Bronchus",
+    "esophagus": "Esophagus",
+    "thyroid_cartilage": "Thyroid",
+    "rectum": "Rectum",
+    "right_adrenal": "R. Adrenal",
+    "left_adrenal": "L. Adrenal",
+    "ascending_aorta": "Asc. Aorta",
+    "aortic_arch": "Aortic Arch",
+    "descending_aorta": "Desc. Aorta",
+
+    # Vascular
+    "inferior_vena_cava": "IVC",
+    "superior_vena_cava": "SVC",
+    "pulmonary_artery": "Pulm. Artery",
+    "pulmonary_vein": "Pulm. Vein",
+    "celiac_artery": "Celiac A.",
+    "superior_mesenteric": "Sup. Mesenteric",
+    "inferior_mesenteric": "Inf. Mesenteric",
+    "left_coronary": "L. Coronary",
+    "right_coronary": "R. Coronary",
+    "left_renal_artery": "L. Renal A.",
+    "right_renal_artery": "R. Renal A.",
+
+    # Skeleton — ribs
+    "right_first_rib": "R. 1st Rib",
+    "right_second_rib": "R. 2nd Rib",
+    "right_third_rib": "R. 3rd Rib",
+    "right_fourth_rib": "R. 4th Rib",
+    "right_fifth_rib": "R. 5th Rib",
+    "right_sixth_rib": "R. 6th Rib",
+    "right_seventh_rib": "R. 7th Rib",
+    "right_eighth_rib": "R. 8th Rib",
+    "right_ninth_rib": "R. 9th Rib",
+    "right_tenth_rib": "R. 10th Rib",
+    "right_eleventh_rib": "R. 11th Rib",
+    "right_twelfth_rib": "R. 12th Rib",
+    "left_first_rib": "L. 1st Rib",
+    "left_second_rib": "L. 2nd Rib",
+    "left_third_rib": "L. 3rd Rib",
+    "left_fourth_rib": "L. 4th Rib",
+    "left_fifth_rib": "L. 5th Rib",
+    "left_sixth_rib": "L. 6th Rib",
+    "left_seventh_rib": "L. 7th Rib",
+    "left_eighth_rib": "L. 8th Rib",
+    "left_ninth_rib": "L. 9th Rib",
+    "left_tenth_rib": "L. 10th Rib",
+    "left_eleventh_rib": "L. 11th Rib",
+    "left_twelfth_rib": "L. 12th Rib",
+
+    # Skeleton — spine
+    "cervical_3": "C3",
+    "cervical_4": "C4",
+    "cervical_5": "C5",
+    "cervical_6": "C6",
+    "cervical_7": "C7",
+    "thoracic_1": "T1",
+    "thoracic_2": "T2",
+    "thoracic_3": "T3",
+    "thoracic_4": "T4",
+    "thoracic_5": "T5",
+    "thoracic_6": "T6",
+    "thoracic_7": "T7",
+    "thoracic_8": "T8",
+    "thoracic_9": "T9",
+    "thoracic_10": "T10",
+    "thoracic_11": "T11",
+    "thoracic_12": "T12",
+    "lumbar_1": "L1",
+    "lumbar_2": "L2",
+    "lumbar_3": "L3",
+    "lumbar_4": "L4",
+    "lumbar_5": "L5",
+    "sacrum": "Sacrum",
+
+    # Skeleton — limb bones
+    "right_femur": "R. Femur",
+    "left_femur": "L. Femur",
+    "right_tibia": "R. Tibia",
+    "left_tibia": "L. Tibia",
+    "right_fibula": "R. Fibula",
+    "left_fibula": "L. Fibula",
+    "right_humerus": "R. Humerus",
+    "left_humerus": "L. Humerus",
+    "right_radius": "R. Radius",
+    "left_radius": "L. Radius",
+    "right_ulna": "R. Ulna",
+    "left_ulna": "L. Ulna",
+    "right_patella": "R. Patella",
+    "left_patella": "L. Patella",
+
+    # Skeleton — girdle / skull
+    "sternum": "Sternum",
+    "right_scapula": "R. Scapula",
+    "left_scapula": "L. Scapula",
+    "right_clavicle": "R. Clavicle",
+    "left_clavicle": "L. Clavicle",
+    "mandible": "Mandible",
+    "right_maxilla": "R. Maxilla",
+    "left_maxilla": "L. Maxilla",
+
+    # Muscles
+    "external_intercostal": "Ext. Intercostal",
+    "internal_intercostal": "Int. Intercostal",
+    "right_external_oblique": "R. Ext. Oblique",
+    "left_external_oblique": "L. Ext. Oblique",
+    "right_rectus_abdominis": "R. Rectus Abd.",
+    "left_rectus_abdominis": "L. Rectus Abd.",
+    "right_latissimus_dorsi": "R. Lat. Dorsi",
+    "left_latissimus_dorsi": "L. Lat. Dorsi",
+    "right_gluteus_maximus": "R. Glut. Max.",
+    "left_gluteus_maximus": "L. Glut. Max.",
+    "right_rectus_femoris": "R. Rect. Fem.",
+    "left_rectus_femoris": "L. Rect. Fem.",
+    "right_pectoralis_major_clav": "R. Pec. Major (Clav)",
+    "left_pectoralis_major_clav": "L. Pec. Major (Clav)",
+    "right_pectoralis_major_stern": "R. Pec. Major (Stern)",
+    "left_pectoralis_major_stern": "L. Pec. Major (Stern)",
+    "right_deltoid_acr": "R. Deltoid",
+    "left_deltoid_acr": "L. Deltoid",
+    "right_deltoid_acr2": "R. Deltoid 2",
+    "left_deltoid_acr2": "L. Deltoid 2",
+    "right_trapezius_desc": "R. Trapezius",
+    "left_trapezius_desc": "L. Trapezius",
+
+    # Skin
+    "skin": "Skin",
 }
 
 
@@ -346,18 +516,35 @@ def compute_full_body_mapping(keypoints: list[dict]) -> dict:
     }
 
 
+def _project_relative_to_2d(
+    fx: float, fz: float,
+    spine_center: np.ndarray,
+    shoulder_width: float,
+    torso_height: float,
+    frame_w: int, frame_h: int,
+) -> tuple[int, int]:
+    """Project a relative anatomical position to 2D pixel coords, clamped to frame bounds."""
+    px = spine_center[0] + fx * shoulder_width
+    py = spine_center[1] - fz * torso_height
+    return (
+        max(0, min(frame_w, round(px * frame_w))),
+        max(0, min(frame_h, round(py * frame_h))),
+    )
+
+
 def compute_2d_overlay_positions(
     keypoints: list[dict],
     frame_w: int,
     frame_h: int,
 ) -> dict[str, dict]:
     """
-    Project organ positions to 2D pixel coordinates on the video frame.
+    Project ALL body parts to 2D pixel coordinates on the video frame.
 
-    Uses the detected body landmarks to position organs relative to the
-    person's body in the video frame.
+    Uses the detected body landmarks to position every organ, bone, muscle,
+    and vascular structure relative to the person's body in the video frame.
 
-    Returns: {organ_name: {x: px, y: px, label: str}}
+    Returns: {part_name: {x, y, label, layer, radius}}
+    where layer is one of: "organs", "skeleton", "muscles", "vascular", "skin"
     """
     metrics = _get_body_metrics(keypoints)
     if metrics is None:
@@ -369,42 +556,164 @@ def compute_2d_overlay_positions(
     shoulder_width = metrics["shoulder_width"]
     torso_height = metrics["torso_height"]
 
-    # All coordinates are normalized (0-1) from MediaPipe
-    overlay = {}
+    overlay: dict[str, dict] = {}
 
-    # Labels for display
-    ORGAN_LABELS = {
-        "liver": "Liver",
-        "stomach": "Stomach",
-        "spleen": "Spleen",
-        "right_kidney": "R. Kidney",
-        "left_kidney": "L. Kidney",
-        "heart": "Heart",
-        "right_lung_upper": "R. Lung",
-        "left_lung_upper": "L. Lung",
-        "gallbladder": "Gallbladder",
-        "diaphragm": "Diaphragm",
-        "trachea": "Trachea",
-        "ascending_aorta": "Aorta",
-        "appendix": "Appendix",
-        "urinary_bladder": "Bladder",
+    base_radius = round(shoulder_width * frame_w * 0.04)
+    small_radius = round(shoulder_width * frame_w * 0.025)
+    tiny_radius = round(shoulder_width * frame_w * 0.015)
+
+    # Cache landmark lookups to avoid repeated _get_kp() calls
+    _kp_cache: dict[str, np.ndarray] = {}
+
+    def _cached_kp(name: str) -> np.ndarray:
+        if name not in _kp_cache:
+            _kp_cache[name] = _get_kp(keypoints, name)
+        return _kp_cache[name]
+
+    # ----- ORGANS (all 25) -----
+    for organ, (fx, _fy, fz) in ORGAN_RELATIVE_POSITIONS.items():
+        x, y = _project_relative_to_2d(
+            fx, fz, spine_center, shoulder_width, torso_height, frame_w, frame_h
+        )
+        overlay[organ] = {
+            "x": x,
+            "y": y,
+            "label": PART_LABELS.get(organ, organ),
+            "layer": "organs",
+            "radius": base_radius,
+        }
+
+    # ----- VASCULAR (all 11) -----
+    for vessel, (fx, _fy, fz) in VASCULAR_RELATIVE_POSITIONS.items():
+        x, y = _project_relative_to_2d(
+            fx, fz, spine_center, shoulder_width, torso_height, frame_w, frame_h
+        )
+        overlay[vessel] = {
+            "x": x,
+            "y": y,
+            "label": PART_LABELS.get(vessel, vessel),
+            "layer": "vascular",
+            "radius": small_radius,
+        }
+
+    # ----- SKELETON — Limb bones (from landmark pairs) -----
+    for bone_name, (lm1_name, lm2_name) in BONE_LANDMARK_MAPPING.items():
+        start = _cached_kp(lm1_name)
+        end = _cached_kp(lm2_name)
+        mid = (start + end) / 2
+        overlay[bone_name] = {
+            "x": round(mid[0] * frame_w),
+            "y": round(mid[1] * frame_h),
+            "label": PART_LABELS.get(bone_name, bone_name),
+            "layer": "skeleton",
+            "radius": small_radius,
+            # Include start/end for line rendering
+            "x1": round(start[0] * frame_w),
+            "y1": round(start[1] * frame_h),
+            "x2": round(end[0] * frame_w),
+            "y2": round(end[1] * frame_h),
+        }
+
+    # ----- SKELETON — Spine vertebrae -----
+    spine_vec = mid_hip - mid_shoulder
+    for vert_name, frac in SPINE_POSITIONS.items():
+        pos = mid_shoulder + spine_vec * frac
+        overlay[vert_name] = {
+            "x": round(pos[0] * frame_w),
+            "y": round(pos[1] * frame_h),
+            "label": PART_LABELS.get(vert_name, vert_name),
+            "layer": "skeleton",
+            "radius": tiny_radius,
+        }
+
+    # ----- SKELETON — Ribs (all 24) -----
+    for rib_base, frac in RIB_SPINE_FRACTION.items():
+        spine_pos = mid_shoulder + spine_vec * frac
+        for side in ("right", "left"):
+            rib_name = f"{side}_{rib_base}"
+            lateral_sign = -1.0 if side == "right" else 1.0
+            lateral_offset = np.array([
+                lateral_sign * shoulder_width * 0.4, 0, 0
+            ])
+            rib_end = spine_pos + lateral_offset
+            rib_mid = (spine_pos + rib_end) / 2
+            overlay[rib_name] = {
+                "x": round(rib_mid[0] * frame_w),
+                "y": round(rib_mid[1] * frame_h),
+                "label": PART_LABELS.get(rib_name, rib_name),
+                "layer": "skeleton",
+                "radius": tiny_radius,
+                "x1": round(spine_pos[0] * frame_w),
+                "y1": round(spine_pos[1] * frame_h),
+                "x2": round(rib_end[0] * frame_w),
+                "y2": round(rib_end[1] * frame_h),
+            }
+
+    # ----- SKELETON — Skull bones -----
+    nose = _cached_kp("nose")
+    l_ear = _cached_kp("left_ear")
+    r_ear = _cached_kp("right_ear")
+    mouth_l = _cached_kp("mouth_left")
+    mouth_r = _cached_kp("mouth_right")
+    jaw_center = (mouth_l + mouth_r) / 2
+    # Mandible centered below nose
+    overlay["mandible"] = {
+        "x": round(jaw_center[0] * frame_w),
+        "y": round(jaw_center[1] * frame_h),
+        "label": PART_LABELS["mandible"],
+        "layer": "skeleton",
+        "radius": small_radius,
+    }
+    # Maxillae on each side
+    r_maxilla_pos = (nose + r_ear) / 2
+    l_maxilla_pos = (nose + l_ear) / 2
+    overlay["right_maxilla"] = {
+        "x": round(r_maxilla_pos[0] * frame_w),
+        "y": round(r_maxilla_pos[1] * frame_h),
+        "label": PART_LABELS["right_maxilla"],
+        "layer": "skeleton",
+        "radius": small_radius,
+    }
+    overlay["left_maxilla"] = {
+        "x": round(l_maxilla_pos[0] * frame_w),
+        "y": round(l_maxilla_pos[1] * frame_h),
+        "label": PART_LABELS["left_maxilla"],
+        "layer": "skeleton",
+        "radius": small_radius,
     }
 
-    for organ, (fx, fy, fz) in ORGAN_RELATIVE_POSITIONS.items():
-        if organ not in ORGAN_LABELS:
-            continue
-
-        # Project to 2D: x offset from spine center, y offset along torso
-        # fx is lateral offset (fraction of shoulder width)
-        # fz is vertical offset (fraction of torso height, positive = up from center)
-        px = spine_center[0] + fx * shoulder_width
-        py = spine_center[1] - fz * torso_height  # y increases downward in video
-
-        overlay[organ] = {
-            "x": round(px * frame_w),
-            "y": round(py * frame_h),
-            "label": ORGAN_LABELS[organ],
+    # ----- MUSCLES (all 22) -----
+    for muscle_name, (lm1_name, lm2_name) in MUSCLE_LANDMARK_MAPPING.items():
+        origin = _cached_kp(lm1_name)
+        insertion = _cached_kp(lm2_name)
+        mid = (origin + insertion) / 2
+        overlay[muscle_name] = {
+            "x": round(mid[0] * frame_w),
+            "y": round(mid[1] * frame_h),
+            "label": PART_LABELS.get(muscle_name, muscle_name),
+            "layer": "muscles",
+            "radius": small_radius,
+            # Include origin/insertion for line rendering
+            "x1": round(origin[0] * frame_w),
+            "y1": round(origin[1] * frame_h),
+            "x2": round(insertion[0] * frame_w),
+            "y2": round(insertion[1] * frame_h),
         }
+
+    # ----- SKIN (body outline) -----
+    # Approximate as bounding region from shoulders to hips
+    overlay["skin"] = {
+        "x": round(spine_center[0] * frame_w),
+        "y": round(spine_center[1] * frame_h),
+        "label": PART_LABELS["skin"],
+        "layer": "skin",
+        "radius": round(shoulder_width * frame_w * 0.5),
+        # Bounding box for outline rendering
+        "x1": round(metrics["r_shoulder"][0] * frame_w),
+        "y1": round(mid_shoulder[1] * frame_h),
+        "x2": round(metrics["l_shoulder"][0] * frame_w),
+        "y2": round(mid_hip[1] * frame_h),
+    }
 
     return overlay
 

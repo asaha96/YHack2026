@@ -5,7 +5,6 @@ import {
   RoomEvent,
   createLocalTracks,
   Track,
-  VideoPresets,
   LocalVideoTrack,
 } from "livekit-client";
 
@@ -40,7 +39,7 @@ export default function CameraPage() {
           audio: false,
           video: {
             facingMode,
-            resolution: VideoPresets.h360.resolution,
+            resolution: { width: 1280, height: 720, frameRate: 30 },
           },
         });
       } catch (camErr: any) {

@@ -1,5 +1,5 @@
 """
-Server-side pose detection using MediaPipe Pose.
+Server-side pose detection using MediaPipe Pose Landmarker (Tasks API).
 
 Decodes JPEG frames from the phone camera and extracts
 33 body landmarks for skeleton overlay and organ mapping.
@@ -7,22 +7,22 @@ Decodes JPEG frames from the phone camera and extracts
 
 import numpy as np
 import cv2
-import mediapipe as mp
+from pathlib import Path
 
-# MediaPipe Pose connection pairs for skeleton drawing
+import mediapipe as mp
+from mediapipe.tasks.python import BaseOptions
+from mediapipe.tasks.python.vision import (
+    PoseLandmarker,
+    PoseLandmarkerOptions,
+    PoseLandmarksConnections,
+    RunningMode,
+)
+
+MODEL_PATH = str(Path(__file__).resolve().parent.parent / "models" / "pose_landmarker.task")
+
+# Build connection pairs list from MediaPipe's built-in connections
 POSE_CONNECTIONS = [
-    # Torso
-    (11, 12), (11, 23), (12, 24), (23, 24),
-    # Right arm
-    (12, 14), (14, 16),
-    # Left arm
-    (11, 13), (13, 15),
-    # Right leg
-    (24, 26), (26, 28),
-    # Left leg
-    (23, 25), (25, 27),
-    # Shoulders to ears
-    (11, 0), (12, 0),
+    (c.start, c.end) for c in PoseLandmarksConnections.POSE_LANDMARKS
 ]
 
 LANDMARK_NAMES = {
@@ -46,16 +46,16 @@ LANDMARK_NAMES = {
 
 
 def _extract_pose_result(pose_landmarks, frame_w: int, frame_h: int) -> dict:
-    """Extract landmarks, bbox, and connections from MediaPipe pose results."""
+    """Extract landmarks, bbox, and connections from PoseLandmarker results."""
     landmarks = []
-    for i, lm in enumerate(pose_landmarks.landmark):
+    for i, lm in enumerate(pose_landmarks):
         landmarks.append({
             "index": i,
             "name": LANDMARK_NAMES.get(i, f"landmark_{i}"),
             "x": lm.x,
             "y": lm.y,
             "z": lm.z,
-            "visibility": lm.visibility,
+            "visibility": lm.visibility if hasattr(lm, "visibility") else lm.presence,
         })
 
     visible = [lm for lm in landmarks if lm["visibility"] > 0.5]
@@ -81,15 +81,18 @@ def _extract_pose_result(pose_landmarks, frame_w: int, frame_h: int) -> dict:
 
 
 class PoseDetector:
-    """Wraps MediaPipe Pose for server-side frame processing."""
+    """Wraps MediaPipe PoseLandmarker for server-side frame processing."""
 
     def __init__(self):
-        self.pose = mp.solutions.pose.Pose(
-            static_image_mode=False,
-            model_complexity=1,
-            min_detection_confidence=0.5,
+        options = PoseLandmarkerOptions(
+            base_options=BaseOptions(model_asset_path=MODEL_PATH),
+            running_mode=RunningMode.IMAGE,
+            num_poses=1,
+            min_pose_detection_confidence=0.5,
+            min_pose_presence_confidence=0.5,
             min_tracking_confidence=0.5,
         )
+        self.landmarker = PoseLandmarker.create_from_options(options)
 
     def process_frame(self, jpeg_bytes: bytes) -> dict | None:
         """
@@ -104,12 +107,13 @@ class PoseDetector:
 
         frame_h, frame_w = frame.shape[:2]
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        results = self.pose.process(rgb_frame)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        result = self.landmarker.detect(mp_image)
 
-        if not results.pose_landmarks:
+        if not result.pose_landmarks or len(result.pose_landmarks) == 0:
             return None
 
-        return _extract_pose_result(results.pose_landmarks, frame_w, frame_h)
+        return _extract_pose_result(result.pose_landmarks[0], frame_w, frame_h)
 
     def process_ndarray(self, rgb_frame: np.ndarray) -> dict | None:
         """
@@ -121,13 +125,14 @@ class PoseDetector:
             return None
 
         frame_h, frame_w = rgb_frame.shape[:2]
-        results = self.pose.process(rgb_frame)
+        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
+        result = self.landmarker.detect(mp_image)
 
-        if not results.pose_landmarks:
+        if not result.pose_landmarks or len(result.pose_landmarks) == 0:
             return None
 
-        return _extract_pose_result(results.pose_landmarks, frame_w, frame_h)
+        return _extract_pose_result(result.pose_landmarks[0], frame_w, frame_h)
 
     def close(self):
         """Release MediaPipe resources."""
-        self.pose.close()
+        self.landmarker.close()
