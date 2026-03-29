@@ -183,16 +183,6 @@ export default function LiveViewPage() {
       });
       const guide = await res.json();
 
-      if (!res.ok) {
-        const hint = typeof guide?.hint === "string" ? guide.hint : "";
-        const detail = typeof guide?.detail === "string" ? guide.detail : "";
-        setNarrationText(
-          hint || detail || `Guide failed (${res.status}). Check K2_API_KEY and restart the API.`
-        );
-        setIsLoading(false);
-        return;
-      }
-
       if (guide.narration) setNarrationText(guide.narration);
 
       if (guide.new_annotations?.length) {

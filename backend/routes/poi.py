@@ -3,7 +3,7 @@ import os
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from services.llm import chat_completions
+from services.agent import _call_groq
 from services.session import add_to_session
 
 router = APIRouter()
@@ -39,7 +39,7 @@ async def narrate_poi(req: NarrateRequest):
             {"role": "user", "content": req.context},
         ]
         try:
-            response = await chat_completions(messages, max_completion_tokens=300)
+            response = await _call_groq(messages, max_tokens=300)
             return {"narration": response, "poi": poi}
         except Exception:
             return {"narration": poi["narration"], "poi": poi}
@@ -75,7 +75,7 @@ Mix of types: ~3 danger, ~3 action, ~2 info. Be specific and clinically accurate
 
     try:
         messages = [{"role": "user", "content": prompt}]
-        response = await chat_completions(messages, max_completion_tokens=1200)
+        response = await _call_groq(messages, max_tokens=1200)
 
         # Parse JSON from response
         text = response.strip()

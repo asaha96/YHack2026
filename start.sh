@@ -30,20 +30,20 @@ find_python() {
     "python3.11"
     "/opt/homebrew/bin/python3.11"
     "python3.12"
-    "python3.13"
     "/opt/homebrew/bin/python3.13"
+    "python3.13"
     "python3"
   )
 
   for candidate in "${candidates[@]}"; do
     [ -z "$candidate" ] && continue
     if command -v "$candidate" >/dev/null 2>&1; then
-      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
+      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
         echo "$candidate"
         return 0
       fi
     elif [ -x "$candidate" ]; then
-      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
+      if "$candidate" -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
         echo "$candidate"
         return 0
       fi
@@ -132,9 +132,8 @@ if [ ! -f .env ]; then
   echo "No .env file found. Creating from template..."
   cp .env.example .env
   echo "Please edit .env and add your API keys:"
-  echo "   - K2_API_KEY (K2 Think inference; optional Moonshot via KIMI_BASE_URL)"
+  echo "   - GROQ_API_KEY"
   echo "   - LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET"
-  echo "   - Optional: GROQ_API_KEY for TTS narration only"
   echo ""
   exit 1
 fi
@@ -142,8 +141,8 @@ fi
 PYTHON_CMD="$(find_python || true)"
 if [ -z "$PYTHON_CMD" ]; then
   echo ""
-  echo "ERROR: Praxis needs Python 3.11–3.13 for the backend and LiveKit agent."
-  echo "Install Python 3.11/3.12/3.13 and rerun the script."
+  echo "ERROR: Praxis needs Python 3.11 or 3.12 for the backend and LiveKit agent."
+  echo "Install Python 3.11/3.12 and rerun the script."
   exit 1
 fi
 
@@ -185,7 +184,7 @@ fi
 echo ""
 echo "Preparing backend environment..."
 if [ -x backend/.venv/bin/python ]; then
-  if ! backend/.venv/bin/python -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 13) else 1)' 2>/dev/null; then
+  if ! backend/.venv/bin/python -c 'import sys; raise SystemExit(0 if (3, 11) <= sys.version_info[:2] <= (3, 12) else 1)' 2>/dev/null; then
     echo "Rebuilding backend virtualenv with Python 3.11/3.12..."
     rm -rf backend/.venv
   fi

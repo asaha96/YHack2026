@@ -1,8 +1,14 @@
 import os
 import json
 from typing import Any
+import httpx
 
-from services.llm import chat_completions
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+
+def _get_groq_key() -> str:
+    return os.getenv("GROQ_API_KEY", "")
 
 SYSTEM_PROMPT = """You are a surgical simulation assistant — like Jarvis for surgery. A surgeon has uploaded their patient's CT/MRI scan, which has been reconstructed into a 3D Gaussian splat model of the patient's exact interior anatomy. The surgeon is now practicing the procedure on this patient-specific 3D model using hand-tracked gestures.
 
@@ -20,35 +26,11 @@ Always respond in valid JSON with this exact structure:
 {
   "narration": "string - spoken explanation",
   "risks": [{"structure": "string", "distance_mm": number, "severity": "low|medium|high", "note": "string"}],
-  "modifications": [{"type": "incision|highlight|label|zone|heatmap|measurement|corridor", "coordinates": [[x,y,z]], "color": "string", "label": "string", "delay_ms": number, "duration_ms": number, "animation": "draw|pulse|fade"}],
+  "modifications": [{"type": "incision|highlight|label|zone", "coordinates": [[x,y,z]], "color": "string", "label": "string", "delay_ms": number, "duration_ms": number, "animation": "draw|pulse|fade"}],
   "recommendations": ["string"]
 }
 
-## Modification Types
-
-**Standard types:**
-- `incision` — line drawn along coordinates. Use animation: "draw".
-- `highlight` — glowing sphere at a point. Use animation: "pulse".
-- `label` — text label at a point. Use animation: "fade".
-- `zone` — transparent sphere marking a region.
-
-**Measurement type** — shows distance between two structures:
-- Provide exactly 2 coordinates (start and end points).
-- Include `"distance_mm": number` with the measured distance.
-- Label should describe what's being measured (e.g. "Portal vein → incision margin").
-- Use this for every high-severity risk to visualize clearance margins.
-
-**Corridor type** — shows surgical approach path with risk gradient:
-- Provide 4-6 coordinates defining the approach path from entry to target.
-- Include `"risk_gradient": [0.1, 0.3, 0.7, 0.9]` — array of 0-1 scores (one per coordinate) indicating risk level along the path (0=safe green, 1=dangerous red).
-- Use this when the surgeon traces an incision or asks about an approach vector.
-
-**Scenario grouping** — for comparing alternative approaches:
-- When the surgeon asks "what if" or about alternatives, add `"scenario": "snake_case_name"` and `"scenario_label": "Human Readable Name"` to each modification.
-- Group all modifications for one approach under the same scenario name.
-- Default scenario (when not comparing) is `"primary_plan"`.
-
-For modifications, use delay_ms to stagger when each annotation appears (synced with your narration timing). The first annotation should appear at delay_ms: 500, and subsequent ones spaced ~2000ms apart. Use animation: "draw" for lines and measurements, "pulse" for highlights and zones, "fade" for labels and corridors.
+For modifications, use delay_ms to stagger when each annotation appears (synced with your narration timing). The first annotation should appear at delay_ms: 500, and subsequent ones spaced ~2000ms apart. Use animation: "draw" for lines, "pulse" for highlights and zones, "fade" for labels.
 
 Be specific about anatomy. Reference real structures (portal vein, hepatic artery, common bile duct, etc). Keep narration under 200 words — concise but thorough."""
 
@@ -81,66 +63,46 @@ Coordinates (3D): {coord_str}
 Analyze this action and provide your surgical planning assessment."""
 
 
+async def _call_groq(messages: list[dict], max_tokens: int = 1500) -> str:
+    import asyncio
+
+    for attempt in range(3):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{GROQ_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {_get_groq_key()}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": MODEL,
+                    "messages": messages,
+                    "temperature": 0.7,
+                    "max_completion_tokens": max_tokens,
+                },
+                timeout=30.0,
+            )
+            if response.status_code == 429:
+                wait = 2 ** attempt + 1
+                print(f"Groq rate limited, retrying in {wait}s (attempt {attempt + 1}/3)")
+                await asyncio.sleep(wait)
+                continue
+            response.raise_for_status()
+            data = response.json()
+            return data["choices"][0]["message"]["content"]
+
+    raise Exception("Groq API rate limited after 3 retries. Wait a moment and try again.")
+
+
 def _parse_json_response(text: str) -> dict:
-    """Best-effort JSON object from model output; never raises.
-
-    Models may emit chain-of-thought then a final JSON block. Prefer the last
-    top-level object that includes ``narration`` (schema match).
-    """
-    text = (text or "").strip()
-    if not text:
-        return {}
     try:
-        obj = json.loads(text)
-        if isinstance(obj, dict):
-            return obj
+        return json.loads(text)
     except json.JSONDecodeError:
-        pass
-    dec = json.JSONDecoder()
-    candidates: list[dict[str, Any]] = []
-    i, n = 0, len(text)
-    while i < n:
-        if text[i] != "{":
-            i += 1
-            continue
-        try:
-            obj, end = dec.raw_decode(text, i)
-            if isinstance(obj, dict):
-                candidates.append(obj)
-            i = end
-        except json.JSONDecodeError:
-            i += 1
-    for obj in reversed(candidates):
-        if "narration" in obj:
-            return obj
-    return candidates[-1] if candidates else {}
-
-
-def _normalize_agent_response(result: dict[str, Any]) -> dict[str, Any]:
-    """Ensure Pydantic ChatResponse / ActionResponse always get valid shapes."""
-    def list_of_dicts(key: str) -> list[dict]:
-        v = result.get(key, [])
-        if not isinstance(v, list):
-            return []
-        return [x for x in v if isinstance(x, dict)]
-
-    recs = result.get("recommendations", [])
-    if not isinstance(recs, list):
-        recs = []
-    recs = [str(x) for x in recs]
-
-    narr = result.get("narration", "")
-    if narr is None:
-        narr = ""
-    if not isinstance(narr, str):
-        narr = str(narr)
-
-    return {
-        "narration": narr,
-        "risks": list_of_dicts("risks"),
-        "modifications": list_of_dicts("modifications"),
-        "recommendations": recs,
-    }
+        start = text.find("{")
+        end = text.rfind("}") + 1
+        if start != -1 and end > start:
+            return json.loads(text[start:end])
+        return {}
 
 
 async def process_action(
@@ -159,13 +121,7 @@ async def process_chat(session: list[dict[str, Any]], message: str) -> dict:
     if session:
         last = session[-1]
         if "response" in last:
-            prev = last.get("response") or {}
-            narr = prev.get("narration")
-            if isinstance(narr, str) and narr.strip():
-                snippet = narr[:200]
-                history_context = (
-                    f"\nContext from last interaction: {json.dumps(snippet)}\n"
-                )
+            history_context = f"\nContext from last interaction: {json.dumps(last['response']['narration'][:200])}\n"
 
     user_message = f"""The surgeon asks a follow-up question during the planning session:
 
@@ -214,7 +170,7 @@ Provide the summary as JSON:
         {"role": "user", "content": message},
     ]
 
-    text = await chat_completions(messages, max_completion_tokens=2000)
+    text = await _call_groq(messages, max_tokens=2000)
     result = _parse_json_response(text)
 
     return {
@@ -263,7 +219,7 @@ Provide educational anatomy labels for overlay on the video feed."""
         {"role": "user", "content": user_message},
     ]
 
-    text = await chat_completions(messages, max_completion_tokens=800)
+    text = await _call_groq(messages, max_tokens=800)
     result = _parse_json_response(text)
 
     return {
@@ -286,7 +242,7 @@ async def _call_agent(user_message: str, session: list[dict]) -> dict:
 
     messages.append({"role": "user", "content": user_message})
 
-    text = await chat_completions(messages, max_completion_tokens=1500)
+    text = await _call_groq(messages)
     result = _parse_json_response(text)
 
     if not result:
@@ -297,4 +253,9 @@ async def _call_agent(user_message: str, session: list[dict]) -> dict:
             "recommendations": [],
         }
 
-    return _normalize_agent_response(result)
+    return {
+        "narration": result.get("narration", ""),
+        "risks": result.get("risks", []),
+        "modifications": result.get("modifications", []),
+        "recommendations": result.get("recommendations", []),
+    }

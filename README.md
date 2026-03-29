@@ -41,7 +41,7 @@ Upload CT/MRI → 3D Reconstruction → AI Labeling → Hand-Tracked Simulation 
 - Works with any standard webcam
 
 **AI Surgical Assistant**
-- K2 Think (`api.k2think.ai`, OpenAI-compatible) via `K2_API_KEY`; model defaults to `MBZUAI-IFM/K2-Think-v2` (override with `KIMI_MODEL` / `KIMI_BASE_URL` for Moonshot or others)
+- Groq API with Llama 4 Scout (17B, 16E instruct)
 - System prompt trained as senior attending surgeon mentoring a resident
 - Returns structured JSON: narration, risks (with severity + proximity), 3D modifications, recommendations
 - Session context maintained across interactions
@@ -54,7 +54,7 @@ Upload CT/MRI → 3D Reconstruction → AI Labeling → Hand-Tracked Simulation 
 - Heatmap overlays for semantic query results
 
 **Voice**
-- Groq TTS (PlayAI Dialog) for narration audio only — optional `GROQ_API_KEY`
+- Groq TTS (PlayAI Dialog model) for narration
 - ElevenLabs conversational AI agent (optional, for bidirectional voice)
 - Web Speech API for voice input
 
@@ -71,8 +71,8 @@ Upload CT/MRI → 3D Reconstruction → AI Labeling → Hand-Tracked Simulation 
 | 3D Rendering | Three.js, CSS2DRenderer, @mkkellogg/gaussian-splats-3d |
 | Hand Tracking | MediaPipe Hands (CDN) |
 | Backend | FastAPI, Python 3.14, uvicorn |
-| LLM | K2 Think (`K2_API_KEY`, default `api.k2think.ai` + `MBZUAI-IFM/K2-Think-v2`) |
-| TTS | Groq TTS (PlayAI Dialog), optional `GROQ_API_KEY` |
+| LLM | Groq API (Llama 4 Scout 17B-16E) |
+| TTS | Groq TTS (PlayAI Dialog) |
 | Medical Imaging | nibabel (NIfTI), pydicom (DICOM), scikit-image (marching cubes) |
 | Semantic Search | BiomedCLIP (Microsoft, via open_clip) |
 | Mesh Processing | trimesh, fast-simplification |
@@ -83,7 +83,7 @@ Upload CT/MRI → 3D Reconstruction → AI Labeling → Hand-Tracked Simulation 
 ### Prerequisites
 - Node.js 18+
 - Python 3.11+
-- K2 Think API key as `K2_API_KEY` (Bearer `IFM-...` from your provider). Optional: Moonshot keys if you point `KIMI_BASE_URL` / `KIMI_MODEL` there.
+- Groq API key ([console.groq.com](https://console.groq.com))
 
 ### Install
 
@@ -108,7 +108,7 @@ npm install
 ```bash
 # From project root
 cp .env.example .env
-# Edit .env and add K2_API_KEY (and optional GROQ_API_KEY for TTS)
+# Edit .env and add your GROQ_API_KEY
 ```
 
 ### Run
@@ -137,14 +137,13 @@ Open [http://localhost:5173](http://localhost:5173)
 │   │   ├── upload.py            # POST /api/upload — CT/MRI file upload
 │   │   ├── reconstruct.py       # POST /api/reconstruct — trigger 3D reconstruction
 │   │   ├── query.py             # POST /api/query — BiomedCLIP semantic search
-│   │   ├── narrate.py           # POST /api/narrate — Groq TTS (optional)
+│   │   ├── narrate.py           # POST /api/narrate — Groq TTS
 │   │   └── summary.py           # GET /api/summary/:id — session report
 │   └── services/
-│       ├── agent.py             # Kimi LLM agent (system prompt, structured output)
-│       ├── llm.py               # Moonshot / Kimi chat completions
+│       ├── agent.py             # Groq LLM agent (system prompt, structured output)
 │       ├── reconstruct.py       # CT/MRI → mesh → splat pipeline
 │       ├── biomedclip.py        # BiomedCLIP + LLM fallback
-│       ├── tts.py               # Groq TTS (optional; narration only)
+│       ├── tts.py               # Groq TTS integration
 │       └── session.py           # In-memory session state
 ├── frontend/
 │   ├── src/

@@ -13,7 +13,6 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
   const dissolveStartRef = React.useRef(0);
   const meshesRef = React.useRef<THREE.Mesh[]>([]);
   const onCompleteRef = React.useRef(onDissolveComplete);
-  const assembleStartRef = React.useRef(performance.now());
   onCompleteRef.current = onDissolveComplete;
 
   React.useEffect(() => {
@@ -132,7 +131,6 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
         cyl.userData.driftZ = (Math.random() - 0.5) * 0.8;
         cyl.userData.spinSpeed = (Math.random() - 0.5) * 3;
         cyl.userData.delayJitter = Math.random() * 0.06;
-        cyl.userData.isBond = true;
         group.add(cyl);
         allMeshes.push(cyl);
       }
@@ -146,99 +144,21 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
     };
     resize();
 
-    // Start all particles scattered and invisible for entrance animation
-    // Bonds (cylinders) stay in place — only fade opacity. Balls get scattered.
-    const ASSEMBLE_DURATION = 1800; // ms for DNA to fully appear
-    let assembled = false;
-    for (const mesh of allMeshes) {
-      const material = mesh.material as THREE.MeshPhysicalMaterial;
-      material.opacity = 0;
-      if (mesh.userData.isBond) {
-        mesh.scale.setScalar(0.01);
-      } else {
-        mesh.scale.setScalar(0.4);
-        const dx = mesh.userData.driftX as number;
-        const dy = mesh.userData.driftY as number;
-        const dz = mesh.userData.driftZ as number;
-        mesh.position.x = (mesh.userData.baseX as number) + dx;
-        mesh.position.y = (mesh.userData.baseY as number) + dy;
-        mesh.position.z = (mesh.userData.baseZ as number) + dz;
-      }
-    }
-    assembleStartRef.current = performance.now();
-
     let t = 0;
     let callbackFired = false;
     let allGone = false;
-    const DISSOLVE_DURATION = 1600;
+    const DISSOLVE_DURATION = 1600; // ms for DNA to fully disappear
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
       t += 0.0012;
       group.rotation.y = t;
 
-      // ── ENTRANCE: assemble particles bottom-to-top ──
-      if (!assembled && !dissolvingRef.current) {
-        const elapsed = performance.now() - assembleStartRef.current;
-        const progress = Math.min(1, elapsed / ASSEMBLE_DURATION);
-
-        for (const mesh of allMeshes) {
-          const ny = mesh.userData.normalizedY as number;
-          const jitter = mesh.userData.delayJitter as number;
-          // Bottom particles appear first (low ny → early fadeStart)
-          const fadeStart = ny * 0.85 + jitter;
-          const fadeDuration = 0.25;
-          const linearProgress = Math.max(0, Math.min(1, (progress - fadeStart) / fadeDuration));
-
-          if (linearProgress > 0) {
-            const p = linearProgress;
-            const eased = 1 - Math.pow(1 - p, 3);
-            const opacityEased = 1 - Math.pow(1 - p, 2);
-
-            const material = mesh.material as THREE.MeshPhysicalMaterial;
-            material.opacity = opacityEased;
-
-            if (mesh.userData.isBond) {
-              // Bonds: just fade in and scale from thin to full, no position change
-              mesh.scale.setScalar(0.01 + 0.99 * eased);
-            } else {
-              // Balls: drift from scattered position back to base
-              mesh.scale.setScalar(0.4 + 0.6 * eased);
-              const dx = mesh.userData.driftX as number;
-              const dy = mesh.userData.driftY as number;
-              const dz = mesh.userData.driftZ as number;
-              const remaining = 1 - eased;
-              mesh.position.x = (mesh.userData.baseX as number) + remaining * dx;
-              mesh.position.y = (mesh.userData.baseY as number) + remaining * dy;
-              mesh.position.z = (mesh.userData.baseZ as number) + remaining * dz;
-              mesh.rotation.x += (mesh.userData.spinSpeed as number) * 0.02 * remaining;
-              mesh.rotation.z += (mesh.userData.spinSpeed as number) * 0.015 * remaining;
-            }
-          }
-        }
-
-        if (progress >= 1) {
-          assembled = true;
-          for (const mesh of allMeshes) {
-            const material = mesh.material as THREE.MeshPhysicalMaterial;
-            material.opacity = 1;
-            mesh.scale.setScalar(1);
-            if (!mesh.userData.isBond) {
-              mesh.position.set(
-                mesh.userData.baseX as number,
-                mesh.userData.baseY as number,
-                mesh.userData.baseZ as number,
-              );
-            }
-          }
-        }
-      }
-
-      // ── EXIT: dissolve particles bottom-to-top ──
       if (dissolvingRef.current && !allGone) {
         const elapsed = performance.now() - dissolveStartRef.current;
         const progress = Math.min(1, elapsed / DISSOLVE_DURATION);
 
+        // Dissolve from bottom to top with organic, eased motion
         for (const mesh of allMeshes) {
           const ny = mesh.userData.normalizedY as number;
           const jitter = mesh.userData.delayJitter as number;
@@ -247,14 +167,17 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
           const linearProgress = Math.max(0, Math.min(1, (progress - fadeStart) / fadeDuration));
 
           if (linearProgress > 0) {
+            // Ease-out cubic: fast start, gentle deceleration
             const p = linearProgress;
             const eased = 1 - Math.pow(1 - p, 3);
+            // Ease-in for opacity: slow fade start, accelerates
             const opacityEased = p * p;
 
             const material = mesh.material as THREE.MeshPhysicalMaterial;
             material.opacity = 1 - opacityEased;
             mesh.scale.setScalar(1 - eased * 0.6);
 
+            // Each particle drifts in its own random direction
             const dx = mesh.userData.driftX as number;
             const dy = mesh.userData.driftY as number;
             const dz = mesh.userData.driftZ as number;
@@ -262,6 +185,7 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
             mesh.position.y = (mesh.userData.baseY as number) + eased * dy;
             mesh.position.z = (mesh.userData.baseZ as number) + eased * dz;
 
+            // Spin as it falls
             mesh.rotation.x += (mesh.userData.spinSpeed as number) * 0.02;
             mesh.rotation.z += (mesh.userData.spinSpeed as number) * 0.015;
           }
@@ -270,6 +194,7 @@ function DnaHelix({ dissolving, onDissolveComplete }: DnaHelixProps) {
           }
         }
 
+        // Fire callback early so text fades while DNA keeps falling
         if (progress >= 0.5 && !callbackFired) {
           callbackFired = true;
           onCompleteRef.current?.();
@@ -308,24 +233,6 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }: HeroSectionProps) {
-  const [entered, setEntered] = React.useState(false);
-  React.useEffect(() => {
-    const t = setTimeout(() => setEntered(true), 100);
-    return () => clearTimeout(t);
-  }, []);
-
-  const entranceStyle = (delayMs: number): React.CSSProperties => {
-    const isFadeOut = fading;
-    const dur = isFadeOut ? "1.3s" : "0.8s";
-    const delay = isFadeOut ? "0ms" : `${delayMs}ms`;
-    return {
-      opacity: entered && !fading ? 1 : 0,
-      filter: entered && !fading ? "none" : fading ? "blur(6px)" : "blur(8px)",
-      transform: entered && !fading ? "none" : fading ? "translateY(-16px) scale(0.98)" : "translateY(22px) scale(0.97)",
-      transition: `opacity ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, filter ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, transform ${dur} cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}`,
-    };
-  };
-
   const contentFadeStyle: React.CSSProperties = {
     transition: "opacity 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), filter 1.3s cubic-bezier(0.22, 0.61, 0.36, 1), transform 1.3s cubic-bezier(0.22, 0.61, 0.36, 1)",
     opacity: fading ? 0 : 1,
@@ -344,11 +251,11 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
       {/* DNA stays independent — keeps animating during text fade */}
       <DnaHelix dissolving={dissolving} onDissolveComplete={onDissolveComplete} />
 
-      <div style={{ ...entranceStyle(0), position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(47,39,31,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(47,39,31,0.03) 1px, transparent 1px)", backgroundSize: "120px 120px", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 92%)", pointerEvents: "none", zIndex: 0 }} />
+      <div style={{ ...contentFadeStyle, position: "absolute", inset: 0, backgroundImage: "linear-gradient(rgba(47,39,31,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(47,39,31,0.03) 1px, transparent 1px)", backgroundSize: "120px 120px", maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.82), transparent 92%)", pointerEvents: "none", zIndex: 0 }} />
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 260, background: "linear-gradient(transparent, rgba(248,244,236,0.94))", pointerEvents: "none", zIndex: 5 }} />
 
       <header style={{
-        ...entranceStyle(200),
+        ...contentFadeStyle,
         position: "relative", zIndex: 20,
         display: "flex", alignItems: "center",
         padding: "20px 40px",
@@ -359,12 +266,12 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
       </header>
 
       <div style={{
+        ...contentFadeStyle,
         position: "relative", zIndex: 10,
         maxWidth: 1200, margin: "0 auto",
         padding: "calc(18vh - 40px) 40px 0 60px",
       }}>
         <div style={{
-          ...entranceStyle(500),
           display: "inline-block",
           padding: "6px 16px", marginBottom: 28,
           border: "1px solid var(--border)",
@@ -378,7 +285,6 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
         </div>
 
         <h1 style={{
-          ...entranceStyle(750),
           fontSize: "clamp(3.4rem, 8vw, 6.6rem)",
           fontWeight: 600,
           lineHeight: 0.92,
@@ -392,7 +298,6 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
         </h1>
 
         <p style={{
-          ...entranceStyle(1000),
           fontSize: "1rem", lineHeight: 1.75,
           color: "var(--text-secondary)",
           maxWidth: 500, marginBottom: 36,
@@ -404,7 +309,6 @@ export function HeroSection({ dissolving, fading, onBegin, onDissolveComplete }:
         <button
           onClick={onBegin}
           style={{
-            ...entranceStyle(1250),
             padding: "12px 26px", borderRadius: 999,
             border: "1px solid var(--accent)",
             backgroundColor: "var(--accent-dim)",

@@ -1,3 +1,4 @@
+import os
 import base64
 from io import BytesIO
 from typing import Any, Union, Optional
@@ -90,10 +91,11 @@ async def _biomedclip_query(query_text: str, image_base64: str) -> dict:
 async def _llm_fallback_query(
     query_text: str, organ_metadata: Optional[dict[str, Any]]
 ) -> dict:
-    """Use Kimi (Moonshot) LLM to reason about the query based on known anatomy."""
+    """Use Groq LLM to reason about the query based on known anatomy."""
     import json
+    import httpx
 
-    from services.llm import chat_completions
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 
     organ_context = ""
     if organ_metadata:
@@ -115,11 +117,23 @@ Identify the most relevant anatomical regions and return as JSON:
 Use realistic 3D coordinates based on standard abdominal anatomy positioning.
 Score represents relevance (1.0 = most relevant)."""
 
-    text = await chat_completions(
-        [{"role": "user", "content": message}],
-        max_completion_tokens=800,
-        temperature=0.5,
-    )
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "model": "meta-llama/llama-4-scout-17b-16e-instruct",
+                "messages": [{"role": "user", "content": message}],
+                "temperature": 0.5,
+                "max_completion_tokens": 800,
+            },
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        text = response.json()["choices"][0]["message"]["content"]
 
     try:
         result = json.loads(text)
