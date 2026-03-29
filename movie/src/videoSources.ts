@@ -1,14 +1,13 @@
 /**
  * videoSources.ts — Real footage slots for each demo scene.
  *
- * When you have a screen recording ready:
+ * To add a recording:
  *   1. Drop the .mp4 into  movie/public/footage/
- *   2. Fill in the `src` and `durationInSeconds` below.
- *      Get duration:  ffprobe -v quiet -show_entries format=duration -of csv=p=0 file.mp4
+ *   2. Fill in the `src` below — duration is measured automatically.
  *
- * VideoDropIn reads `durationInSeconds` and computes the exact playbackRate at
- * render time using the live scene duration — so the video always fills the
- * scene perfectly even when audio changes the scene length.
+ * calculateMetadata() probes each file with an HTMLVideoElement at build time
+ * and computes the exact playbackRate needed to fill the scene, so the video
+ * always stays in sync with the audio regardless of clip length changes.
  *
  * Scenes with no VideoDropIn (Title, Problem, Hero, Closing) are null and ignored.
  */
@@ -16,11 +15,6 @@
 export interface VideoSlot {
   /** Path relative to public/, e.g. "footage/upload-demo.mp4" */
   src: string;
-  /**
-   * Native length of the video file in seconds.
-   * Run:  ffprobe -v quiet -show_entries format=duration -of csv=p=0 file.mp4
-   */
-  durationInSeconds: number;
 }
 
 // prettier-ignore
@@ -29,7 +23,7 @@ export const VIDEO_SOURCES: (VideoSlot | null)[] = [
   null,  // 1 · ProblemScene     — no video panel
 
   // ── Screen recordings of the Praxis app ─────────────────────────────────────
-  { src: "footage/upload-demo.mp4", durationInSeconds: 44.233 },  // 2 · UploadScene
+  { src: "footage/upload-demo.mp4" },  // 2 · UploadScene      — drag-drop DICOM → progress bar → case created
   null,  // 3 · ReconstructScene — DICOM slices → 3D volume spinning in the viewer
   null,  // 4 · HandTrackingScene— hand skeleton overlay, pinch gesture navigating anatomy
   null,  // 5 · AIScene          — surgeon types a question, copilot streams an answer

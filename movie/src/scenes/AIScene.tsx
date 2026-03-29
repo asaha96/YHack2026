@@ -2,14 +2,14 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
+import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn, AIMock } from "../components/VideoDropIn";
 import { VIDEO_SOURCES } from "../videoSources";
 import { PetPenguin, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
-export const AIScene: React.FC = () => {
+export const AIScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
   const frame = useCurrentFrame();
-  const slot = VIDEO_SOURCES[5];
   const { fps, durationInFrames } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
@@ -67,8 +67,8 @@ export const AIScene: React.FC = () => {
             windowTitle="praxis — AI surgical guidance · case 4471-B"
             stepLabel="STEP 04 · AI GUIDANCE"
             scale={0.86}
-            videoSrc={slot?.src}
-            videoDurationInSeconds={slot?.durationInSeconds}
+            videoSrc={VIDEO_SOURCES[5]?.src}
+            playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>
                 <PetPenguin

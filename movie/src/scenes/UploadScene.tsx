@@ -2,15 +2,15 @@ import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
+import type { VideoSceneProps } from "../Intro";
 import { VideoDropIn } from "../components/VideoDropIn";
 import { VIDEO_SOURCES } from "../videoSources";
 import { CTScanAccordion } from "../components/CTScanAccordion";
 import { PetCat, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
-export const UploadScene: React.FC = () => {
+export const UploadScene: React.FC<VideoSceneProps> = ({ videoPlaybackRate }) => {
   const frame = useCurrentFrame();
-  const slot = VIDEO_SOURCES[2];
   const { fps, durationInFrames } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
@@ -71,8 +71,8 @@ export const UploadScene: React.FC = () => {
             windowTitle="praxis — upload · case 4471-B"
             stepLabel="STEP 01 · DICOM UPLOAD"
             scale={0.86}
-            videoSrc={slot?.src}
-            videoDurationInSeconds={slot?.durationInSeconds}
+            videoSrc={VIDEO_SOURCES[2]?.src}
+            playbackRate={videoPlaybackRate ?? undefined}
             overlayContent={
               <>
                 <PetCat

@@ -4,6 +4,7 @@ import { getAudioDuration } from "@remotion/media-utils";
 import { Intro } from "./Intro";
 import type { IntroProps } from "./Intro";
 import { SCENE_NARRATIONS } from "./components/Subtitles";
+import { VIDEO_SOURCES } from "./videoSources";
 
 const FPS = 30;
 
@@ -11,7 +12,6 @@ const FPS = 30;
 const TRAIL_FRAMES = 30;
 
 // Gap between consecutive clips within the same scene when connecting them (0.4 s).
-// The first clip in each scene still uses its natural scene-relative offset.
 const INTER_CLIP_GAP = Math.round(0.4 * FPS);
 
 // Fallback props used in Remotion Studio before calculateMetadata resolves.
@@ -20,26 +20,39 @@ const DEFAULT_PROPS: IntroProps = {
   sceneDurations: Array(9).fill(200) as number[],
   clipFromFrames: [18, 98, 214, 314, 414, 492, 614, 710, 814, 906, 1014, 1092, 1214, 1296, 1414, 1500, 1620, 1696],
   audioDurations: Array(18).fill(150) as number[],
+  videoPlaybackRates: Array(9).fill(null) as (number | null)[],
 };
+
+/** Probe a video file's native duration using an HTMLVideoElement (runs in Chromium). */
+function getVideoDurationInSeconds(src: string): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.onloadedmetadata = () => {
+      resolve(video.duration);
+      video.src = ""; // release
+    };
+    video.onerror = () => reject(new Error(`Cannot probe video: ${src}`));
+    video.src = src;
+    video.load();
+  });
+}
 
 async function calculateMetadata() {
   const allClips = SCENE_NARRATIONS.flat();
 
-  // Measure every audio clip (getAudioDuration returns seconds → convert to frames)
+  // ── 1. Measure audio clips ─────────────────────────────────────────────────
   const clipSeconds = await Promise.all(
     allClips.map((clip) => getAudioDuration(staticFile(`narration/${clip.audio}`)))
   );
   const audioDurations = clipSeconds.map((s) => Math.ceil(s * FPS));
 
-  // Build scene starts, durations, and per-clip absolute from-frames.
-  // Within each scene, clips play sequentially: clip N+1 starts no earlier
-  // than clip N ends (no overlap). Scene duration grows to fit.
+  // ── 2. Build scene timeline (audio-driven) ─────────────────────────────────
   const sceneStarts: number[] = [];
   const sceneDurations: number[] = [];
   const clipFromFrames: number[] = [];
   let currentFrame = 0;
   let clipIdx = 0;
-  let prevClipEnd = 0; // tracks the end of the last clip globally
+  let prevClipEnd = 0;
 
   for (const sceneClips of SCENE_NARRATIONS) {
     sceneStarts.push(currentFrame);
@@ -47,13 +60,11 @@ async function calculateMetadata() {
     let sceneMaxEnd = 0;
     let isFirstInScene = true;
     for (const clip of sceneClips) {
-      // First clip in a scene: use its natural scene-relative offset.
-      // Subsequent clips: connect directly after the previous clip ends + a short gap.
       const naturalFrom = currentFrame + clip.offset;
       const connectedFrom = prevClipEnd + INTER_CLIP_GAP;
       const from = isFirstInScene
-        ? Math.max(naturalFrom, prevClipEnd) // respect scene lead-in; don't overlap
-        : Math.max(naturalFrom, connectedFrom); // connect; still respect natural order
+        ? Math.max(naturalFrom, prevClipEnd)
+        : Math.max(naturalFrom, connectedFrom);
       isFirstInScene = false;
       clipFromFrames.push(from);
 
@@ -68,7 +79,28 @@ async function calculateMetadata() {
     currentFrame += duration;
   }
 
-  const props: IntroProps = { sceneStarts, sceneDurations, clipFromFrames, audioDurations };
+  // ── 3. Probe video files and compute per-scene playback rates ──────────────
+  const videoPlaybackRates: (number | null)[] = await Promise.all(
+    VIDEO_SOURCES.map(async (slot, i) => {
+      if (!slot) return null;
+      try {
+        const videoDuration = await getVideoDurationInSeconds(staticFile(slot.src));
+        const sceneDurationSeconds = sceneDurations[i] / FPS;
+        return videoDuration / sceneDurationSeconds;
+      } catch {
+        // File not found or unreadable — fall back to animated mock
+        return null;
+      }
+    })
+  );
+
+  const props: IntroProps = {
+    sceneStarts,
+    sceneDurations,
+    clipFromFrames,
+    audioDurations,
+    videoPlaybackRates,
+  };
   return { durationInFrames: currentFrame, props };
 }
 

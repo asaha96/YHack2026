@@ -86,6 +86,7 @@ function AppPage() {
   const [narrationText, setNarrationText] = useState<string | null>(null);
   const handTrackingEnabled = true;
   const [showSummary, setShowSummary] = useState(false);
+  const [viewerScreenshot, setViewerScreenshot] = useState<string | null>(null);
   const [simulationTriggered, setSimulationTriggered] = useState(false);
   const simulationTriggeredRef = useRef(false);
   const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number } | null>(null);
@@ -662,7 +663,11 @@ function AppPage() {
       }}>
         <div />
         <div style={{ display: "flex", alignItems: "center", gap: 10, pointerEvents: "auto" }}>
-          <button onClick={() => setShowSummary(true)} style={{
+          <button onClick={() => {
+            const shot = viewerRef.current?.captureCanvas() || null;
+            setViewerScreenshot(shot);
+            setShowSummary(true);
+          }} style={{
             padding: "0 24px", height: 44, borderRadius: 999,
             border: "none",
             backgroundColor: "#fff",
@@ -752,7 +757,7 @@ function AppPage() {
         )}
       </main>
 
-      <SummaryView sessionId={sessionId} visible={showSummary} onClose={() => setShowSummary(false)} />
+      <SummaryView sessionId={sessionId} visible={showSummary} screenshot={viewerScreenshot} onClose={() => setShowSummary(false)} />
     </div>
   );
 }
