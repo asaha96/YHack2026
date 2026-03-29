@@ -45,7 +45,7 @@ export default function Landing() {
   const [intakeVisible, setIntakeVisible] = useState(false);
   const [processProgress, setProcessProgress] = useState(0);
   const [statusIndex, setStatusIndex] = useState(0);
-  const [patientImage, setPatientImage] = useState<File | null>(null);
+  const [patientFiles, setPatientFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const processStartRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -249,10 +249,10 @@ export default function Landing() {
               <div
                 onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
-                onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) setPatientImage(e.dataTransfer.files[0]); }}
+                onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files.length) setPatientFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]); }}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
-                  padding: patientImage ? "14px 16px" : "28px 16px",
+                  padding: patientFiles.length > 0 ? "14px 16px" : "28px 16px",
                   borderRadius: 14,
                   border: `2px dashed ${isDragging ? "var(--accent)" : "var(--border)"}`,
                   backgroundColor: isDragging ? "var(--accent-dim)" : "transparent",
@@ -264,15 +264,26 @@ export default function Landing() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   accept=".dcm,.nii,.nii.gz,.zip,.png,.jpg,.jpeg"
                   style={{ display: "none" }}
-                  onChange={e => { if (e.target.files?.[0]) setPatientImage(e.target.files[0]); }}
+                  onChange={e => { if (e.target.files?.length) { setPatientFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; } }}
                 />
-                {patientImage ? (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 500 }}>{patientImage.name}</span>
-                    <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", marginLeft: "auto" }}>{(patientImage.size / 1024 / 1024).toFixed(1)} MB</span>
+                {patientFiles.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {patientFiles.map((f, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                        <span style={{ fontSize: "0.78rem", color: "var(--text-primary)", fontWeight: 500, flex: 1, textAlign: "left", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</span>
+                        <span style={{ fontSize: "0.65rem", color: "var(--text-muted)", flexShrink: 0 }}>{(f.size / 1024 / 1024).toFixed(1)} MB</span>
+                        <button type="button" onClick={e => { e.stopPropagation(); setPatientFiles(prev => prev.filter((_, j) => j !== i)); }} style={{
+                          background: "none", border: "none", color: "var(--text-muted)", fontSize: "0.75rem", padding: "2px 6px", borderRadius: 4, flexShrink: 0,
+                        }}>x</button>
+                      </div>
+                    ))}
+                    <p style={{ fontSize: "0.62rem", color: "var(--text-muted)", marginTop: 4 }}>
+                      Click or drop to add more files
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -282,7 +293,7 @@ export default function Landing() {
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
                     <p style={{ fontSize: "0.78rem", color: "var(--text-secondary)", marginBottom: 4 }}>
-                      Drop CT / MRI scan here
+                      Drop CT / MRI scans here
                     </p>
                     <p style={{ fontSize: "0.65rem", color: "var(--text-muted)" }}>
                       DICOM, NIfTI, ZIP, or image files
