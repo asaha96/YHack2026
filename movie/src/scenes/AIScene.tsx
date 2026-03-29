@@ -3,11 +3,13 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { VideoDropIn, AIMock } from "../components/VideoDropIn";
+import { VIDEO_SOURCES } from "../videoSources";
 import { PetPenguin, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
 export const AIScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const slot = VIDEO_SOURCES[5];
   const { fps } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
@@ -65,6 +67,8 @@ export const AIScene: React.FC = () => {
             windowTitle="praxis — AI surgical guidance · case 4471-B"
             stepLabel="STEP 04 · AI GUIDANCE"
             scale={0.86}
+            videoSrc={slot?.src}
+            playbackRate={slot?.playbackRate}
             overlayContent={
               <>
                 <PetPenguin

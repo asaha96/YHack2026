@@ -3,11 +3,13 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { VideoDropIn, HandTrackMock } from "../components/VideoDropIn";
+import { VIDEO_SOURCES } from "../videoSources";
 import { PetBunny, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
 export const HandTrackingScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const slot = VIDEO_SOURCES[4];
   const { fps } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
@@ -67,6 +69,8 @@ export const HandTrackingScene: React.FC = () => {
             windowTitle="praxis — simulate · hand tracking active"
             stepLabel="STEP 03 · GESTURE SIMULATION"
             scale={0.86}
+            videoSrc={slot?.src}
+            playbackRate={slot?.playbackRate}
             overlayContent={
               <>
                 <PetBunny

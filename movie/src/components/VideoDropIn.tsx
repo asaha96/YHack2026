@@ -1,5 +1,5 @@
 import React from "react";
-import { interpolate, useCurrentFrame } from "remotion";
+import { OffthreadVideo, interpolate, staticFile, useCurrentFrame } from "remotion";
 import { C, fade, mono, sans, serif } from "../constants";
 import { WindowChrome } from "./Panels";
 
@@ -7,13 +7,15 @@ import { WindowChrome } from "./Panels";
  * VideoDropIn — App footage container for Praxis demo scenes.
  *
  * HOW TO USE WITH REAL FOOTAGE:
- * Replace the `mockContent` children with:
- *   <Video src={staticFile("your-recording.mp4")} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+ *   1. Drop the .mp4 in movie/public/footage/
+ *   2. Fill in the slot in src/videoSources.ts with { src, playbackRate }
+ *   3. Pass `videoSrc` and `playbackRate` here — the video will be
+ *      automatically stretched/compressed to fill the exact scene duration.
  *
  * The `overlayContent` (pets, labels) renders on top regardless.
  */
 export const VideoDropIn: React.FC<{
-  /** What shows inside the viewport (animated mock or real <Video>) */
+  /** What shows inside the viewport when no real footage is available */
   children: React.ReactNode;
   /** Window chrome title shown in the title bar */
   windowTitle?: string;
@@ -23,12 +25,26 @@ export const VideoDropIn: React.FC<{
   overlayContent?: React.ReactNode;
   /** Overall scale — useful for fitting in constrained layouts */
   scale?: number;
+  /**
+   * Path to a real screen-recording (relative to public/).
+   * When provided the video replaces the animated mock entirely.
+   */
+  videoSrc?: string;
+  /**
+   * video_duration_seconds / scene_duration_seconds.
+   * Stretches or compresses the clip so it fills exactly the scene length.
+   * Values < 1 slow it down; > 1 speed it up. See videoSources.ts for how
+   * to compute this.
+   */
+  playbackRate?: number;
 }> = ({
   children,
   windowTitle = "praxis — localhost:5173",
   stepLabel,
   overlayContent,
   scale = 1,
+  videoSrc,
+  playbackRate = 1,
 }) => {
   const W = 1320 * scale;
   const H = 760 * scale;
@@ -46,7 +62,16 @@ export const VideoDropIn: React.FC<{
             background: "linear-gradient(160deg, #fcfaf4 0%, #f8f4ec 60%, #f6f1ea 100%)",
           }}
         >
-          {children}
+          {/* Real footage — stretched to fill the scene exactly */}
+          {videoSrc ? (
+            <OffthreadVideo
+              src={staticFile(videoSrc)}
+              playbackRate={playbackRate}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            children
+          )}
 
           {/* Scanline texture overlay — makes it look like a screen recording */}
           <div
@@ -60,8 +85,8 @@ export const VideoDropIn: React.FC<{
             }}
           />
 
-          {/* FOOTAGE PLACEHOLDER badge — remove when real video is added */}
-          <div
+          {/* FOOTAGE PLACEHOLDER badge — hidden when real video is loaded */}
+          {!videoSrc && <div
             style={{
               position: "absolute",
               top: 16,
@@ -88,7 +113,7 @@ export const VideoDropIn: React.FC<{
             >
               drop footage here
             </span>
-          </div>
+          </div>}
 
           {/* Overlay content (pets, annotations) */}
           {overlayContent && (

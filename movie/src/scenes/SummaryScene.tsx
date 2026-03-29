@@ -3,11 +3,13 @@ import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remo
 import { C, fade, serif, spr } from "../constants";
 import { Eyebrow } from "../components/Typography";
 import { VideoDropIn, SummaryMock } from "../components/VideoDropIn";
+import { VIDEO_SOURCES } from "../videoSources";
 import { PetCorgi, SparkleOverlay } from "../components/PetOverlay";
 
 // Local frame: 0 → 180 (6s)
 export const SummaryScene: React.FC = () => {
   const frame = useCurrentFrame();
+  const slot = VIDEO_SOURCES[6];
   const { fps } = useVideoConfig();
 
   const fadeIn = fade(frame, 0, 40);
@@ -65,6 +67,8 @@ export const SummaryScene: React.FC = () => {
             windowTitle="praxis — surgical plan · export"
             stepLabel="STEP 05 · PDF EXPORT"
             scale={0.86}
+            videoSrc={slot?.src}
+            playbackRate={slot?.playbackRate}
             overlayContent={
               <>
                 <PetCorgi
